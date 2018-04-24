@@ -1,0 +1,56 @@
+package main
+
+import (
+	"log"
+	"net"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	pb "{{ .PbPath }}"
+	"google.golang.org/grpc/reflection"
+)
+
+const (
+	port = "{{ .Port }}"
+)
+
+{{ template "services" .Services }}
+
+func main() {
+	lis, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+	{{ template "register_services" .Services }}
+
+	reflection.Register(s)
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+}
+
+{{ define "services" }}
+{{range . }}
+type {{.Name}}Server struct{}
+
+{{ template "methods" .}}
+
+{{end}}
+{{ end }}
+
+{{ define "methods" }}
+{{ $name := .Name }}
+{{ range .Methods}}
+func (s *{{$name}}Server) {{.Name}}(ctx context.Context, in *pb.{{.Input}}) (*pb.{{.Output}},error){
+
+}
+{{end}}
+{{end}}
+
+{{ define "register_services" }}
+{{ range .}}
+	pb.Register{{.Name}}Server(s, &{{.Name}}Server{})
+{{ end }}
+{{ end }}
