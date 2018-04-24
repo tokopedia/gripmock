@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+
+	"github.com/renstrom/fuzzysearch/fuzzy"
 )
 
 var mx = sync.Mutex{}
@@ -38,6 +40,11 @@ func allStub() stubMapping {
 	return stubStorage
 }
 
+type closeMatch struct {
+	rule   string
+	expect map[string]interface{}
+}
+
 func findStub(stub *findStubPayload) (*Output, error) {
 	mx.Lock()
 	defer mx.Unlock()
@@ -53,27 +60,74 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	if len(stubs) == 0 {
 		return nil, fmt.Errorf("Stub for Service:%s and Method:%s is empty", stub.Service, stub.Method)
 	}
+
+	closestMatch := []closeMatch{}
 	for _, stubrange := range stubs {
-		if stubrange.Input.Equals != nil && equals(stub.Data, stubrange.Input.Equals) {
-			return &stubrange.Output, nil
+		if expect := stubrange.Input.Equals; expect != nil {
+			closestMatch = append(closestMatch, closeMatch{"equals", expect})
+			if equals(stub.Data, expect) {
+				return &stubrange.Output, nil
+			}
 		}
 
-		if stubrange.Input.Contains != nil && contains(stubrange.Input.Contains, stub.Data) {
-			return &stubrange.Output, nil
+		if expect := stubrange.Input.Contains; expect != nil {
+			closestMatch = append(closestMatch, closeMatch{"contains", expect})
+			if contains(stubrange.Input.Contains, stub.Data) {
+				return &stubrange.Output, nil
+			}
 		}
 
-		if stubrange.Input.Matches != nil && matches(stubrange.Input.Matches, stub.Data) {
-			return &stubrange.Output, nil
+		if expect := stubrange.Input.Matches; expect != nil {
+			closestMatch = append(closestMatch, closeMatch{"matches", expect})
+			if matches(stubrange.Input.Matches, stub.Data) {
+				return &stubrange.Output, nil
+			}
 		}
 	}
 
-	return nil, stubNotFoundError(stub)
+	return nil, stubNotFoundError(stub, closestMatch)
 }
 
-func stubNotFoundError(stub *findStubPayload) error {
+func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error {
 	template := fmt.Sprintf("Can't find stub \n\nService: %s \n\nMethod: %s \n\nInput\n\n", stub.Service, stub.Method)
+	expectString := renderFieldAsString(stub.Data)
+	template += expectString
 
-	template += renderFieldAsString(stub.Data)
+	lowestFuzzyRank := struct {
+		rank  int
+		match closeMatch
+	}{-1, closeMatch{}}
+	for _, closeMatchValue := range closestMatches {
+		closeMatchString := renderFieldAsString(closeMatchValue.expect)
+		src := expectString
+		tgt := closeMatchString
+		// swap it
+		if len(src) > len(tgt) {
+			tmp := tgt
+			tgt = src
+			src = tmp
+		}
+		rank := fuzzy.RankMatch(src, tgt)
+		if rank == -1 {
+			continue
+		}
+		// 0 is the closest match
+		if rank < lowestFuzzyRank.rank || lowestFuzzyRank.rank == -1 {
+			lowestFuzzyRank.rank = rank
+			lowestFuzzyRank.match = closeMatchValue
+		}
+	}
+
+	var closestMatch closeMatch
+	if lowestFuzzyRank.rank == -1 {
+		closestMatch = closestMatches[0]
+	} else {
+		closestMatch = lowestFuzzyRank.match
+	}
+
+	closestMatchString := renderFieldAsString(closestMatch.expect)
+	template += fmt.Sprintf("\n\nClosest Match \n\n%s:%s", closestMatch.rule, closestMatchString)
+
 	return fmt.Errorf(template)
 }
 
