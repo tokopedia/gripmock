@@ -2,7 +2,9 @@ package stub
 
 import (
 	"fmt"
+	"log"
 	"reflect"
+	"regexp"
 	"sync"
 
 	"github.com/renstrom/fuzzysearch/fuzzy"
@@ -160,16 +162,22 @@ func contains(expect, actual map[string]interface{}) bool {
 
 func matches(expect, actual map[string]interface{}) bool {
 	for keyExpect, valueExpect := range expect {
-		valueExpectMap := valueExpect.(map[string]interface{})
-		actualvalue, ok := actual[keyExpect]
+		valueExpectString, ok := valueExpect.(string)
 		if !ok {
-			return ok
+			return false
+		}
+		actualvalue, ok := actual[keyExpect].(string)
+		if !ok {
+			return false
 		}
 
-		if equals, ok := valueExpectMap["equals"]; ok {
-			if !reflect.DeepEqual(equals, actualvalue) {
-				return false
-			}
+		match, err := regexp.Match(valueExpectString, []byte(actualvalue))
+		if err != nil {
+			log.Println("Error on matching regex %s with %s error:%v", valueExpectString, actualvalue, err)
+		}
+
+		if !match {
+			return false
 		}
 	}
 	return true

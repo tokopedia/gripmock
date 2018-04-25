@@ -71,12 +71,7 @@ func addStub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success := struct {
-		Success string `json:"success"`
-	}{
-		"Success add stub",
-	}
-	json.NewEncoder(w).Encode(success)
+	w.Write([]byte("Success add stub"))
 }
 
 func listStub(w http.ResponseWriter, r *http.Request) {

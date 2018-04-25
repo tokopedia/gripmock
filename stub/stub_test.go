@@ -41,8 +41,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("POST", "/add", read)
 			},
 			handler: addStub,
-			expect: `{"success":"Success add stub"}
-`,
+			expect:  `Success add stub`,
 		},
 		{
 			name: "list stub",
@@ -82,8 +81,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("POST", "/add", bytes.NewReader([]byte(payload)))
 			},
 			handler: addStub,
-			expect: `{"success":"Success add stub"}
-`,
+			expect:  `Success add stub`,
 		},
 		{
 			name: "find stub contains",
@@ -102,33 +100,14 @@ func TestStub(t *testing.T) {
 			handler: handleFindStub,
 			expect:  "{\"data\":{\"hello\":\"world\"},\"error\":\"\"}\n",
 		}, {
-			name: "find stub contains error",
-			mock: func() *http.Request {
-				payload := `{
-						"service":"Testing",
-						"method":"TestMethod",
-						"data":{
-							"field1":"helllo field1",
-							"field2":"hello field2",
-							"field3":"hello field31"
-						}
-					}`
-				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
-			},
-			handler: handleFindStub,
-			expect: `{"error":"Can't find stub for Service:Testing Method:TestMethod Input:{\"field1\":\"helllo field1\",\"field2\":\"hello field2\",\"field3\":\"hello field31\"}"}
-`,
-		}, {
-			name: "add stub matches field equals",
+			name: "add stub matches regex",
 			mock: func() *http.Request {
 				payload := `{
 						"service":"Testing2",
 						"method":"TestMethod",
 						"input":{
 							"matches":{
-								"field1":{
-									"equals":"equals field1"
-								}
+								"field1":".*ello$"
 							}
 						},
 						"output":{
@@ -140,33 +119,15 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("POST", "/add", bytes.NewReader([]byte(payload)))
 			},
 			handler: addStub,
-			expect:  "{\"success\":\"Success add stub\"}\n",
+			expect:  "Success add stub",
 		}, {
-			name: "find stub matches field equals",
+			name: "find stub matches regex",
 			mock: func() *http.Request {
 				payload := `{
 						"service":"Testing2",
 						"method":"TestMethod",
 						"data":{
-							"field1":"equals field1",
-							"field2":"field2",
-							"field3":"field31"
-						}
-					}`
-				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
-			},
-			handler: handleFindStub,
-			expect:  "{\"data\":{\"reply\":\"OK\"},\"error\":\"\"}\n",
-		}, {
-			name: "find stub matches field equals error",
-			mock: func() *http.Request {
-				payload := `{
-						"service":"Testing2",
-						"method":"TestMethod",
-						"data":{
-							"field1":"equals field0",
-							"field2":"field2",
-							"field3":"field31"
+							"field1":"hello"
 						}
 					}`
 				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
