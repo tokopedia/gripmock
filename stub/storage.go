@@ -12,6 +12,7 @@ import (
 
 var mx = sync.Mutex{}
 
+// below represent map[servicename][methodname][]expectations
 type stubMapping map[string]map[string][]storage
 
 var stubStorage = stubMapping{}
@@ -95,42 +96,53 @@ func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error
 	expectString := renderFieldAsString(stub.Data)
 	template += expectString
 
-	lowestFuzzyRank := struct {
-		rank  int
+	highestRank := struct {
+		rank  float32
 		match closeMatch
-	}{-1, closeMatch{}}
+	}{0, closeMatch{}}
 	for _, closeMatchValue := range closestMatches {
-		closeMatchString := renderFieldAsString(closeMatchValue.expect)
-		src := expectString
-		tgt := closeMatchString
-		// swap it
-		if len(src) > len(tgt) {
-			tmp := tgt
-			tgt = src
-			src = tmp
-		}
-		rank := fuzzy.RankMatch(src, tgt)
-		if rank == -1 {
-			continue
-		}
-		// 0 is the closest match
-		if rank < lowestFuzzyRank.rank || lowestFuzzyRank.rank == -1 {
-			lowestFuzzyRank.rank = rank
-			lowestFuzzyRank.match = closeMatchValue
+		rank := rankMatch(expectString, closeMatchValue.expect)
+
+		// the higher the better
+		if rank > highestRank.rank {
+			highestRank.rank = rank
+			highestRank.match = closeMatchValue
 		}
 	}
 
 	var closestMatch closeMatch
-	if lowestFuzzyRank.rank == -1 {
+	if highestRank.rank == 0 {
 		closestMatch = closestMatches[0]
 	} else {
-		closestMatch = lowestFuzzyRank.match
+		closestMatch = highestRank.match
 	}
 
 	closestMatchString := renderFieldAsString(closestMatch.expect)
 	template += fmt.Sprintf("\n\nClosest Match \n\n%s:%s", closestMatch.rule, closestMatchString)
 
 	return fmt.Errorf(template)
+}
+
+// we made our own simple ranking logic
+// count the matches field_name and value then compare it with total field names and values
+// the higher the better
+func rankMatch(expect string, closeMatch map[string]interface{}) float32 {
+	occurence := 0
+	for key, value := range closeMatch {
+		if fuzzy.Match(key+":", expect) {
+			occurence++
+		}
+
+		if fuzzy.Match(fmt.Sprint(value), expect) {
+			occurence++
+		}
+	}
+
+	if occurence == 0 {
+		return 0
+	}
+	totalFields := len(closeMatch) * 2
+	return float32(occurence) / float32(totalFields)
 }
 
 func renderFieldAsString(fields map[string]interface{}) string {
@@ -181,4 +193,11 @@ func matches(expect, actual map[string]interface{}) bool {
 		}
 	}
 	return true
+}
+
+func clearStorage() {
+	mx.Lock()
+	defer mx.Unlock()
+
+	stubStorage = stubMapping{}
 }

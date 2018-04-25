@@ -3,7 +3,6 @@ package stub
 import (
 	"bytes"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -134,6 +133,30 @@ func TestStub(t *testing.T) {
 			},
 			handler: handleFindStub,
 			expect:  "{\"data\":{\"reply\":\"OK\"},\"error\":\"\"}\n",
+		}, {
+			name: "error find stub contains",
+			mock: func() *http.Request {
+				payload := `{
+						"service":"Testing",
+						"method":"TestMethod",
+						"data":{
+							"field1":"hello field1",
+							"field2":"hello field2",
+							"field3":"hello field4"
+						}
+					}`
+				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleFindStub,
+			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\n{\n\tfield1: hello field1\n\tfield2: hello field2\n\tfield3: hello field4\n}\n\nClosest Match \n\ncontains:{\n\tfield1: hello field1\n\tfield3: hello field3\n}",
+		}, {
+			name: "error find stub equals",
+			mock: func() *http.Request {
+				payload := `{"service":"Testing","method":"TestMethod","data":{"Hola":"Dunia"}}`
+				return httptest.NewRequest("POST", "/find", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleFindStub,
+			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\n{\n\tHola: Dunia\n}\n\nClosest Match \n\nequals:{\n\tHola: Mundo\n}",
 		},
 	}
 
@@ -144,7 +167,6 @@ func TestStub(t *testing.T) {
 			v.handler(wrt, req)
 			res, err := ioutil.ReadAll(wrt.Result().Body)
 
-			log.Println(err)
 			assert.NoError(t, err)
 			assert.Equal(t, v.expect, string(res))
 		})

@@ -15,6 +15,7 @@ func RunStubServer(port string) {
 	r.Post("/add", addStub)
 	r.Get("/", listStub)
 	r.Post("/find", handleFindStub)
+	r.Get("/clear", handleClearStub)
 	fmt.Println("Serving HTTP server on localhost" + port)
 	go func() {
 		err := http.ListenAndServe(port, r)
@@ -128,4 +129,9 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(output)
+}
+
+func handleClearStub(w http.ResponseWriter, r *http.Request) {
+	clearStorage()
+	w.Write([]byte("OK"))
 }
