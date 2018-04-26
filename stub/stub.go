@@ -11,12 +11,13 @@ import (
 )
 
 func RunStubServer(port string) {
+	port = ":" + port
 	r := chi.NewRouter()
 	r.Post("/add", addStub)
 	r.Get("/", listStub)
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
-	fmt.Println("Serving HTTP server on localhost" + port)
+	fmt.Println("Serving stub admin on http://localhost" + port)
 	go func() {
 		err := http.ListenAndServe(port, r)
 		log.Fatal(err)
@@ -76,6 +77,7 @@ func addStub(w http.ResponseWriter, r *http.Request) {
 }
 
 func listStub(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(allStub())
 }
 
@@ -128,6 +130,7 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(output)
 }
 

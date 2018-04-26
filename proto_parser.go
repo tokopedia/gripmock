@@ -1,5 +1,11 @@
 package main
 
+import (
+	"io"
+
+	"github.com/alecthomas/participle"
+)
+
 type Proto struct {
 	syntax   string     `"syntax" "=" String  ";"`
 	imprt    string     `["import" String ";"]`
@@ -28,4 +34,11 @@ type Input struct {
 
 type Output struct {
 	Identifier string `@Ident`
+}
+
+func ParseProto(reader io.Reader) (Proto, error) {
+	parser, err := participle.Build(&Proto{}, nil)
+	proto := Proto{}
+	err = parser.Parse(reader, &proto)
+	return proto, err
 }
