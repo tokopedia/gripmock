@@ -102,7 +102,7 @@ type {{.Name}} struct{}
 {{ range .Methods}}
 func (s *{{$serviceName}}) {{.Name}}(ctx context.Context, in *{{.Input}}) (*{{.Output}},error){
 	out := &{{.Output}}{}
-	err := findStub("{{$serviceName}}", ".Name", in, out)
+	err := findStub("{{$serviceName}}", "{{.Name}}", in, out)
 	return out, err
 }
 {{end}}

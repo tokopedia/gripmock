@@ -97,6 +97,11 @@ func generateProtoc(protoPath, output string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// change package to "main" on generated code
+	protoname := getProtoName(protoPath)
+	sed := exec.Command("sed", "-i", `s/^package \w*$/package main/`, output+protoname+".pb.go")
+	sed.Run()
 }
 
 func generateGrpcServer(output, grpcPort, adminPort string, proto Proto) {
