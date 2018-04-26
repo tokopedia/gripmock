@@ -80,7 +80,7 @@ func main() {
 	{{ template "register_services" .Services }}
 
 	reflection.Register(s)
-	log.Println("Serving gRPC on tcp://localost" + TCP_PORT)
+	fmt.Println("Serving gRPC on tcp://localost" + TCP_PORT)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
