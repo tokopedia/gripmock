@@ -16,31 +16,33 @@ import (
 )
 
 func main() {
-	protoPathPointer := flag.String("proto", "", "Proto file to generate gRPC server")
-	outputPointer := flag.String("o", "", "directory to output server.go. default is $GOPATH/src/grpc/")
+	outputPointer := flag.String("o", "", "directory to output server.go. Default is $GOPATH/src/grpc/")
 	grpcPort := flag.String("grpc-port", "4770", "Port of gRPC tcp server")
 	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
+	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
 
 	flag.Parse()
 	fmt.Println("Starting gRPC Mock")
 
-	output := *outputPointer + "/"
+	output := *outputPointer
 	if output == "" {
 		if os.Getenv("GOPATH") == "" {
 			log.Fatal("output is not provided and GOPATH is empty")
 		}
-		output = os.Getenv("GOPATH") + "src/grpc/"
+		output = os.Getenv("GOPATH") + "/src/grpc"
 	}
+
+	// for safety
+	output += "/"
 
 	// run admin stub server
-	stub.RunStubServer(*adminport)
+	stub.RunStubServer(stub.Options{
+		StubPath: *stubPath,
+		Port:     *adminport,
+	})
 
 	// parse proto files
-	protoPath := *protoPathPointer
-	if protoPath == "" {
-		log.Fatal("proto can't be empty")
-	}
-
+	protoPath := flag.Arg(flag.NArg() - 1)
 	proto, err := parseProto(protoPath)
 	if err != nil {
 		log.Fatal("can't parse proto ", err)
@@ -76,6 +78,9 @@ func getProtoName(path string) string {
 }
 
 func parseProto(protoPath string) (Proto, error) {
+	if _, err := os.Stat(protoPath); os.IsNotExist(err) {
+		log.Fatal(fmt.Sprintf("Proto file '%s' not found", protoPath))
+	}
 	byt, err := ioutil.ReadFile(protoPath)
 	if err != nil {
 		log.Fatal("Error on reading proto " + err.Error())
@@ -95,13 +100,18 @@ func generateProtoc(protoPath, output string) {
 	protoc.Stderr = os.Stderr
 	err := protoc.Run()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Fail on protoc ", err)
 	}
 
 	// change package to "main" on generated code
 	protoname := getProtoName(protoPath)
 	sed := exec.Command("sed", "-i", `s/^package \w*$/package main/`, output+protoname+".pb.go")
-	sed.Run()
+	sed.Stderr = os.Stderr
+	sed.Stdout = os.Stdout
+	err = sed.Run()
+	if err != nil {
+		log.Fatal("Fail on sed")
+	}
 }
 
 func generateGrpcServer(output, grpcPort, adminPort string, proto Proto) {

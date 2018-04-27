@@ -10,13 +10,28 @@ import (
 	"github.com/go-chi/chi"
 )
 
-func RunStubServer(port string) {
-	port = ":" + port
+type Options struct {
+	Port     string
+	StubPath string
+}
+
+const DEFAULT_PORT = "4771"
+
+func RunStubServer(opt Options) {
+	if opt.Port == "" {
+		opt.Port = DEFAULT_PORT
+	}
+	port := ":" + opt.Port
 	r := chi.NewRouter()
 	r.Post("/add", addStub)
 	r.Get("/", listStub)
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
+
+	if opt.StubPath != "" {
+		readStubFromFile(opt.StubPath)
+	}
+
 	fmt.Println("Serving stub admin on http://localhost" + port)
 	go func() {
 		err := http.ListenAndServe(port, r)

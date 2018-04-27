@@ -1,7 +1,9 @@
 package stub
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"reflect"
 	"regexp"
@@ -200,4 +202,29 @@ func clearStorage() {
 	defer mx.Unlock()
 
 	stubStorage = stubMapping{}
+}
+
+func readStubFromFile(path string) {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.Printf("Can't read stub from %s. %v\n", path, err)
+		return
+	}
+
+	for _, file := range files {
+		byt, err := ioutil.ReadFile(path + "/" + file.Name())
+		if err != nil {
+			log.Printf("Error when reading file %s. %v. skipping...", file.Name(), err)
+			continue
+		}
+
+		stub := new(Stub)
+		err = json.Unmarshal(byt, stub)
+		if err != nil {
+			log.Printf("Error when reading file %s. %v. skipping...", file.Name(), err)
+			continue
+		}
+
+		storeStub(stub)
+	}
 }
