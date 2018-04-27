@@ -34,6 +34,9 @@ func main() {
 
 	// for safety
 	output += "/"
+	if _, err := os.Stat(output); os.IsNotExist(err) {
+		os.Mkdir(output, os.ModePerm)
+	}
 
 	// run admin stub server
 	stub.RunStubServer(stub.Options{
