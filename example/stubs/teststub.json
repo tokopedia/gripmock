@@ -1,0 +1,14 @@
+{
+ "service":"Greeter",
+  "method":"SayHello",
+  "input":{
+    "equals":{
+      "name":"jeki"
+    }
+  },
+  "output":{
+    "data":{
+      "message":"Hello Jeki"
+    }
+  }
+}
