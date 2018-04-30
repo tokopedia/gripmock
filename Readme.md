@@ -29,7 +29,7 @@ Stub Server running on `http://localhost:4771`
 
 - `GET /` Will list all stubs mapping.
 - `POST /add` Will add stub with provided stub data
-- `POST /find` Find matching stub with provided input. see Input Matching below.
+- `POST /find` Find matching stub with provided input. see [Input Matching](#input_matching) below.
 
 Stub Format is JSON text format. It has skeleton like below:
 ```
@@ -66,7 +66,7 @@ For our `hello` service example we put stub with below text:
   }
 ```
 
-## Input Matching
+## <a name="input_matching"></a>Input Matching
 Stub will responding the expected response if only requested with matching rule of input. Stub service will serve `/find` endpoint with format:
 ```
 {
