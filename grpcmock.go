@@ -22,7 +22,7 @@ func main() {
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
 
 	flag.Parse()
-	fmt.Println("Starting gRPC Mock")
+	fmt.Println("Starting GripMock")
 
 	output := *outputPointer
 	if output == "" {
@@ -45,20 +45,20 @@ func main() {
 	})
 
 	// parse proto files
-	protoPath := flag.Arg(flag.NArg() - 1)
-	proto, err := parseProto(protoPath)
+	protoPaths := flag.Args()
+	protos, err := parseProto(protoPaths)
 	if err != nil {
 		log.Fatal("can't parse proto ", err)
 	}
 
 	// generate pb.go using protoc
-	generateProtoc(protoPath, output)
+	generateProtoc(protoPaths, output)
 
 	// generate grpc server based on proto
-	generateGrpcServer(output, *grpcPort, *adminport, proto)
+	generateGrpcServer(output, *grpcPort, *adminport, protos)
 
 	// build the server
-	buildServer(output, protoPath)
+	buildServer(output, protoPaths)
 
 	// and run
 	run, runerr := runGrpcServer(output)
@@ -80,25 +80,37 @@ func getProtoName(path string) string {
 	return strings.Split(filename, ".")[0]
 }
 
-func parseProto(protoPath string) (Proto, error) {
-	if _, err := os.Stat(protoPath); os.IsNotExist(err) {
-		log.Fatal(fmt.Sprintf("Proto file '%s' not found", protoPath))
-	}
-	byt, err := ioutil.ReadFile(protoPath)
-	if err != nil {
-		log.Fatal("Error on reading proto " + err.Error())
-	}
+func parseProto(protoPath []string) ([]Proto, error) {
+	protos := []Proto{}
+	for _, path := range protoPath {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			log.Fatal(fmt.Sprintf("Proto file '%s' not found", protoPath))
+		}
+		byt, err := ioutil.ReadFile(path)
+		if err != nil {
+			log.Fatal("Error on reading proto " + err.Error())
+		}
 
-	return ParseProto(bytes.NewReader(byt))
+		proto, err := ParseProto(bytes.NewReader(byt))
+		if err != nil {
+			return nil, err
+		}
+		protos = append(protos, proto)
+	}
+	return protos, nil
 }
 
-func generateProtoc(protoPath, output string) {
-	protodirs := strings.Split(protoPath, "/")
+func generateProtoc(protoPath []string, output string) {
+	protodirs := strings.Split(protoPath[0], "/")
 	protodir := ""
 	if len(protodirs) > 0 {
 		protodir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
 	}
-	protoc := exec.Command("protoc", "-I", protodir, protoPath, "--go_out=plugins=grpc:"+output)
+
+	args := []string{"-I", protodir}
+	args = append(args, protoPath...)
+	args = append(args, "--go_out=plugins=grpc:"+output)
+	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
 	err := protoc.Run()
@@ -107,17 +119,19 @@ func generateProtoc(protoPath, output string) {
 	}
 
 	// change package to "main" on generated code
-	protoname := getProtoName(protoPath)
-	sed := exec.Command("sed", "-i", `s/^package \w*$/package main/`, output+protoname+".pb.go")
-	sed.Stderr = os.Stderr
-	sed.Stdout = os.Stdout
-	err = sed.Run()
-	if err != nil {
-		log.Fatal("Fail on sed")
+	for _, proto := range protoPath {
+		protoname := getProtoName(proto)
+		sed := exec.Command("sed", "-i", `s/^package \w*$/package main/`, output+protoname+".pb.go")
+		sed.Stderr = os.Stderr
+		sed.Stdout = os.Stdout
+		err = sed.Run()
+		if err != nil {
+			log.Fatal("Fail on sed")
+		}
 	}
 }
 
-func generateGrpcServer(output, grpcPort, adminPort string, proto Proto) {
+func generateGrpcServer(output, grpcPort, adminPort string, proto []Proto) {
 	file, err := os.Create(output + "server.go")
 	if err != nil {
 		log.Fatal(err)
@@ -130,9 +144,12 @@ func generateGrpcServer(output, grpcPort, adminPort string, proto Proto) {
 
 }
 
-func buildServer(output, protoPath string) {
-	protoname := getProtoName(protoPath)
-	build := exec.Command("go", "build", "-o", output+"grpcserver", output+"server.go", output+protoname+".pb.go")
+func buildServer(output string, protoPaths []string) {
+	args := []string{"build", "-o", output + "grpcserver", output + "server.go"}
+	for _, path := range protoPaths {
+		args = append(args, output+getProtoName(path)+".pb.go")
+	}
+	build := exec.Command("go", args...)
 	build.Stdout = os.Stdout
 	build.Stderr = os.Stderr
 	err := build.Run()

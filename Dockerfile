@@ -2,6 +2,8 @@ FROM golang:alpine
 
 RUN mkdir /proto
 
+RUN mkdir /stubs
+
 RUN apk -U --no-cache add git protobuf
 
 RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \

@@ -7,13 +7,18 @@ import (
 )
 
 type Proto struct {
-	syntax   string     `"syntax" "=" String  ";"`
-	imprt    string     `["import" String ";"]`
-	option   string     `[{"option" Ident "=" {String | Ident} ";"}]`
-	pkg      string     `"package" Ident ";" `
-	Services []*Service `{ @@ }`
-	Message  string     `{ "message" Ident "{" { Ident Ident {Ident} "=" Int ";" } "}" }`
+	ToplevelProto headerProto `{ @@ }`
+	Services      []*Service  `{ @@ }`
+	Message       string      `{ "message" Ident "{" { Ident Ident {Ident} "=" Int ";" } "}" }`
 }
+
+type headerProto struct {
+	Syntax   string     `"syntax" "=" String  ";" |`
+	Imprt    string     `"import" String ";" |`
+	Option   string     `"option" Ident "=" {String | Ident} ";" |`
+	Package string 		`"package" Ident ";"`
+}
+
 
 type Service struct {
 	Name    string    `"service" @Ident "{"`
