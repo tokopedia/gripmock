@@ -1,11 +1,10 @@
-package _go
+package main
 
 import (
 	"context"
 	"log"
 	"os"
 
-	"github.com/ahmadmuzakki/gripmock/example/pb"
 	"google.golang.org/grpc"
 )
 
@@ -16,14 +15,14 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewGreeterClient(conn)
+	c := NewGreeterClient(conn)
 
 	// Contact the server and print out its response.
-	name := "jeki"
+	name := "gripmock"
 	if len(os.Args) > 1 {
 		name = os.Args[1]
 	}
-	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: name})
+	r, err := c.SayHello(context.Background(), &HelloRequest{Name: name})
 	if err != nil {
 		log.Fatalf("error from grpc: %v", err)
 	}
