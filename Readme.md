@@ -4,10 +4,11 @@ If you already familiar with [Apiary](https://apiary.io) or [WireMock](http://wi
 
 
 # How It Works
-GripMock will serve *TCP* on port `:4770` for GRPC service and *HTTP* on port `:4771` for Stub service.
-When GRPC service receive a request it will find mapped stub in stub service for matching stubs.
+GripMock has 2 main components:
+1. GRPC server that serving on `tcp://localhost:4770`. It's main job is to serve incoming rpc call from client then parse the input so that can be posted to Stub service to find the perfect stub match.
+2. Stub server that serving on `http://localhost:4771`. It's main job is to store all the stub mapping. We can add a new stub or list existing stub using http request.
 
-Matched stub will be returned to GRPC service as a JSON response then further unmarshal into struct reply.
+Matched stub will be returned to GRPC service then further parse it to response the rpc call.
 
 
 ## Quick Usage
