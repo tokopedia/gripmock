@@ -3,7 +3,7 @@ GripMock is a **mock server** for **GRPC** services. It's using `.proto` file to
 If you already familiar with [Apiary](https://apiary.io) or [WireMock](http://wiremock.org) for mocking API service and looking for similiar thing for GRPC then this is the perfect fit for that.
 
 
-# How It Works
+## How It Works
 GripMock has 2 main components:
 1. GRPC server that serving on `tcp://localhost:4770`. It's main job is to serve incoming rpc call from client then parse the input so that can be posted to Stub service to find the perfect stub match.
 2. Stub server that serving on `http://localhost:4771`. It's main job is to store all the stub mapping. We can add a new stub or list existing stub using http request.
