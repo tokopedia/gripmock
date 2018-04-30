@@ -1,11 +1,11 @@
-package main
+package _go
 
 import (
 	"context"
 	"log"
 	"os"
 
-	"github.com/ahmadmuzakki/grpcmock/example/pb"
+	"github.com/ahmadmuzakki/gripmock/example/pb"
 	"google.golang.org/grpc"
 )
 

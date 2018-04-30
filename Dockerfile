@@ -10,15 +10,15 @@ RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	google.golang.org/grpc/reflection \
 	golang.org/x/net/context
 
-RUN mkdir -p /go/src/github.com/ahmadmuzakki/grpcmock
+RUN mkdir -p /go/src/github.com/ahmadmuzakki/gripmock
 
-COPY . /go/src/github.com/ahmadmuzakki/grpcmock
+COPY . /go/src/github.com/ahmadmuzakki/gripmock
 
-WORKDIR /go/src/github.com/ahmadmuzakki/grpcmock
+WORKDIR /go/src/github.com/ahmadmuzakki/gripmock
 
 RUN go build
 
-RUN mv /go/src/github.com/ahmadmuzakki/grpcmock/grpcmock /usr/bin/grpcmock
+RUN mv /go/src/github.com/ahmadmuzakki/gripmock/gripmock /usr/bin/gripmock
 
 RUN rm -rf *
 
