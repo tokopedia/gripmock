@@ -10,17 +10,20 @@ RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	github.com/mitchellh/mapstructure \
 	google.golang.org/grpc \
 	google.golang.org/grpc/reflection \
-	golang.org/x/net/context
+	golang.org/x/net/context \
+	github.com/alecthomas/participle \
+	github.com/go-chi/chi \
+	github.com/renstrom/fuzzysearch/fuzzy
 
-RUN mkdir -p /go/src/github.com/ahmadmuzakki/gripmock
+RUN mkdir -p /go/src/github.com/jekiapp/gripmock
 
-COPY . /go/src/github.com/ahmadmuzakki/gripmock
+COPY . /go/src/github.com/jekiapp/gripmock
 
-WORKDIR /go/src/github.com/ahmadmuzakki/gripmock
+WORKDIR /go/src/github.com/jekiapp/gripmock
 
 RUN go build
 
-RUN mv /go/src/github.com/ahmadmuzakki/gripmock/gripmock /usr/bin/gripmock
+RUN mv /go/src/github.com/jekiapp/gripmock/gripmock /usr/bin/gripmock
 
 RUN rm -rf *
 

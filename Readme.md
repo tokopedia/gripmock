@@ -120,7 +120,7 @@ Input matching has 3 rules to match an input. which is **equals**,**contains** a
   .
   .
   "input":{
-    "contains":{
+    "matches":{
       "name":"^grip.*$"
     }
   }

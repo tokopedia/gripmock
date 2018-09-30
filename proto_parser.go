@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"log"
 
 	"github.com/alecthomas/participle"
 )
@@ -42,7 +43,10 @@ type Output struct {
 }
 
 func ParseProto(reader io.Reader) (Proto, error) {
-	parser, err := participle.Build(&Proto{}, nil)
+	parser, err := participle.Build(&Proto{})
+	if err != nil {
+		log.Fatalf("Error creating proto parser %v", err)
+	}
 	proto := Proto{}
 	err = parser.Parse(reader, &proto)
 	return proto, err
