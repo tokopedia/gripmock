@@ -18,7 +18,9 @@ import (
 func main() {
 	outputPointer := flag.String("o", "", "directory to output server.go. Default is $GOPATH/src/grpc/")
 	grpcPort := flag.String("grpc-port", "4770", "Port of gRPC tcp server")
+	grpcBindAddr := flag.String("grpc-listen", "", "Adress the gRPC server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
+	adminBindAddr := flag.String("admin-listen", "", "Adress the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
 
 	flag.Parse()
@@ -42,6 +44,7 @@ func main() {
 	stub.RunStubServer(stub.Options{
 		StubPath: *stubPath,
 		Port:     *adminport,
+		BindAddr: *adminBindAddr,
 	})
 
 	// parse proto files
@@ -55,7 +58,7 @@ func main() {
 	generateProtoc(protoPaths, output)
 
 	// generate grpc server based on proto
-	generateGrpcServer(output, *grpcPort, *adminport, protos)
+	generateGrpcServer(output, fmt.Sprintf("%s:%s", *grpcBindAddr, *grpcPort), *adminport, protos)
 
 	// build the server
 	buildServer(output, protoPaths)
@@ -131,14 +134,14 @@ func generateProtoc(protoPath []string, output string) {
 	}
 }
 
-func generateGrpcServer(output, grpcPort, adminPort string, proto []Proto) {
+func generateGrpcServer(output, grpcAddr, adminPort string, proto []Proto) {
 	file, err := os.Create(output + "server.go")
 	if err != nil {
 		log.Fatal(err)
 	}
 	GenerateServerFromProto(proto, &Options{
 		writer:    file,
-		grpcPort:  grpcPort,
+		grpcAddr:  grpcAddr,
 		adminPort: adminPort,
 	})
 

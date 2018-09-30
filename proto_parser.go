@@ -14,12 +14,11 @@ type Proto struct {
 }
 
 type headerProto struct {
-	Syntax   string     `"syntax" "=" String  ";" |`
-	Imprt    string     `"import" String ";" |`
-	Option   string     `"option" Ident "=" {String | Ident} ";" |`
-	Package string 		`"package" Ident ";"`
+	Syntax  string `"syntax" "=" String  ";" |`
+	Imprt   string `"import" String ";" |`
+	Option  string `"option" Ident "=" {String | Ident} ";" |`
+	Package string `"package" Ident ";"`
 }
-
 
 type Service struct {
 	Name    string    `"service" @Ident "{"`

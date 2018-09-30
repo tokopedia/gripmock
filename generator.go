@@ -8,14 +8,14 @@ import (
 
 type generatorParam struct {
 	Protos    []Proto
-	GrpcPort  string
+	GrpcAddr  string
 	AdminPort string
 	PbPath    string
 }
 
 type Options struct {
 	writer    io.Writer
-	grpcPort  string
+	grpcAddr  string
 	adminPort string
 	pbPath    string
 }
@@ -23,7 +23,7 @@ type Options struct {
 func GenerateServerFromProto(proto []Proto, opt *Options) error {
 	param := generatorParam{
 		Protos:    filterProto(proto),
-		GrpcPort:  opt.grpcPort,
+		GrpcAddr:  opt.grpcAddr,
 		AdminPort: opt.adminPort,
 		PbPath:    opt.pbPath,
 	}
@@ -76,7 +76,7 @@ import (
 )
 
 const (
-	TCP_PORT  = ":{{.GrpcPort}}"
+	TCP_ADDRESS  = "{{.GrpcAddr}}"
 	HTTP_PORT = ":{{.AdminPort}}"
 )
 
@@ -85,7 +85,7 @@ const (
 {{ end }}
 
 func main() {
-	lis, err := net.Listen("tcp", TCP_PORT)
+	lis, err := net.Listen("tcp", TCP_ADDRESS)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -96,7 +96,7 @@ func main() {
 	{{ end }}
 
 	reflection.Register(s)
-	fmt.Println("Serving gRPC on tcp://localost" + TCP_PORT)
+	fmt.Println("Serving gRPC on tcp://" + TCP_ADDRESS)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
