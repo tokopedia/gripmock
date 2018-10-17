@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"log"
 
 	"github.com/alecthomas/participle"
 )
@@ -13,12 +14,11 @@ type Proto struct {
 }
 
 type headerProto struct {
-	Syntax   string     `"syntax" "=" String  ";" |`
-	Imprt    string     `"import" String ";" |`
-	Option   string     `"option" Ident "=" {String | Ident} ";" |`
-	Package string 		`"package" Ident ";"`
+	Syntax  string `"syntax" "=" String  ";" |`
+	Imprt   string `"import" String ";" |`
+	Option  string `"option" Ident "=" {String | Ident} ";" |`
+	Package string `"package" Ident ";"`
 }
-
 
 type Service struct {
 	Name    string    `"service" @Ident "{"`
@@ -42,7 +42,10 @@ type Output struct {
 }
 
 func ParseProto(reader io.Reader) (Proto, error) {
-	parser, err := participle.Build(&Proto{}, nil)
+	parser, err := participle.Build(&Proto{})
+	if err != nil {
+		log.Fatalf("Error creating proto parser %v", err)
+	}
 	proto := Proto{}
 	err = parser.Parse(reader, &proto)
 	return proto, err

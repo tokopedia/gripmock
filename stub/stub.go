@@ -12,6 +12,7 @@ import (
 
 type Options struct {
 	Port     string
+	BindAddr string
 	StubPath string
 }
 
@@ -21,7 +22,7 @@ func RunStubServer(opt Options) {
 	if opt.Port == "" {
 		opt.Port = DEFAULT_PORT
 	}
-	port := ":" + opt.Port
+	addr := opt.BindAddr + ":" + opt.Port
 	r := chi.NewRouter()
 	r.Post("/add", addStub)
 	r.Get("/", listStub)
@@ -32,9 +33,9 @@ func RunStubServer(opt Options) {
 		readStubFromFile(opt.StubPath)
 	}
 
-	fmt.Println("Serving stub admin on http://localhost" + port)
+	fmt.Println("Serving stub admin on http://" + addr)
 	go func() {
-		err := http.ListenAndServe(port, r)
+		err := http.ListenAndServe(addr, r)
 		log.Fatal(err)
 	}()
 }
