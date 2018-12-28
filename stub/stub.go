@@ -6,7 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-
+	"strings"
+	
 	"github.com/go-chi/chi"
 )
 
@@ -105,6 +106,10 @@ func validateStub(stub *Stub) error {
 	if stub.Method == "" {
 		return fmt.Errorf("Method name can't be emtpy")
 	}
+	
+	// due to golang implementation
+	// method name must capital
+	stub.Method = strings.Title(stub.Method)
 
 	switch {
 	case stub.Input.Contains != nil:
@@ -138,7 +143,11 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		responseError(err, w)
 		return
 	}
-
+	
+	// due to golang implementation
+	// method name must capital
+	stub.Method = strings.Title(stub.Method)
+	
 	output, err := findStub(stub)
 	if err != nil {
 		log.Println(err)

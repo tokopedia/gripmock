@@ -24,6 +24,7 @@ import "anotherdummy";
 service Greeter {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc saySmall (HelloRequest) returns (HelloReply) {}
 }
 
 // The request message containing the user's name.
@@ -43,5 +44,5 @@ func TestProtoParser(t *testing.T) {
 	ast := Proto{}
 	err = parser.ParseString(protofile, &ast)
 	assert.NoError(t, err)
-	assert.Equal(t,ast.Services[0].Methods[0].Output,"HelloReply")
+	assert.Equal(t, ast.Services[0].Methods[0].Output, "HelloReply")
 }
