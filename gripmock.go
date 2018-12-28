@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -49,6 +48,10 @@ func main() {
 
 	// parse proto files
 	protoPaths := flag.Args()
+
+	if len(protoPaths) == 0 {
+		log.Fatal("Need atleast one proto file")
+	}
 	protos, err := parseProto(protoPaths)
 	if err != nil {
 		log.Fatal("can't parse proto ", err)
@@ -83,8 +86,8 @@ func getProtoName(path string) string {
 	return strings.Split(filename, ".")[0]
 }
 
-func parseProto(protoPath []string) ([]Proto, error) {
-	protos := []Proto{}
+func parseProto(protoPath []string) ([]Service, error) {
+	services := []Service{}
 	for _, path := range protoPath {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			log.Fatal(fmt.Sprintf("Proto file '%s' not found", protoPath))
@@ -93,14 +96,13 @@ func parseProto(protoPath []string) ([]Proto, error) {
 		if err != nil {
 			log.Fatal("Error on reading proto " + err.Error())
 		}
-
-		proto, err := ParseProto(bytes.NewReader(byt))
+		service, err := GetServicesFromProto(string(byt))
 		if err != nil {
 			return nil, err
 		}
-		protos = append(protos, proto)
+		services = append(services, service...)
 	}
-	return protos, nil
+	return services, nil
 }
 
 func generateProtoc(protoPath []string, output string) {
@@ -134,12 +136,12 @@ func generateProtoc(protoPath []string, output string) {
 	}
 }
 
-func generateGrpcServer(output, grpcAddr, adminPort string, proto []Proto) {
+func generateGrpcServer(output, grpcAddr, adminPort string, services []Service) {
 	file, err := os.Create(output + "server.go")
 	if err != nil {
 		log.Fatal(err)
 	}
-	GenerateServerFromProto(proto, &Options{
+	GenerateServer(services, &Options{
 		writer:    file,
 		grpcAddr:  grpcAddr,
 		adminPort: adminPort,

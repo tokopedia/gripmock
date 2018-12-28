@@ -3,18 +3,14 @@ package main
 import (
 	"testing"
 
-	"github.com/alecthomas/participle"
 	"github.com/stretchr/testify/assert"
 	"os"
 )
 
 func TestGenerateServerFromProto(t *testing.T) {
-	parser, err := participle.Build(&Proto{})
+	services, err := GetServicesFromProto(protofile)
 	assert.NoError(t, err)
-	ast := Proto{}
-	err = parser.ParseString(protofile, &ast)
-	assert.NoError(t, err)
-	err = GenerateServerFromProto([]Proto{ast}, &Options{
+	err = GenerateServer(services, &Options{
 		writer: os.Stdout,
 	})
 	assert.NoError(t, err)

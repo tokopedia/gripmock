@@ -3,7 +3,6 @@ package main
 import (
 	"testing"
 
-	"github.com/alecthomas/participle"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,10 +38,13 @@ message HelloReply {
 `
 
 func TestProtoParser(t *testing.T) {
-	parser, err := participle.Build(&Proto{}, nil)
+	services, err := GetServicesFromProto(protofile)
 	assert.NoError(t, err)
-	ast := Proto{}
-	err = parser.ParseString(protofile, &ast)
-	assert.NoError(t, err)
-	assert.Equal(t, ast.Services[0].Methods[0].Output, "HelloReply")
+	assert.Len(t, services, 1)
+	assert.Equal(t, "Greeter", services[0].Name)
+}
+
+func TestPickServiceDeclaration(t *testing.T) {
+	svcs := pickServiceDeclarations(protofile)
+	assert.Len(t, svcs, 1)
 }
