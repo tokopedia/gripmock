@@ -9,7 +9,7 @@ import (
 )
 
 func TestGenerateServerFromProto(t *testing.T) {
-	parser, err := participle.Build(&Proto{}, nil)
+	parser, err := participle.Build(&Proto{})
 	assert.NoError(t, err)
 	ast := Proto{}
 	err = parser.ParseString(protofile, &ast)

@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"os"
+	"strings"
 	"text/template"
 )
 
@@ -36,7 +37,9 @@ func GenerateServerFromProto(proto []Proto, opt *Options) error {
 		opt.writer = os.Stdout
 	}
 
-	tmpl := template.New("server.tmpl")
+	tmpl := template.New("server.tmpl").Funcs(template.FuncMap{
+		"Title": strings.Title,
+	})
 	tmpl, err := tmpl.Parse(SERVER_TEMPLATE)
 	if err != nil {
 		return err
@@ -116,9 +119,10 @@ type {{.Name}} struct{}
 {{ define "methods" }}
 {{ $serviceName := .Name }}
 {{ range .Methods}}
-func (s *{{$serviceName}}) {{.Name}}(ctx context.Context, in *{{.Input}}) (*{{.Output}},error){
+{{ $methodName := .Name | Title }}
+func (s *{{$serviceName}}) {{$methodName}}(ctx context.Context, in *{{.Input}}) (*{{.Output}},error){
 	out := &{{.Output}}{}
-	err := findStub("{{$serviceName}}", "{{.Name}}", in, out)
+	err := findStub("{{$serviceName}}", "{{$methodName}}", in, out)
 	return out, err
 }
 {{end}}
