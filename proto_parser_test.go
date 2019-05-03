@@ -22,7 +22,7 @@ import "anotherdummy";
 // The greeting service definition.
 service Greeter {
   // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SayHello (HelloRequest) returns (stream HelloReply);
   rpc saySmall (HelloRequest) returns (HelloReply) {}
 }
 
