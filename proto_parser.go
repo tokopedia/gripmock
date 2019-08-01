@@ -16,9 +16,9 @@ type Service struct {
 type Method struct {
 	Name   string `"rpc" @Ident `
 	Input  string `"(" @Ident ")"`
-	Output string `"returns" "(" @Ident ")"`
+	Output string `"returns" "(" "stream"? @Ident ")"`
 	// TODO deal with body of method
-	Closing string `"{""}"`
+	Closing string `"{"?"}"? ";"?`
 }
 
 func GetServicesFromProto(text string) ([]Service, error) {
