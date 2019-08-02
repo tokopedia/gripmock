@@ -10,8 +10,12 @@ import (
 func TestGenerateServerFromProto(t *testing.T) {
 	services, err := GetServicesFromProto(protofile)
 	assert.NoError(t, err)
+	f, _ := os.Create("./example/server/generated_server.go")
+
 	err = GenerateServer(services, &Options{
-		writer: os.Stdout,
+		writer: f,
+		format: true,
 	})
+
 	assert.NoError(t, err)
 }

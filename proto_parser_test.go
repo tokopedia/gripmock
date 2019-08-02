@@ -1,42 +1,24 @@
 package main
 
 import (
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-var protofile = `
+var protofile string
 
-syntax = "proto3";
-
-option java_multiple_files = true;
-option java_package = "io.grpc.examples.helloworld";
-option java_outer_classname = "HelloWorldProto";
-
-package gripmock;
-
-import "dummy";
-import "anotherdummy";
-
-// The greeting service definition.
-service Greeter {
-  rpc SayHello (HelloRequest) returns (HelloReply);
-  rpc serverStream (stream HelloRequest) returns (HelloReply);
-  rpc clientStream (HelloRequest) returns (stream HelloReply);
-  rpc bidirectional (stream HelloRequest) returns (stream HelloReply);
+func TestMain(m *testing.M) {
+	byt, err := ioutil.ReadFile("./example/pb/hello.proto")
+	if err != nil {
+		log.Fatal(err)
+	}
+	protofile = string(byt)
+	os.Exit(m.Run())
 }
-
-// The request message containing the user's name.
-message HelloRequest {
-  string name = 1;
-}
-
-// The response message containing the greetings
-message HelloReply {
-  string message = 1;
-}
-`
 
 func TestProtoParser(t *testing.T) {
 	services, err := GetServicesFromProto(protofile)
