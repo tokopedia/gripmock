@@ -21,9 +21,10 @@ import "anotherdummy";
 
 // The greeting service definition.
 service Greeter {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (stream HelloReply);
-  rpc saySmall (HelloRequest) returns (HelloReply) {}
+  rpc SayHello (HelloRequest) returns (HelloReply);
+  rpc serverStream (stream HelloRequest) returns (HelloReply);
+  rpc clientStream (HelloRequest) returns (stream HelloReply);
+  rpc bidirectional (stream HelloRequest) returns (stream HelloReply);
 }
 
 // The request message containing the user's name.
@@ -40,8 +41,46 @@ message HelloReply {
 func TestProtoParser(t *testing.T) {
 	services, err := GetServicesFromProto(protofile)
 	assert.NoError(t, err)
+
 	assert.Len(t, services, 1)
+
+	service := services[0]
+
 	assert.Equal(t, "Greeter", services[0].Name)
+
+	assert.Equal(t, 4, len(service.Methods))
+
+	assert.Equal(t, Method{
+		Name:         "SayHello",
+		StreamInput:  false,
+		Input:        "HelloRequest",
+		StreamOutput: false,
+		Output:       "HelloReply",
+	}, *service.Methods[0])
+
+	assert.Equal(t, Method{
+		Name:         "serverStream",
+		StreamInput:  true,
+		Input:        "HelloRequest",
+		StreamOutput: false,
+		Output:       "HelloReply",
+	}, *service.Methods[1])
+
+	assert.Equal(t, Method{
+		Name:         "clientStream",
+		StreamInput:  false,
+		Input:        "HelloRequest",
+		StreamOutput: true,
+		Output:       "HelloReply",
+	}, *service.Methods[2])
+
+	assert.Equal(t, Method{
+		Name:         "bidirectional",
+		StreamInput:  true,
+		Input:        "HelloRequest",
+		StreamOutput: true,
+		Output:       "HelloReply",
+	}, *service.Methods[3])
 }
 
 func TestPickServiceDeclaration(t *testing.T) {

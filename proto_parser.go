@@ -14,11 +14,13 @@ type Service struct {
 }
 
 type Method struct {
-	Name   string `"rpc" @Ident `
-	Input  string `"(" @Ident ")"`
-	Output string `"returns" "(" "stream"? @Ident ")"`
+	Name         string `"rpc" @Ident "("`
+	StreamInput  bool   `@"stream"?`
+	Input        string ` @Ident ")" "returns" "("`
+	StreamOutput bool   `@"stream"?`
+	Output       string ` @Ident ")"`
 	// TODO deal with body of method
-	Closing string `"{"?"}"? ";"?`
+	closing string `"{"?"}"? ";"?`
 }
 
 func GetServicesFromProto(text string) ([]Service, error) {
