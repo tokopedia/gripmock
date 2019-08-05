@@ -37,6 +37,9 @@ func main() {
 	wg.Add(1)
 	go clientStream(c, wg)
 
+	wg.Add(1)
+	go bidirectionalStream(c, wg)
+
 	wg.Wait()
 }
 
@@ -92,4 +95,42 @@ func clientStream(c GripmockClient, wg *sync.WaitGroup) {
 	}
 
 	log.Printf("c2s message: %v", reply.Message)
+}
+
+// bidirectional stream
+func bidirectionalStream(c GripmockClient, wg *sync.WaitGroup) {
+	stream, err := c.Bidirectional(context.Background())
+	if err != nil {
+		log.Fatalf("2ds error: %v", err)
+	}
+
+	requests := []Request{
+		{
+			Name: "2ds-message1",
+		}, {
+			Name: "2ds-message2",
+		},
+	}
+
+	go func() {
+		defer wg.Done()
+		for {
+			reply, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				log.Fatalf("2ds error %v", err)
+			}
+
+			log.Printf("2ds message: %s\n", reply.Message)
+		}
+	}()
+
+	for _, request := range requests {
+		if err := stream.Send(&request); err != nil {
+			log.Fatalf("2ds error: %v", err)
+		}
+	}
+	stream.CloseSend()
 }

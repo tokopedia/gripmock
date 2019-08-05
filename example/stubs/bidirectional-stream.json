@@ -1,0 +1,14 @@
+{
+ "service":"Gripmock",
+  "method":"Bidirectional",
+  "input":{
+    "matches":{
+      "name":"^2ds.*$"
+    }
+  },
+  "output":{
+    "data":{
+      "message":"This is response from bidirectional streaming"
+    }
+  }
+}
