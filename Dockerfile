@@ -13,9 +13,12 @@ RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	golang.org/x/net/context \
 	github.com/alecthomas/participle \
 	github.com/go-chi/chi \
-	github.com/renstrom/fuzzysearch/fuzzy \
-	github.com/gobuffalo/packr/v2/... \
-    github.com/gobuffalo/packr/v2/packr2
+	github.com/renstrom/fuzzysearch/fuzzy
+
+RUN go get -u -v github.com/gobuffalo/packr/v2/... \
+                 github.com/gobuffalo/packr/v2/packr2
+
+RUN apk del git
 
 RUN mkdir -p /go/src/github.com/tokopedia/gripmock
 
@@ -35,4 +38,4 @@ RUN rm -rf *
 
 EXPOSE 4770 4771
 
-RUN apk del git
+ENTRYPOINT ["gripmock"]

@@ -1,0 +1,14 @@
+{
+ "service":"Gripmock",
+  "method":"ServerStream",
+  "input":{
+    "equals":{
+      "name":"server-to-client-streaming"
+    }
+  },
+  "output":{
+    "data":{
+      "message":"This is response from server to client streaming"
+    }
+  }
+}
