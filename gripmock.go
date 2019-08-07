@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/jekiapp/gripmock/stub"
+	"github.com/charandas/gripmock/stub"
 )
 
 func main() {

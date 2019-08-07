@@ -7,8 +7,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	
+
 	"github.com/go-chi/chi"
+	"google.golang.org/grpc/codes"
 )
 
 type Options struct {
@@ -46,6 +47,11 @@ func responseError(err error, w http.ResponseWriter) {
 	w.Write([]byte(err.Error()))
 }
 
+type GrpcError struct {
+	Message string     `json:"message"`
+	Code    codes.Code `json:"code"`
+}
+
 type Stub struct {
 	Service string `json:"service"`
 	Method  string `json:"method"`
@@ -61,7 +67,8 @@ type Input struct {
 
 type Output struct {
 	Data  map[string]interface{} `json:"data"`
-	Error string                 `json:"error"`
+	ErrorObject GrpcError        `json:"errorObject"`
+	Error string                 `json:string`
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +113,7 @@ func validateStub(stub *Stub) error {
 	if stub.Method == "" {
 		return fmt.Errorf("Method name can't be emtpy")
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
@@ -124,7 +131,7 @@ func validateStub(stub *Stub) error {
 
 	// TODO: validate all input case
 
-	if stub.Output.Error == "" && stub.Output.Data == nil {
+	if (stub.Output.Error == "" && stub.Output.ErrorObject == GrpcError{}) && stub.Output.Data == nil {
 		return fmt.Errorf("Output can't be empty")
 	}
 	return nil
@@ -143,11 +150,11 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		responseError(err, w)
 		return
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
-	
+
 	output, err := findStub(stub)
 	if err != nil {
 		log.Println(err)

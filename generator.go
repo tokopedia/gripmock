@@ -64,6 +64,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -124,9 +126,15 @@ type payload struct {
 	Data    interface{} ` + "`json:\"data\"`" + `
 }
 
+type grpcError struct {
+	Message string     ` + "`json:\"message\"`" + `
+	Code    codes.Code ` + "`json:\"code\"`" + `
+}
+
 type response struct {
-	Data  interface{} ` + "`json:\"data\"`" + `
-	Error string      ` + "`json:\"error\"`" + `
+	Data  interface{}       ` + "`json:\"data\"`" + `
+	ErrorObject grpcError   ` + "`json:\"errorObject\"`" + `
+	Error string            ` + "`json:\"error\"`" + `
 }
 
 func findStub(service, method string, in, out interface{}) error {
@@ -157,7 +165,9 @@ func findStub(service, method string, in, out interface{}) error {
 		return err
 	}
 
-	if respRPC.Error != "" {
+	if (respRPC.ErrorObject != grpcError{}) {
+		return status.Error(respRPC.ErrorObject.Code, respRPC.ErrorObject.Message)
+	} else if respRPC.Error != "" {
 		return fmt.Errorf(respRPC.Error)
 	}
 

@@ -15,15 +15,15 @@ RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	github.com/go-chi/chi \
 	github.com/renstrom/fuzzysearch/fuzzy
 
-RUN mkdir -p /go/src/github.com/jekiapp/gripmock
+RUN mkdir -p /go/src/github.com/charandas/gripmock
 
-COPY . /go/src/github.com/jekiapp/gripmock
+COPY . /go/src/github.com/charandas/gripmock
 
-WORKDIR /go/src/github.com/jekiapp/gripmock
+WORKDIR /go/src/github.com/charandas/gripmock
 
 RUN go build
 
-RUN mv /go/src/github.com/jekiapp/gripmock/gripmock /usr/bin/gripmock
+RUN mv /go/src/github.com/charandas/gripmock/gripmock /usr/bin/gripmock
 
 RUN rm -rf *
 

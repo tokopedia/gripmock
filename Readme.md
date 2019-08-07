@@ -13,7 +13,7 @@ Matched stub will be returned to GRPC service then further parse it to response 
 
 ## Quick Usage
 First, prepare your `.proto` file. or you can use `hello.proto` in `example/pb/` folder. Suppose you put it in `/mypath/hello.proto`. We gonna use Docker image for easier example test.
-basic syntax to run GripMock is 
+basic syntax to run GripMock is
 `gripmock <protofile>`
 
 - Install [Docker](https://docs.docker.com/install/)
@@ -44,7 +44,11 @@ Stub Format is JSON text format. It has skeleton like below:
     "data":{
       // put result fields here
     },
-    "error":"<error message>" // Optional. if you want to return error instead.
+    "error": "string", // Optional. if you want to return error instead. Would be thrown as grpc UNKNOWN status
+    "errorObject": { // Optional. if you want to return error instead.
+      "code": "<integer>", // https://github.com/grpc/grpc-go/blob/master/codes/codes.go
+      "message": "<error message>"
+    }
   }
 }
 ```
