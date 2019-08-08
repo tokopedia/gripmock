@@ -31,6 +31,7 @@ Stub Server running on `http://localhost:4771`
 - `GET /` Will list all stubs mapping.
 - `POST /add` Will add stub with provided stub data
 - `POST /find` Find matching stub with provided input. see [Input Matching](#input_matching) below.
+- `GET /clear` Clear stub mappings.
 
 Stub Format is JSON text format. It has skeleton like below:
 ```
