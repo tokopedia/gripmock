@@ -66,9 +66,9 @@ type Input struct {
 }
 
 type Output struct {
-	Data  map[string]interface{} `json:"data"`
-	ErrorObject GrpcError        `json:"errorObject"`
-	Error string                 `json:string`
+	Data        map[string]interface{} `json:"data"`
+	ErrorObject GrpcError              `json:"errorObject"`
+	Error       string                 `json:string`
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
