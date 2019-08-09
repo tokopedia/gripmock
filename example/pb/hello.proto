@@ -1,23 +1,25 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-option java_package = "io.grpc.examples.helloworld";
-option java_outer_classname = "HelloWorldProto";
-
-package gripmock;
+package main;
 
 // The greeting service definition.
-service Greeter {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+service Gripmock {
+  // standard grpc method
+  rpc SayHello (Request) returns (Reply);
+  // server to client sreaming
+  rpc serverStream (Request) returns (stream Reply);
+  // client to server streaming
+  rpc clientStream (stream Request) returns (Reply);
+  // bidirectional streaming
+  rpc bidirectional (stream Request) returns (stream Reply);
 }
 
 // The request message containing the user's name.
-message HelloRequest {
+message Request {
   string name = 1;
 }
 
 // The response message containing the greetings
-message HelloReply {
+message Reply {
   string message = 1;
 }

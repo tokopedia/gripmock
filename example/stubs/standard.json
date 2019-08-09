@@ -1,14 +1,14 @@
 {
- "service":"Greeter",
+ "service":"Gripmock",
   "method":"SayHello",
   "input":{
     "equals":{
-      "name":"jeki"
+      "name":"tokopedia"
     }
   },
   "output":{
     "data":{
-      "message":"Hello Jeki"
+      "message":"Hello Tokopedia"
     }
   }
 }

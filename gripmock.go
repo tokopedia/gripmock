@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/jekiapp/gripmock/stub"
+	"github.com/tokopedia/gripmock/stub"
 )
 
 func main() {
@@ -48,6 +48,11 @@ func main() {
 
 	// parse proto files
 	protoPaths := flag.Args()
+
+	// for backwards compatibility
+	if len(protoPaths) > 1 && protoPaths[0] == "gripmock" {
+		protoPaths = protoPaths[0:]
+	}
 
 	if len(protoPaths) == 0 {
 		log.Fatal("Need atleast one proto file")

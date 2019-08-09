@@ -15,18 +15,27 @@ RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	github.com/go-chi/chi \
 	github.com/renstrom/fuzzysearch/fuzzy
 
-RUN mkdir -p /go/src/github.com/jekiapp/gripmock
+RUN go get -u -v github.com/gobuffalo/packr/v2/... \
+                 github.com/gobuffalo/packr/v2/packr2
 
-COPY . /go/src/github.com/jekiapp/gripmock
+RUN apk del git
 
-WORKDIR /go/src/github.com/jekiapp/gripmock
+RUN mkdir -p /go/src/github.com/tokopedia/gripmock
+
+COPY . /go/src/github.com/tokopedia/gripmock
+
+WORKDIR /go/src/github.com/tokopedia/gripmock
+
+RUN packr2
 
 RUN go build
 
-RUN mv /go/src/github.com/jekiapp/gripmock/gripmock /usr/bin/gripmock
+RUN packr2 clean
+
+RUN mv /go/src/github.com/tokopedia/gripmock/gripmock /usr/bin/gripmock
 
 RUN rm -rf *
 
 EXPOSE 4770 4771
 
-RUN apk del git
+ENTRYPOINT ["gripmock"]
