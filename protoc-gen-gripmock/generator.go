@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"go/format"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,6 +15,7 @@ import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"golang.org/x/tools/imports"
 )
 
 func main() {
@@ -143,11 +143,9 @@ func generateServer(services []Service, opt *Options) error {
 	}
 
 	byt := buf.Bytes()
-	if opt.format {
-		byt, err = format.Source(byt)
-		if err != nil {
-			return fmt.Errorf("formatting %v", err)
-		}
+	byt, err = imports.Process("", byt, nil)
+	if err != nil {
+		return fmt.Errorf("formatting %v", err)
 	}
 
 	_, err = opt.writer.Write(byt)
