@@ -14,7 +14,6 @@ func TestGenerateServerFromProto(t *testing.T) {
 
 	err = GenerateServer(services, &Options{
 		writer: f,
-		format: true,
 	})
 
 	assert.NoError(t, err)

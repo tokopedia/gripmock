@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"go/format"
 	"io"
 	"log"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/gobuffalo/packr/v2"
+	"golang.org/x/tools/imports"
 )
 
 type generatorParam struct {
@@ -47,7 +47,6 @@ type Options struct {
 	grpcAddr  string
 	adminPort string
 	pbPath    string
-	format    bool
 }
 
 var SERVER_TEMPLATE string
@@ -91,11 +90,9 @@ func GenerateServer(services []Service, opt *Options) error {
 	}
 
 	byt := buf.Bytes()
-	if opt.format {
-		byt, err = format.Source(byt)
-		if err != nil {
-			return fmt.Errorf("formatting %v", err)
-		}
+	byt, err = imports.Process("", byt, nil)
+	if err != nil {
+		return fmt.Errorf("formatting %v", err)
 	}
 
 	_, err = opt.writer.Write(byt)
