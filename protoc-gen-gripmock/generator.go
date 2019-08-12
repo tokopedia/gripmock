@@ -39,7 +39,9 @@ func main() {
 
 	buf := new(bytes.Buffer)
 	err = generateServer(services, &Options{
-		writer: buf,
+		writer:    buf,
+		adminPort: gen.Param["admin-port"],
+		grpcAddr:  fmt.Sprintf("%s:%s", gen.Param["grpc-address"], gen.Param["grpc-port"]),
 	})
 	if err != nil {
 		log.Fatalf("Failed to generate server %v", err)
@@ -59,10 +61,6 @@ func main() {
 	if err != nil {
 		gen.Error(err, "failed to write output proto")
 	}
-}
-
-func parseParam() {
-	// TODO parse param
 }
 
 type generatorParam struct {

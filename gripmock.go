@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -57,16 +56,15 @@ func main() {
 	if len(protoPaths) == 0 {
 		log.Fatal("Need atleast one proto file")
 	}
-	protos, err := parseProto(protoPaths)
-	if err != nil {
-		log.Fatal("can't parse proto ", err)
-	}
 
-	// generate pb.go using protoc
-	generateProtoc(protoPaths, output)
-
-	// generate grpc server based on proto
-	generateGrpcServer(output, fmt.Sprintf("%s:%s", *grpcBindAddr, *grpcPort), *adminport, protos)
+	// generate pb.go and grpc server based on proto
+	generateProtoc(protocParam{
+		protoPath:   protoPaths,
+		adminPort:   *adminport,
+		grpcAddress: *grpcBindAddr,
+		grpcPort:    *grpcPort,
+		output:      output,
+	})
 
 	// build the server
 	buildServer(output, protoPaths)
@@ -91,35 +89,26 @@ func getProtoName(path string) string {
 	return strings.Split(filename, ".")[0]
 }
 
-func parseProto(protoPath []string) ([]Service, error) {
-	services := []Service{}
-	for _, path := range protoPath {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			log.Fatal(fmt.Sprintf("Proto file '%s' not found", protoPath))
-		}
-		byt, err := ioutil.ReadFile(path)
-		if err != nil {
-			log.Fatal("Error on reading proto " + err.Error())
-		}
-		service, err := GetServicesFromProto(string(byt))
-		if err != nil {
-			return nil, err
-		}
-		services = append(services, service...)
-	}
-	return services, nil
+type protocParam struct {
+	protoPath   []string
+	adminPort   string
+	grpcAddress string
+	grpcPort    string
+	output      string
 }
 
-func generateProtoc(protoPath []string, output string) {
-	protodirs := strings.Split(protoPath[0], "/")
+func generateProtoc(param protocParam) {
+	protodirs := strings.Split(param.protoPath[0], "/")
 	protodir := ""
 	if len(protodirs) > 0 {
 		protodir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
 	}
 
 	args := []string{"-I", protodir}
-	args = append(args, protoPath...)
-	args = append(args, "--go_out=plugins=grpc:"+output)
+	args = append(args, param.protoPath...)
+	args = append(args, "--go_out=plugins=grpc:"+param.output)
+	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
+		param.adminPort, param.grpcAddress, param.grpcPort, param.output))
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
@@ -129,9 +118,9 @@ func generateProtoc(protoPath []string, output string) {
 	}
 
 	// change package to "main" on generated code
-	for _, proto := range protoPath {
+	for _, proto := range param.protoPath {
 		protoname := getProtoName(proto)
-		sed := exec.Command("sed", "-i", `s/^package \w*$/package main/`, output+protoname+".pb.go")
+		sed := exec.Command("sed", "-i", `s/^package \w*$/package main/`, param.output+protoname+".pb.go")
 		sed.Stderr = os.Stderr
 		sed.Stdout = os.Stdout
 		err = sed.Run()
@@ -139,20 +128,6 @@ func generateProtoc(protoPath []string, output string) {
 			log.Fatal("Fail on sed")
 		}
 	}
-}
-
-func generateGrpcServer(output, grpcAddr, adminPort string, services []Service) {
-	/*file, err := os.Create(output + "server.go")
-	if err != nil {
-		log.Fatal(err)
-	}
-	GenerateServer(services, &Options{
-		writer:    file,
-		grpcAddr:  grpcAddr,
-		adminPort: adminPort,
-	})
-	*/
-	// should call protoc here
 }
 
 func buildServer(output string, protoPaths []string) {
