@@ -142,7 +142,7 @@ func generateProtoc(protoPath []string, output string) {
 }
 
 func generateGrpcServer(output, grpcAddr, adminPort string, services []Service) {
-	file, err := os.Create(output + "server.go")
+	/*file, err := os.Create(output + "server.go")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -151,7 +151,8 @@ func generateGrpcServer(output, grpcAddr, adminPort string, services []Service) 
 		grpcAddr:  grpcAddr,
 		adminPort: adminPort,
 	})
-
+	*/
+	// should call protoc here
 }
 
 func buildServer(output string, protoPaths []string) {
