@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package main;
 
+// import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+
 // The greeting service definition.
 service Gripmock {
   // standard grpc method
@@ -12,6 +15,8 @@ service Gripmock {
   rpc clientStream (stream Request) returns (Reply);
   // bidirectional streaming
   rpc bidirectional (stream Request) returns (stream Reply);
+
+  rpc HealthCheck(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
 // The request message containing the user's name.

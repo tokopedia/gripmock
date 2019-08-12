@@ -30,15 +30,10 @@ func main() {
 		log.Fatalf("Failed to unmarshal proto: %v", err)
 	}
 
-	services := []Service{}
-	for _, proto := range gen.Request.ProtoFile {
-		services = append(services, convertTemplateService(proto.Service)...)
-	}
-
 	gen.CommandLineParameters(gen.Request.GetParameter())
 
 	buf := new(bytes.Buffer)
-	err = generateServer(services, &Options{
+	err = generateServer(gen.Request.ProtoFile, &Options{
 		writer:    buf,
 		adminPort: gen.Param["admin-port"],
 		grpcAddr:  fmt.Sprintf("%s:%s", gen.Param["grpc-address"], gen.Param["grpc-port"]),
@@ -64,10 +59,11 @@ func main() {
 }
 
 type generatorParam struct {
-	Services  []Service
-	GrpcAddr  string
-	AdminPort string
-	PbPath    string
+	Services     []Service
+	Dependencies map[string]string
+	GrpcAddr     string
+	AdminPort    string
+	PbPath       string
 }
 
 type Service struct {
@@ -112,12 +108,16 @@ func init() {
 	SERVER_TEMPLATE = s
 }
 
-func generateServer(services []Service, opt *Options) error {
+func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) error {
+	services := extractServices(protos)
+	deps := resolveDependencies(protos)
+
 	param := generatorParam{
-		Services:  services,
-		GrpcAddr:  opt.grpcAddr,
-		AdminPort: opt.adminPort,
-		PbPath:    opt.pbPath,
+		Services:     services,
+		Dependencies: deps,
+		GrpcAddr:     opt.grpcAddr,
+		AdminPort:    opt.adminPort,
+		PbPath:       opt.pbPath,
 	}
 
 	if opt == nil {
@@ -150,36 +150,83 @@ func generateServer(services []Service, opt *Options) error {
 	return err
 }
 
-// change the structure also translate method type
-func convertTemplateService(services []*descriptor.ServiceDescriptorProto) []Service {
-	svcTmp := make([]Service, len(services))
-	for i, svc := range services {
-		svcTmp[i].Name = *svc.Name
-		methods := make([]methodTemplate, len(svc.Method))
-		for j, method := range svc.Method {
-			tipe := methodTypeStandard
-			if method.GetServerStreaming() && !method.GetClientStreaming() {
-				tipe = methodTypeServerStream
-			} else if !method.GetServerStreaming() && method.GetClientStreaming() {
-				tipe = methodTypeClientStream
-			} else if method.GetServerStreaming() && method.GetClientStreaming() {
-				tipe = methodTypeBidirectional
-			}
+func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]string {
+	depsFile := []string{}
+	for _, proto := range protos {
+		depsFile = append(depsFile, proto.GetDependency()...)
+	}
 
-			methods[j] = methodTemplate{
-				Name:        strings.Title(*method.Name),
-				ServiceName: svc.GetName(),
-				Input:       getMessageType(method.GetInputType()),
-				Output:      getMessageType(method.GetOutputType()),
-				MethodType:  tipe,
+	deps := map[string]string{}
+	for _, dep := range depsFile {
+		for _, proto := range protos {
+			if proto.GetName() != dep {
+				continue
 			}
+			pkg := proto.GetOptions().GetGoPackage()
+			deps[pkg] = getAlias(proto.GetName())
 		}
-		svcTmp[i].Methods = methods
+	}
+
+	return deps
+}
+
+func getAlias(protoName string) string {
+	splitSlash := strings.Split(protoName, "/")
+	split := strings.Split(splitSlash[len(splitSlash)-1], ".")
+	return split[0]
+}
+
+// change the structure also translate method type
+func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
+	svcTmp := []Service{}
+	for _, proto := range protos {
+		for i, svc := range proto.GetService() {
+			svcTmp = append(svcTmp, Service{})
+			svcTmp[i].Name = svc.GetName()
+			methods := make([]methodTemplate, len(svc.Method))
+			for j, method := range svc.Method {
+				tipe := methodTypeStandard
+				if method.GetServerStreaming() && !method.GetClientStreaming() {
+					tipe = methodTypeServerStream
+				} else if !method.GetServerStreaming() && method.GetClientStreaming() {
+					tipe = methodTypeClientStream
+				} else if method.GetServerStreaming() && method.GetClientStreaming() {
+					tipe = methodTypeBidirectional
+				}
+
+				methods[j] = methodTemplate{
+					Name:        strings.Title(*method.Name),
+					ServiceName: svc.GetName(),
+					Input:       getMessageType(protos, proto.GetDependency(), method.GetInputType()),
+					Output:      getMessageType(protos, proto.GetDependency(), method.GetOutputType()),
+					MethodType:  tipe,
+				}
+			}
+			svcTmp[i].Methods = methods
+		}
 	}
 	return svcTmp
 }
 
-func getMessageType(tipe string) string {
-	tipes := strings.Split(tipe, ".")
-	return tipes[len(tipes)-1]
+func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tipe string) string {
+	split := strings.Split(tipe, ".")[1:]
+	targetPackage := strings.Join(split[:len(split)-1], ".")
+	log.Println(targetPackage)
+	targetType := split[len(split)-1]
+	for _, dep := range deps {
+		for _, proto := range protos {
+			log.Println(proto.GetName(), dep, proto.GetPackage(), targetPackage)
+			if proto.GetName() != dep || proto.GetPackage() != targetPackage {
+				continue
+			}
+
+			for _, msg := range proto.GetMessageType() {
+				if msg.GetName() == targetType {
+					alias := getAlias(proto.GetName())
+					return fmt.Sprintf("%s.%s", alias, msg.GetName())
+				}
+			}
+		}
+	}
+	return targetType
 }
