@@ -98,7 +98,55 @@ func TestStub(t *testing.T) {
 			},
 			handler: handleFindStub,
 			expect:  "{\"data\":{\"hello\":\"world\"},\"errorObject\":{\"message\":\"\",\"code\":0},\"Error\":\"\"}\n",
-		}, {
+		},
+		{
+			name: "add stub nested contains",
+			mock: func() *http.Request {
+				payload := `{
+								"service": "Testing",
+								"method":"TestMethod",
+								"input":{
+									"contains":{
+										"field1":"hello field1",
+										"field3": {
+											"nested1": "hello nested1",
+											"nested2": "hello nested2"
+										}
+									}
+								},
+								"output":{
+									"data":{
+										"hello":"world"
+									}
+								}
+							}`
+				return httptest.NewRequest("POST", "/add", bytes.NewReader([]byte(payload)))
+			},
+			handler: addStub,
+			expect:  `Success add stub`,
+		},
+		{
+			name: "find stub nested contains",
+			mock: func() *http.Request {
+				payload := `{
+						"service":"Testing",
+						"method":"TestMethod",
+						"data":{
+							"field1":"hello field1",
+							"field2":"hello field2",
+							"field3": {
+								"nested1": "hello nested1",
+								"nested2": "hello nested2",
+								"nested3": "hello nested3"
+							}
+						}
+					}`
+				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleFindStub,
+			expect:  "{\"data\":{\"hello\":\"world\"},\"errorObject\":{\"message\":\"\",\"code\":0},\"Error\":\"\"}\n",
+		},
+		{
 			name: "add stub matches regex",
 			mock: func() *http.Request {
 				payload := `{
@@ -119,7 +167,8 @@ func TestStub(t *testing.T) {
 			},
 			handler: addStub,
 			expect:  "Success add stub",
-		}, {
+		},
+		{
 			name: "find stub matches regex",
 			mock: func() *http.Request {
 				payload := `{
@@ -133,7 +182,8 @@ func TestStub(t *testing.T) {
 			},
 			handler: handleFindStub,
 			expect:  "{\"data\":{\"reply\":\"OK\"},\"errorObject\":{\"message\":\"\",\"code\":0},\"Error\":\"\"}\n",
-		}, {
+		},
+		{
 			name: "add stub nested matches regex",
 			mock: func() *http.Request {
 				payload := `{
@@ -156,7 +206,8 @@ func TestStub(t *testing.T) {
 			},
 			handler: addStub,
 			expect:  "Success add stub",
-		}, {
+		},
+		{
 			name: "find stub nested matches regex",
 			mock: func() *http.Request {
 				payload := `{
@@ -172,7 +223,8 @@ func TestStub(t *testing.T) {
 			},
 			handler: handleFindStub,
 			expect:  "{\"data\":{\"reply\":\"OK\"},\"errorObject\":{\"message\":\"\",\"code\":0},\"Error\":\"\"}\n",
-		}, {
+		},
+		{
 			name: "error find stub contains",
 			mock: func() *http.Request {
 				payload := `{
@@ -188,7 +240,8 @@ func TestStub(t *testing.T) {
 			},
 			handler: handleFindStub,
 			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\n{\n\tfield1: hello field1\n\tfield2: hello field2\n\tfield3: hello field4\n}\n\nClosest Match \n\ncontains:{\n\tfield1: hello field1\n\tfield3: hello field3\n}",
-		}, {
+		},
+		{
 			name: "error find stub equals",
 			mock: func() *http.Request {
 				payload := `{"service":"Testing","method":"TestMethod","data":{"Hola":"Dunia"}}`

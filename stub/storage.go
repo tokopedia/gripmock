@@ -168,6 +168,11 @@ func contains(expect, actual map[string]interface{}) bool {
 		}
 
 		if !reflect.DeepEqual(val, actualvalue) {
+			valueExpectMap, okExpectMap := val.(map[string]interface{})
+			valueActualMap, okActualMap := actual[key].(map[string]interface{})
+			if okExpectMap && okActualMap {
+				return contains(valueExpectMap, valueActualMap)
+			}
 			return false
 		}
 	}
