@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -8,10 +9,11 @@ import (
 )
 
 type generatorParam struct {
-	Services  []Service
-	GrpcAddr  string
-	AdminPort string
-	PbPath    string
+	Services   []Service
+	GrpcAddr   string
+	AdminPort  string
+	PbPath     string
+	AddImports []string
 }
 
 type Options struct {
@@ -21,12 +23,45 @@ type Options struct {
 	pbPath    string
 }
 
+type ProtobufGolangReference struct {
+	GolangReference string
+	GolangImport    string
+}
+
+// This should contain all protobuf references that we want to support, with at least the well known types
+var referenceTypeRegistry = map[string]ProtobufGolangReference{
+	"google.protobuf.Empty": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/empty",
+		GolangReference: "empty.Empty",
+	},
+}
+
 func GenerateServer(services []Service, opt *Options) error {
+	addImportsSet := make(map[string]bool)
+	// Iterate over services and replace the type, add the correct import to Imports
+	for _, service := range services {
+		for _, method := range service.Methods {
+			if golangReference, ok := referenceTypeRegistry[method.Input]; ok {
+				method.Input = golangReference.GolangReference
+				addImportsSet[fmt.Sprintf("\"%s\"", golangReference.GolangImport)] = true
+			}
+			if golangReference, ok := referenceTypeRegistry[method.Output]; ok {
+				method.Output = golangReference.GolangReference
+				addImportsSet[fmt.Sprintf("\"%s\"", golangReference.GolangImport)] = true
+			}
+		}
+	}
+	addImports := make([]string, 0, len(addImportsSet))
+	for key := range addImportsSet {
+		addImports = append(addImports, key)
+	}
+
 	param := generatorParam{
-		Services:  services,
-		GrpcAddr:  opt.grpcAddr,
-		AdminPort: opt.adminPort,
-		PbPath:    opt.pbPath,
+		Services:   services,
+		GrpcAddr:   opt.grpcAddr,
+		AdminPort:  opt.adminPort,
+		PbPath:     opt.pbPath,
+		AddImports: addImports,
 	}
 
 	if opt == nil {
@@ -59,6 +94,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+
+	{{ range .AddImports }}
+		{{ . }}
+	{{ end }}
 
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/net/context"

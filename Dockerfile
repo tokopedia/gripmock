@@ -4,7 +4,7 @@ RUN mkdir /proto
 
 RUN mkdir /stubs
 
-RUN apk -U --no-cache add git protobuf
+RUN apk -U --no-cache add git protobuf-dev
 
 RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	github.com/mitchellh/mapstructure \

@@ -15,8 +15,8 @@ type Service struct {
 
 type Method struct {
 	Name   string `"rpc" @Ident `
-	Input  string `"(" @Ident ")"`
-	Output string `"returns" "(" "stream"? @Ident ")"`
+	Input  string `"(" @(Ident{ "." Ident }) ")"`
+	Output string `"returns" "(" "stream"? @(Ident{ "." Ident }) ")"`
 	// TODO deal with body of method
 	Closing string `"{"?"}"? ";"?`
 }

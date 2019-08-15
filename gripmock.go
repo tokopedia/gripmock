@@ -112,9 +112,10 @@ func generateProtoc(protoPath []string, output string) {
 		protodir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
 	}
 
-	args := []string{"-I", protodir}
+	args := []string{"-I", protodir, "-I", "/usr/include"}
 	args = append(args, protoPath...)
 	args = append(args, "--go_out=plugins=grpc:"+output)
+	fmt.Printf("protoc %v", args)
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
