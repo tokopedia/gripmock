@@ -178,7 +178,15 @@ func matches(expect, actual map[string]interface{}) bool {
 	for keyExpect, valueExpect := range expect {
 		valueExpectString, ok := valueExpect.(string)
 		if !ok {
-			return false
+			valueExpectMap, okMap := valueExpect.(map[string]interface{})
+			if !okMap {
+				return false
+			}
+			valueActualMap, okMap := actual[keyExpect].(map[string]interface{})
+			if !okMap {
+				return false
+			}
+			return matches(valueExpectMap, valueActualMap)
 		}
 		actualvalue, ok := actual[keyExpect].(string)
 		if !ok {
@@ -187,7 +195,7 @@ func matches(expect, actual map[string]interface{}) bool {
 
 		match, err := regexp.Match(valueExpectString, []byte(actualvalue))
 		if err != nil {
-			log.Println("Error on matching regex %s with %s error:%v", valueExpectString, actualvalue, err)
+			log.Printf("Error on matching regex %s with %s error: %v\n", valueExpectString, actualvalue, err)
 		}
 
 		if !match {
