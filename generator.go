@@ -30,9 +30,78 @@ type ProtobufGolangReference struct {
 
 // This should contain all protobuf references that we want to support, with at least the well known types
 var referenceTypeRegistry = map[string]ProtobufGolangReference{
+	// General use Well Known Types
+	"google.protobuf.Any": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/any",
+		GolangReference: "any.Any",
+	},
+	"google.protobuf.Duration": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/duration",
+		GolangReference: "duration.Duration",
+	},
 	"google.protobuf.Empty": {
 		GolangImport:    "github.com/golang/protobuf/ptypes/empty",
 		GolangReference: "empty.Empty",
+	},
+	"google.protobuf.Timestamp": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/timestamp",
+		GolangReference: "timestamp.Timestamp",
+	},
+
+	// Basic Value Wrapper Well Known Types
+	"google.protobuf.BoolValue": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.BoolValue",
+	},
+	"google.protobuf.BytesValue": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.BytesValue",
+	},
+	"google.protobuf.DoubleValue": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.DoubleValue",
+	},
+	"google.protobuf.FloatValue": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.FloatValue",
+	},
+	"google.protobuf.Int32Value": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.Int32Value",
+	},
+	"google.protobuf.Int64Value": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.Int64Value",
+	},
+	"google.protobuf.StringValue": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.StringValue",
+	},
+	"google.protobuf.UInt32Value": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.UInt32Value",
+	},
+	"google.protobuf.UInt64Value": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/wrappers",
+		GolangReference: "wrappers.UInt64Value",
+	},
+
+	// Special Value Wrapper Well Known Types
+	"google.protobuf.ListValue": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/struct",
+		GolangReference: "struct.ListValue",
+	},
+	"google.protobuf.NullValue": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/struct",
+		GolangReference: "struct.NullValue",
+	},
+	"google.protobuf.Struct": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/struct",
+		GolangReference: "struct.Struct",
+	},
+	"google.protobuf.Value": {
+		GolangImport:    "github.com/golang/protobuf/ptypes/struct",
+		GolangReference: "struct.Value",
 	},
 }
 
