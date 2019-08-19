@@ -1,0 +1,12 @@
+{
+ "service":"Gripmock",
+  "method":"HealthCheck",
+  "input":{
+   "equals":{}
+  },
+  "output":{
+    "data":{
+     "value": "OK"
+    }
+  }
+}

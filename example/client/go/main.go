@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 )
 
@@ -41,6 +42,13 @@ func main() {
 	go bidirectionalStream(c, wg)
 
 	wg.Wait()
+
+	ctx := context.Background()
+	resp, err := c.HealthCheck(ctx, &empty.Empty{})
+	if err != nil {
+		log.Fatalf("error call HealthCheck %v", err)
+	}
+	log.Printf("Healthcheck: %s", resp.GetValue())
 }
 
 // server to client streaming

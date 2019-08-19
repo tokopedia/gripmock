@@ -98,6 +98,10 @@ func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error
 	expectString := renderFieldAsString(stub.Data)
 	template += expectString
 
+	if len(closestMatches) == 0 {
+		return fmt.Errorf(template)
+	}
+
 	highestRank := struct {
 		rank  float32
 		match closeMatch
