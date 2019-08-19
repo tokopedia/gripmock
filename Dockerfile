@@ -19,7 +19,14 @@ RUN go get -u -v github.com/gobuffalo/packr/v2/... \
                  github.com/gobuffalo/packr/v2/packr2
 
 # cloning well-known-types
-RUN git clone https://github.com/google/protobuf.git /protobuf
+RUN git clone https://github.com/google/protobuf.git /protobuf-repo
+
+RUN mkdir protobuf
+
+# only use needed files
+RUN mv /protobuf-repo/src/ /protobuf/
+
+RUN rm -rf /protobuf-repo
 
 RUN apk del git
 

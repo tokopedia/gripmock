@@ -106,7 +106,7 @@ func generateProtoc(param protocParam) {
 
 	args := []string{"-I", protodir}
 	// include well-known-types
-	args = append(args, "-I", "/protobuf/src")
+	args = append(args, "-I", "/protobuf")
 	args = append(args, param.protoPath...)
 	args = append(args, "--go_out=plugins=grpc:"+param.output)
 	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
