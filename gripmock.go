@@ -20,6 +20,10 @@ func main() {
 	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
 	adminBindAddr := flag.String("admin-listen", "", "Adress the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
+	// for backwards compatibility
+	if os.Args[1] == "gripmock" {
+		os.Args = append(os.Args[:1], os.Args[2:]...)
+	}
 
 	flag.Parse()
 	fmt.Println("Starting GripMock")
@@ -47,11 +51,6 @@ func main() {
 
 	// parse proto files
 	protoPaths := flag.Args()
-
-	// for backwards compatibility
-	if len(protoPaths) > 1 && protoPaths[0] == "gripmock" {
-		protoPaths = protoPaths[0:]
-	}
 
 	if len(protoPaths) == 0 {
 		log.Fatal("Need atleast one proto file")
