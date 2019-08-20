@@ -157,13 +157,23 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 	}
 
 	deps := map[string]string{}
+	aliases := map[string]bool{}
+	aliasNum := 1
 	for _, dep := range depsFile {
 		for _, proto := range protos {
 			if proto.GetName() != dep {
 				continue
 			}
 			pkg := proto.GetOptions().GetGoPackage()
-			deps[pkg] = getAlias(proto.GetName())
+			alias := getAlias(proto.GetName())
+			// in case of found same alias
+			if ok := aliases[alias]; ok {
+				alias = fmt.Sprintf("%s%d", alias, aliasNum)
+				aliasNum++
+			} else {
+				aliases[alias] = true
+			}
+			deps[pkg] = alias
 		}
 	}
 
