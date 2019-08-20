@@ -16,7 +16,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
-
+{{ range $package, $alias := .Dependencies }}
+import {{$alias}} "{{$package}}"
+{{end}}
 const (
 	TCP_ADDRESS  = "{{.GrpcAddr}}"
 	HTTP_PORT = ":{{.AdminPort}}"
