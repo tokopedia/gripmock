@@ -161,10 +161,14 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 	aliasNum := 1
 	for _, dep := range depsFile {
 		for _, proto := range protos {
-			if proto.GetName() != dep {
+			pkg := proto.GetOptions().GetGoPackage()
+
+			// skip whether its not intended deps
+			// or has empty Go package
+			if proto.GetName() != dep || pkg == "" {
 				continue
 			}
-			pkg := proto.GetOptions().GetGoPackage()
+
 			alias := getAlias(proto.GetName())
 			// in case of found same alias
 			if ok := aliases[alias]; ok {
