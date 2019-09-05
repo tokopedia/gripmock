@@ -102,10 +102,13 @@ func generateProtoc(param protocParam) {
 	if len(protodirs) > 0 {
 		protodir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
 	}
-
 	args := []string{"-I", protodir}
 	// include well-known-types
 	args = append(args, "-I", "/protobuf")
+	if os.Getenv("GOPATH") != "" {
+		googlesApisPath := os.Getenv("GOPATH")+"/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/"
+		args = append(args, "-I", googlesApisPath)
+	}
 	args = append(args, param.protoPath...)
 	args = append(args, "--go_out=plugins=grpc:"+param.output)
 	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
