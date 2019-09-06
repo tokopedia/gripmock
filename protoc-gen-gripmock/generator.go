@@ -170,8 +170,11 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 			}
 
 			// some package declarations use a semicolon, which causes a formatting error
-			// ignore for now
-			pkg = strings.Split(pkg, ";")[0]
+			// use the alias instead, if available
+			var sections = strings.Split(pkg, ";")
+			if len(sections) > 1 {
+				pkg = sections[1]
+			}
 
 			alias := getAlias(proto.GetName())
 			// in case of found same alias
