@@ -1,0 +1,15 @@
+name: Integration test
+on: push
+
+jobs:
+  build:
+    name: Run example
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    - name: Test example
+      uses: ./
+      with:
+        entrypoint: test/example/entrypoint.sh
+
