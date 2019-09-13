@@ -169,7 +169,15 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 				continue
 			}
 
-			alias := getAlias(proto.GetName())
+			// support go_package alias declaration
+			// https://github.com/golang/protobuf/issues/139
+			var alias string
+			if splits := strings.Split(pkg, ";"); len(splits) > 1 {
+				alias = splits[1]
+			} else {
+				alias = getAlias(proto.GetName())
+			}
+
 			// in case of found same alias
 			if ok := aliases[alias]; ok {
 				alias = fmt.Sprintf("%s%d", alias, aliasNum)
