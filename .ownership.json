@@ -1,0 +1,6 @@
+{
+  "name": "gripmock",
+  "description": "Grpc mock server",
+  "owner": "jekiapp",
+  "slack_channel": "tdk"
+}
