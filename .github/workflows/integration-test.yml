@@ -11,5 +11,6 @@ jobs:
     - name: Run Simple Example
       uses: ./
       with:
-        entrypoint: .github/workflows/run-example.sh simple
+        entrypoint: .github/workflows/run-example.sh
+        args: simple
 
