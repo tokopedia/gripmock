@@ -4,7 +4,7 @@ RUN mkdir /proto
 
 RUN mkdir /stubs
 
-RUN apk -U --no-cache add git protobuf
+RUN apk -U --no-cache add git protobuf nginx openssl
 
 RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	github.com/mitchellh/mapstructure \
@@ -50,6 +50,10 @@ RUN go install -v
 
 RUN rm -rf *
 
-EXPOSE 4770 4771
+# NGINX and SSL configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY entrypoint.sh /root/
 
-ENTRYPOINT ["gripmock"]
+EXPOSE 4770 4771 80 443
+
+ENTRYPOINT ["/root/entrypoint.sh"]
