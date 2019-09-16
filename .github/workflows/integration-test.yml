@@ -9,7 +9,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@master
     - name: Test example
-      uses: docker://tkpd/gripmock:test
+      uses: ./
+      with:
+        entrypoint: test/example/entrypoint.sh
+    - name: Test example 2
+      uses: ./
       with:
         entrypoint: test/example/entrypoint.sh
 
