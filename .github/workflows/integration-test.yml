@@ -8,12 +8,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@master
-    - name: Test example
+    - name: Run Simple Example
       uses: ./
       with:
-        entrypoint: test/example/entrypoint.sh
-    - name: Test example 2
-      uses: ./
-      with:
-        entrypoint: test/example/entrypoint.sh
+        entrypoint: .github/workflows/run-example.sh simple
 

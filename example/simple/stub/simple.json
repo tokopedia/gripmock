@@ -1,0 +1,14 @@
+{
+ "service":"Simple",
+  "method":"SayHello",
+  "input":{
+    "equals":{
+      "name":"tokopedia"
+    }
+  },
+  "output":{
+    "data":{
+      "message":"Hello Tokopedia"
+    }
+  }
+}

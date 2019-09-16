@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package simple;
+
+// The greeting service definition.
+service Simple {
+  // simple unary method
+  rpc SayHello (Request) returns (Reply);
+}
+
+// The request message containing the user's name.
+message Request {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message Reply {
+  string message = 1;
+}
