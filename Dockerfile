@@ -48,8 +48,6 @@ WORKDIR /go/src/github.com/tokopedia/gripmock
 # install gripmock
 RUN go install -v
 
-RUN rm -rf *
-
 EXPOSE 4770 4771
 
 ENTRYPOINT ["gripmock"]
