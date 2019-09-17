@@ -13,4 +13,9 @@ jobs:
       with:
         entrypoint: .github/workflows/run-example.sh
         args: simple
+    - name: Run Stream Example
+      uses: ./
+      with:
+        entrypoint: .github/workflows/run-example.sh
+        args: stream
 

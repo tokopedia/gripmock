@@ -6,7 +6,7 @@
   },
   "output":{
     "data":{
-     "value": "OK"
+     "code": 200
     }
   }
 }
