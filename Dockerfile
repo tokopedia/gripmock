@@ -28,8 +28,6 @@ RUN mv /protobuf-repo/src/ /protobuf/
 
 RUN rm -rf /protobuf-repo
 
-RUN apk del git
-
 RUN mkdir -p /go/src/github.com/tokopedia/gripmock
 
 COPY . /go/src/github.com/tokopedia/gripmock
