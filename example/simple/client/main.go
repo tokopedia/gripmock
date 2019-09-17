@@ -21,7 +21,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	c := pb.NewSimpleClient(conn)
+	c := pb.NewGripmockClient(conn)
 
 	// Contact the server and print out its response.
 	name := "tokopedia"

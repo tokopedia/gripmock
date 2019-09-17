@@ -161,7 +161,6 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 	aliasNum := 1
 	for _, dep := range depsFile {
 		for _, proto := range protos {
-			pkg := proto.GetOptions().GetGoPackage()
 			alias, pkg := getGoPackage(proto)
 
 			// skip whether its not intended deps

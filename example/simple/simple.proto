@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package simple;
 
-// The greeting service definition.
-service Simple {
+// The Gripmock service definition.
+service Gripmock {
   // simple unary method
   rpc SayHello (Request) returns (Reply);
 }

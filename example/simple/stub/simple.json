@@ -1,5 +1,5 @@
 {
- "service":"Simple",
+ "service":"Gripmock",
   "method":"SayHello",
   "input":{
     "equals":{

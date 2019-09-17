@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package stream;
 
-// The greeting service definition.
+// The Gripmock service definition.
 service Gripmock {
   // server to client sreaming
   rpc serverStream (Request) returns (stream Reply);
