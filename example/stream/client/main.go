@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"sync"
+	"time"
 
 	pb "github.com/tokopedia/gripmock/example/stream"
 	"google.golang.org/grpc"
@@ -12,7 +13,11 @@ import (
 
 func main() {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial("localhost:4770", grpc.WithInsecure())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	// Set up a connection to the server.
+	conn, err := grpc.DialContext(ctx, "localhost:4770", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
