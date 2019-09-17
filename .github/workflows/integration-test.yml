@@ -18,4 +18,9 @@ jobs:
       with:
         entrypoint: .github/workflows/run-example.sh
         args: stream
+    - name: Run WKT Example
+      uses: ./
+      with:
+        entrypoint: .github/workflows/run-example.sh
+        args: well_known_types
 

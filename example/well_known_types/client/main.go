@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	pb "github.com/tokopedia/gripmock/example/well_known_types"
 	"google.golang.org/grpc"
 )
 
@@ -22,10 +23,14 @@ func main() {
 
 	c := pb.NewGripmockClient(conn)
 
-	r, err := c.HealthCheck(context.Background(), &empty.Empty{})
+	r, err := c.ApiInfo(context.Background(), &empty.Empty{})
 	if err != nil {
 		log.Fatalf("error from grpc: %v", err)
 	}
-	code := r.GetFields()["code"].GetNumberValue()
-	log.Println("response code: %v", code)
+
+	if r.Name != "Gripmock" {
+		log.Fatalf("expecting api name: Gripmock, but got '%v' instead", r.Name)
+	}
+
+	log.Printf("Api Name: %v", r.Name)
 }

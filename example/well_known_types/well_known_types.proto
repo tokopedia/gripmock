@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package well_known_types;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/api.proto";
+
+service Gripmock {
+  rpc ApiInfo(google.protobuf.Empty) returns (google.protobuf.Api);
+}
