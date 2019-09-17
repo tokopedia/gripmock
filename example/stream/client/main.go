@@ -4,32 +4,25 @@ import (
 	"context"
 	"io"
 	"log"
-	"os"
 	"sync"
+	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	pb "github.com/tokopedia/gripmock/example/stream"
 	"google.golang.org/grpc"
 )
 
 func main() {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial("localhost:4770", grpc.WithInsecure())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	// Set up a connection to the server.
+	conn, err := grpc.DialContext(ctx, "localhost:4770", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := NewGripmockClient(conn)
-
-	// Contact the server and print out its response.
-	name := "tokopedia"
-	if len(os.Args) > 1 {
-		name = os.Args[1]
-	}
-	r, err := c.SayHello(context.Background(), &Request{Name: name})
-	if err != nil {
-		log.Fatalf("error from grpc: %v", err)
-	}
-	log.Printf("Greeting: %s", r.Message)
+	c := pb.NewGripmockClient(conn)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -43,18 +36,12 @@ func main() {
 
 	wg.Wait()
 
-	ctx := context.Background()
-	resp, err := c.HealthCheck(ctx, &empty.Empty{})
-	if err != nil {
-		log.Fatalf("error call HealthCheck %v", err)
-	}
-	log.Printf("Healthcheck: %s", resp.GetValue())
 }
 
 // server to client streaming
-func serverStream(c GripmockClient, wg *sync.WaitGroup) {
+func serverStream(c pb.GripmockClient, wg *sync.WaitGroup) {
 	defer wg.Done()
-	req := &Request{
+	req := &pb.Request{
 		Name: "server-to-client-streaming",
 	}
 	stream, err := c.ServerStream(context.Background(), req)
@@ -77,14 +64,14 @@ func serverStream(c GripmockClient, wg *sync.WaitGroup) {
 }
 
 // client to server streaming
-func clientStream(c GripmockClient, wg *sync.WaitGroup) {
+func clientStream(c pb.GripmockClient, wg *sync.WaitGroup) {
 	defer wg.Done()
 	stream, err := c.ClientStream(context.Background())
 	if err != nil {
 		log.Fatalf("c2s error: %v", err)
 	}
 
-	requests := []Request{
+	requests := []pb.Request{
 		{
 			Name: "c2s-1",
 		}, {
@@ -106,13 +93,13 @@ func clientStream(c GripmockClient, wg *sync.WaitGroup) {
 }
 
 // bidirectional stream
-func bidirectionalStream(c GripmockClient, wg *sync.WaitGroup) {
+func bidirectionalStream(c pb.GripmockClient, wg *sync.WaitGroup) {
 	stream, err := c.Bidirectional(context.Background())
 	if err != nil {
 		log.Fatalf("2ds error: %v", err)
 	}
 
-	requests := []Request{
+	requests := []pb.Request{
 		{
 			Name: "2ds-message1",
 		}, {

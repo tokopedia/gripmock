@@ -1,0 +1,30 @@
+name: Integration test
+on:
+  pull_request:
+    branches:
+      master
+
+
+jobs:
+  build:
+    name: Run example
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    - name: Run Simple Example
+      uses: ./
+      with:
+        entrypoint: .github/workflows/run-example.sh
+        args: simple
+    - name: Run Stream Example
+      uses: ./
+      with:
+        entrypoint: .github/workflows/run-example.sh
+        args: stream
+    - name: Run WKT Example
+      uses: ./
+      with:
+        entrypoint: .github/workflows/run-example.sh
+        args: well_known_types
+

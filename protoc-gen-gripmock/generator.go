@@ -141,12 +141,12 @@ func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) erro
 	}
 
 	byt := buf.Bytes()
-	byt, err = imports.Process("", byt, nil)
+	bytProcessed, err := imports.Process("", byt, nil)
 	if err != nil {
-		return fmt.Errorf("formatting %v", err)
+		return fmt.Errorf("formatting: %v \n%s", err, string(byt))
 	}
 
-	_, err = opt.writer.Write(byt)
+	_, err = opt.writer.Write(bytProcessed)
 	return err
 }
 
@@ -161,7 +161,7 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 	aliasNum := 1
 	for _, dep := range depsFile {
 		for _, proto := range protos {
-			pkg := proto.GetOptions().GetGoPackage()
+			alias, pkg := getGoPackage(proto)
 
 			// skip whether its not intended deps
 			// or has empty Go package
@@ -169,7 +169,6 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 				continue
 			}
 
-			alias := getAlias(proto.GetName())
 			// in case of found same alias
 			if ok := aliases[alias]; ok {
 				alias = fmt.Sprintf("%s%d", alias, aliasNum)
@@ -184,10 +183,23 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 	return deps
 }
 
-func getAlias(protoName string) string {
-	splitSlash := strings.Split(protoName, "/")
-	split := strings.Split(splitSlash[len(splitSlash)-1], ".")
-	return split[0]
+func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackage string) {
+	goPackage = proto.GetOptions().GetGoPackage()
+	if goPackage == "" {
+		return
+	}
+
+	// support go_package alias declaration
+	// https://github.com/golang/protobuf/issues/139
+	if splits := strings.Split(goPackage, ";"); len(splits) > 1 {
+		goPackage = splits[0]
+		alias = splits[1]
+	} else {
+		splitSlash := strings.Split(proto.GetName(), "/")
+		split := strings.Split(splitSlash[len(splitSlash)-1], ".")
+		alias = split[0]
+	}
+	return
 }
 
 // change the structure also translate method type
@@ -234,7 +246,7 @@ func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tip
 
 			for _, msg := range proto.GetMessageType() {
 				if msg.GetName() == targetType {
-					alias := getAlias(proto.GetName())
+					alias, _ := getGoPackage(proto)
 					return fmt.Sprintf("%s.%s", alias, msg.GetName())
 				}
 			}

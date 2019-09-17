@@ -1,12 +1,13 @@
 {
  "service":"Gripmock",
-  "method":"HealthCheck",
+  "method":"ApiInfo",
   "input":{
    "equals":{}
   },
   "output":{
     "data":{
-     "value": "OK"
+     "name": "Gripmock",
+     "version": "1.0"
     }
   }
 }
