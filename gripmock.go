@@ -20,7 +20,7 @@ func main() {
 	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
 	adminBindAddr := flag.String("admin-listen", "", "Adress the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
-	wktDir := flag.String("wkt-dir", "/protobuf", "Directory of well-known-types protos.")
+	imports := flag.String("imports", "/protobuf", "comma separated imports path. default path /protobuf is where gripmock Dockerfile install WKT protos")
 	// for backwards compatibility
 	if os.Args[1] == "gripmock" {
 		os.Args = append(os.Args[:1], os.Args[2:]...)
@@ -57,6 +57,8 @@ func main() {
 		log.Fatal("Need atleast one proto file")
 	}
 
+	importDirs := strings.Split(*imports, ",")
+
 	// generate pb.go and grpc server based on proto
 	generateProtoc(protocParam{
 		protoPath:   protoPaths,
@@ -64,7 +66,7 @@ func main() {
 		grpcAddress: *grpcBindAddr,
 		grpcPort:    *grpcPort,
 		output:      output,
-		wktPath:     *wktDir,
+		imports:     importDirs,
 	})
 
 	// build the server
@@ -96,7 +98,7 @@ type protocParam struct {
 	grpcAddress string
 	grpcPort    string
 	output      string
-	wktPath     string
+	imports     []string
 }
 
 func generateProtoc(param protocParam) {
@@ -108,7 +110,9 @@ func generateProtoc(param protocParam) {
 
 	args := []string{"-I", protodir}
 	// include well-known-types
-	args = append(args, "-I", param.wktPath)
+	for _, i := range param.imports {
+		args = append(args, "-I", i)
+	}
 	args = append(args, param.protoPath...)
 	args = append(args, "--go_out=plugins=grpc:"+param.output)
 	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
