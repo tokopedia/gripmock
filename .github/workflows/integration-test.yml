@@ -26,4 +26,8 @@ jobs:
       uses: ./
       with:
         entrypoint: example/well_known_types/entrypoint.sh
+    - name: Run Multi Package Example
+      uses: ./
+      with:
+        entrypoint: example/multi-package/entrypoint.sh
 
