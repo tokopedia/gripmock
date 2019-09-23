@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package hello;
+
+import "bar/bar.proto";
+
+service Gripmock {
+    rpc Greet (bar.Bar) returns (Response);
+}
+
+message Response {
+    string response = 1;
+}
