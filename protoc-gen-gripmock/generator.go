@@ -247,7 +247,10 @@ func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tip
 			for _, msg := range proto.GetMessageType() {
 				if msg.GetName() == targetType {
 					alias, _ := getGoPackage(proto)
-					return fmt.Sprintf("%s.%s", alias, msg.GetName())
+					if alias != "" {
+						alias += "."
+					}
+					return fmt.Sprintf("%s%s", alias, msg.GetName())
 				}
 			}
 		}
