@@ -12,7 +12,7 @@ RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	google.golang.org/grpc/reflection \
 	golang.org/x/net/context \
 	github.com/go-chi/chi \
-	github.com/renstrom/fuzzysearch/fuzzy \
+	github.com/lithammer/fuzzysearch/fuzzy \
 	golang.org/x/tools/imports
 
 RUN go get -u -v github.com/gobuffalo/packr/v2/... \
