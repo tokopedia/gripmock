@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/renstrom/fuzzysearch/fuzzy"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 var mx = sync.Mutex{}

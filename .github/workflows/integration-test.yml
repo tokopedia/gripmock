@@ -1,0 +1,33 @@
+name: Integration test
+on:
+  pull_request:
+    branches:
+      master
+
+
+jobs:
+  build:
+    name: Run example
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    - name: Run Simple Example
+      uses: ./
+      with:
+        entrypoint: example/simple/entrypoint.sh
+        args: simple
+    - name: Run Stream Example
+      uses: ./
+      with:
+        entrypoint: example/stream/entrypoint.sh
+        args: stream
+    - name: Run WKT Example
+      uses: ./
+      with:
+        entrypoint: example/well_known_types/entrypoint.sh
+    - name: Run Multi Package Example
+      uses: ./
+      with:
+        entrypoint: example/multi-package/entrypoint.sh
+

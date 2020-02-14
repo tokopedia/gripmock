@@ -38,7 +38,7 @@
   version = "1.0.0"
 
 [[constraint]]
-  name = "github.com/renstrom/fuzzysearch"
+  name = "github.com/lithammer/fuzzysearch"
   version = "1.0.0"
 
 [[constraint]]
