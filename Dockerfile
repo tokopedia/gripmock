@@ -34,7 +34,7 @@ COPY . /go/src/github.com/tokopedia/gripmock
 
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
-RUN packr2
+RUN cd $GOPATH && packr2
 
 # install generator plugin
 RUN go install -v
