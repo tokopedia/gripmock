@@ -206,9 +206,9 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 	svcTmp := []Service{}
 	for _, proto := range protos {
-		for i, svc := range proto.GetService() {
-			svcTmp = append(svcTmp, Service{})
-			svcTmp[i].Name = svc.GetName()
+		for _, svc := range proto.GetService() {
+			var s Service
+			s.Name = svc.GetName()
 			methods := make([]methodTemplate, len(svc.Method))
 			for j, method := range svc.Method {
 				tipe := methodTypeStandard
@@ -228,7 +228,8 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 					MethodType:  tipe,
 				}
 			}
-			svcTmp[i].Methods = methods
+			s.Methods = methods
+			svcTmp = append(svcTmp, s)
 		}
 	}
 	return svcTmp
