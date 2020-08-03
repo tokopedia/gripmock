@@ -1,0 +1,15 @@
+{
+  "service": "Gripmock1",
+  "method": "SayHello",
+  "input": {
+    "equals": {
+      "name": "tokopedia"
+    }
+  },
+  "output": {
+    "data": {
+      "message": "Hello Tokopedia 1",
+      "return_code": 1
+    }
+  }
+}
