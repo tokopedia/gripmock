@@ -191,7 +191,7 @@ func matches(expect, actual map[string]interface{}) bool {
 
 		match, err := regexp.Match(valueExpectString, []byte(actualvalue))
 		if err != nil {
-			log.Println("Error on matching regex %s with %s error:%v", valueExpectString, actualvalue, err)
+			log.Printf("Error on matching regex %s with %s error:%v\n", valueExpectString, actualvalue, err)
 		}
 
 		if !match {

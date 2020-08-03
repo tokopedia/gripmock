@@ -32,5 +32,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("error from grpc: %v", err)
 	}
-	log.Printf("Greeting: %s", r.Message)
+	log.Printf("Greeting: %s (return code %d)", r.Message, r.ReturnCode)
 }
