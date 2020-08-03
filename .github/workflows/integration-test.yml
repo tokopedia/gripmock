@@ -30,4 +30,8 @@ jobs:
       uses: ./
       with:
         entrypoint: example/multi-package/entrypoint.sh
+    - name: Run Multi Files Example
+      uses: ./
+      with:
+        entrypoint: example/multi-files/entrypoint.sh
 
