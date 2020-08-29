@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package="gripmock/prj-foo/foo";
+
+package foo;
+
+import "bar/bar.proto";
+import "foo/foo.proto";
+
+service Greeter {
+    rpc Greet (bar.Request) returns (Response);
+}

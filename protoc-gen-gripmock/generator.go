@@ -67,6 +67,7 @@ type generatorParam struct {
 }
 
 type Service struct {
+	Package string
 	Name    string
 	Methods []methodTemplate
 }
@@ -109,8 +110,8 @@ func init() {
 }
 
 func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) error {
-	services := extractServices(protos)
 	deps := resolveDependencies(protos)
+	services := extractServices(protos, deps)
 
 	param := generatorParam{
 		Services:     services,
@@ -203,11 +204,12 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 }
 
 // change the structure also translate method type
-func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
+func extractServices(protos []*descriptor.FileDescriptorProto, deps map[string]string) []Service {
 	svcTmp := []Service{}
 	for _, proto := range protos {
 		for _, svc := range proto.GetService() {
 			var s Service
+			s.Package = resolvePackage(deps, proto.GetPackage())
 			s.Name = svc.GetName()
 			methods := make([]methodTemplate, len(svc.Method))
 			for j, method := range svc.Method {
@@ -223,8 +225,8 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 				methods[j] = methodTemplate{
 					Name:        strings.Title(*method.Name),
 					ServiceName: svc.GetName(),
-					Input:       getMessageType(protos, proto.GetDependency(), method.GetInputType()),
-					Output:      getMessageType(protos, proto.GetDependency(), method.GetOutputType()),
+					Input:       formatMessageType(deps, method.GetInputType()),
+					Output:      formatMessageType(deps, method.GetOutputType()),
 					MethodType:  tipe,
 				}
 			}
@@ -235,26 +237,22 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 	return svcTmp
 }
 
-func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tipe string) string {
-	split := strings.Split(tipe, ".")[1:]
-	targetPackage := strings.Join(split[:len(split)-1], ".")
-	targetType := split[len(split)-1]
-	for _, dep := range deps {
-		for _, proto := range protos {
-			if proto.GetName() != dep || proto.GetPackage() != targetPackage {
-				continue
-			}
-
-			for _, msg := range proto.GetMessageType() {
-				if msg.GetName() == targetType {
-					alias, _ := getGoPackage(proto)
-					if alias != "" {
-						alias += "."
-					}
-					return fmt.Sprintf("%s%s", alias, msg.GetName())
-				}
-			}
+func resolvePackage(deps map[string]string, pack string) string {
+	for _, alias := range deps {
+		if alias == pack {
+			return pack
 		}
 	}
-	return targetType
+	return ""
+}
+
+func formatMessageType(deps map[string]string, t string) string {
+	split := strings.Split(t, ".")[1:]
+	targetPackage := strings.Join(split[:len(split)-1], ".")
+	targetPackage = resolvePackage(deps, targetPackage)
+	targetType := split[len(split)-1]
+	if targetPackage == "" {
+		return targetType
+	}
+	return targetPackage + "." + targetType
 }

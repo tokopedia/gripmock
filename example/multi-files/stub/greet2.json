@@ -9,7 +9,7 @@
   "output": {
     "data": {
       "message": "Hello Tokopedia 2",
-      "return_code": 1
+      "return_code": 2
     }
   }
 }

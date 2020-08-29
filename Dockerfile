@@ -1,5 +1,7 @@
 FROM golang:alpine
 
+ENV GO111MODULE=off
+
 RUN mkdir /proto
 
 RUN mkdir /stubs
@@ -12,7 +14,9 @@ RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	golang.org/x/net/context \
 	github.com/go-chi/chi \
 	github.com/lithammer/fuzzysearch/fuzzy \
-	golang.org/x/tools/imports
+	golang.org/x/tools/imports \
+	google.golang.org/protobuf/reflect/protoreflect \
+	google.golang.org/protobuf/runtime/protoimpl
 
 RUN go get -u -v github.com/gobuffalo/packr/v2/... \
 	github.com/gobuffalo/packr/v2/packr2
@@ -45,6 +49,6 @@ WORKDIR /go/src/github.com/tokopedia/gripmock
 # install gripmock
 RUN go install -v
 
-EXPOSE 4770 4771
+EXPOSE 4770 4771 4772
 
 ENTRYPOINT ["gripmock"]
