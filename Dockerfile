@@ -1,7 +1,5 @@
 FROM golang:alpine
 
-ENV GO111MODULE=off
-
 RUN mkdir /proto
 
 RUN mkdir /stubs
@@ -11,12 +9,9 @@ RUN apk -U --no-cache add git protobuf
 RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	google.golang.org/grpc \
 	google.golang.org/grpc/reflection \
-	golang.org/x/net/context \
 	github.com/go-chi/chi \
 	github.com/lithammer/fuzzysearch/fuzzy \
-	golang.org/x/tools/imports \
-	google.golang.org/protobuf/reflect/protoreflect \
-	google.golang.org/protobuf/runtime/protoimpl
+	golang.org/x/tools/imports
 
 RUN go get -u -v github.com/gobuffalo/packr/v2/... \
 	github.com/gobuffalo/packr/v2/packr2

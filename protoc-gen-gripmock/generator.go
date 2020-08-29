@@ -196,9 +196,8 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 		goPackage = splits[0]
 		alias = splits[1]
 	} else {
-		splitSlash := strings.Split(proto.GetName(), "/")
-		split := strings.Split(splitSlash[len(splitSlash)-1], ".")
-		alias = split[0]
+		splitSlash := strings.Split(goPackage, "/")
+		alias = splitSlash[len(splitSlash)-1]
 	}
 	return
 }
