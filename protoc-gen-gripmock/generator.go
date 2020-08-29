@@ -225,8 +225,8 @@ func extractServices(protos []*descriptor.FileDescriptorProto, deps map[string]s
 				methods[j] = methodTemplate{
 					Name:        strings.Title(*method.Name),
 					ServiceName: svc.GetName(),
-					Input:       formatMessageType(deps, method.GetInputType()),
-					Output:      formatMessageType(deps, method.GetOutputType()),
+					Input:       getMessageType(protos, proto.GetDependency(), method.GetInputType()),
+					Output:      getMessageType(protos, proto.GetDependency(), method.GetOutputType()),
 					MethodType:  tipe,
 				}
 			}
@@ -246,13 +246,26 @@ func resolvePackage(deps map[string]string, pack string) string {
 	return ""
 }
 
-func formatMessageType(deps map[string]string, t string) string {
-	split := strings.Split(t, ".")[1:]
+func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tipe string) string {
+	split := strings.Split(tipe, ".")[1:]
 	targetPackage := strings.Join(split[:len(split)-1], ".")
-	targetPackage = resolvePackage(deps, targetPackage)
 	targetType := split[len(split)-1]
-	if targetPackage == "" {
-		return targetType
+	for _, dep := range deps {
+		for _, proto := range protos {
+			if proto.GetName() != dep || proto.GetPackage() != targetPackage {
+				continue
+			}
+
+			for _, msg := range proto.GetMessageType() {
+				if msg.GetName() == targetType {
+					alias, _ := getGoPackage(proto)
+					if alias != "" {
+						alias += "."
+					}
+					return fmt.Sprintf("%s%s", alias, msg.GetName())
+				}
+			}
+		}
 	}
-	return targetPackage + "." + targetType
+	return targetType
 }
