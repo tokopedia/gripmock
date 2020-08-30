@@ -148,17 +148,18 @@ The reason I created a fork was because I did a lot of changes and ended up drif
 ## New features
 
 This fork adds the following features:
-* Packages at the same Level - proto files defined at their own folders and none of them is at the min package (top level)
-* Immediate sub directories can represent different imports
 * Uploading proto files
+* When uploading protos, immediate sub directories can represent different imports, if tthe flag `--isd` is set
+* Packages at the same Level - proto files defined at their own folders and none of them is at the min package (top level)
 
 Changes:
 * modules
 * generating proto into GOPATH
+* Argument list now considers directories. These directories are added to the import list and all the proto files inside are also added to the list of compiled protos.
 
 Breaking changes:
-* It no longer accepts individual proto files, but rather directories with the proto files
 * `GOPATH` needs to be defined
+
 
 ### Packages at the same Level
 Now we can address the scenario where we have proto files packages where none is at the main package.
@@ -181,10 +182,26 @@ Unfortunately just copying doesn't work for all projects, since some projects ha
 I am thinking about when some projects define the packages in the `protoc` command like `--go_out=Mbar/bar.proto=this/is/a/package:.`.
 What we have to do is the opposite. Change the proto files used for the mocks so that all have the option `go_package` and that the imports reflect the current structure.
 
-If sub dirs import flag is set `-isb`, all immediate sub dirs from the list of dirs passed as argument, like `foo` and `bar` inside `/proto`,
-will be imported by the `protoc` with the compile option `-I` allowing us to have different packages in different sub directories.
+If sub dirs import flag is set `-isb`, all immediate sub dirs from the uploaded protos.
+Consider a zip file with the following tree dir.
 
-Make sure that:
+```
+proto
+├── prj-bar
+│   └── bar
+│       ├── bar.pb.go
+│       └── bar.proto
+└── prj-foo
+    └── foo
+        ├── foo.pb.go
+        ├── foo.proto
+        ├── hello.pb.go
+        └── hello.prot
+``` 
+
+`prj-foo` and `prj-bar` inside `/proto`, will be imported by the `protoc` with the compile option `-I` allowing us to have different packages in different sub directories.
+
+Please make you proto well behaved:
 * all proto files have the `option go_package`.
   * eg: `option go_package = "github.com/quintans/foo";`
 * all the imports must be relative to the current file structure

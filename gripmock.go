@@ -41,8 +41,8 @@ func main() {
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
 	upPort := flag.String("up-port", "4772", "Port of upload proto server")
 	upBindAddr := flag.String("up-listen", "", "Address the upload proto server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
-	imports := flag.String("imports", "/protobuf", "comma separated imports path. default path /protobuf is where gripmock Dockerfile install WKT protos")
-	importSubdirs := flag.Bool("isd", false, "Immediate sub dirs from the list of dirs passed as argument, will be imported")
+	imports := flag.String("imports", "", "comma separated imports path. Path /protobuf is always set. It is where gripmock Dockerfile install WKT protos")
+	importSubdirs := flag.Bool("isd", false, "Immediate sub dirs of the upload, will be imported")
 	// for backwards compatibility
 	if len(os.Args) > 1 && os.Args[1] == "gripmock" {
 		os.Args = append(os.Args[:1], os.Args[2:]...)
@@ -69,8 +69,6 @@ func main() {
 		os.Mkdir(*output, os.ModePerm)
 	}
 
-	// parse proto files
-	protoPaths := flag.Args()
 	err := os.RemoveAll(upProtoFolder)
 	if err != nil {
 		log.Fatalf("did not remove %s: %v", upProtoFolder, err)
@@ -79,11 +77,46 @@ func main() {
 	if err != nil {
 		log.Fatalf("did not create %s: %v", upProtoFolder, err)
 	}
-	protoPaths = append(protoPaths, upProtoFolder)
 
-	importDirs := strings.Split(*imports, ",")
-	if len(importDirs) == 0 {
-		log.Fatal("No importable dirs")
+	importDirs := []string{"/protobuf"}
+	impSplit := strings.Split(*imports, ",")
+	if len(*imports) > 0 {
+		importDirs = append(importDirs, impSplit...)
+	}
+
+	// parse proto files
+	args := flag.Args()
+	protoPaths, imps := expandDirs(args)
+
+	// if the first arg is a file, add the its dir to the list of imports
+	if len(args) > 0 {
+		name := args[0]
+		fi, err := os.Stat(name)
+		if err != nil {
+			log.Fatalf("Unable to get the status of %s: %v", name, err)
+			return
+		}
+		if fi.Mode().IsRegular() {
+			protodirs := strings.Split(name, "/")
+			protodir := ""
+			if len(protodirs) > 0 {
+				protodir = strings.Join(protodirs[:len(protodirs)-1], "/")
+			}
+			imps = append(imps, protodir)
+		}
+	}
+
+	// only add argument folders if they are not inside imports list
+	for _, i := range imps {
+		found := false
+		for _, is := range impSplit {
+			if strings.Contains(is, i) {
+				found = true
+			}
+		}
+		if !found {
+			importDirs = append(importDirs, i)
+		}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -136,7 +169,8 @@ type servers struct {
 }
 
 func (s *servers) boot(ctx context.Context) error {
-	protoPaths := expandDirs(s.params.protoPaths)
+	protos, _ := expandDirs([]string{upProtoFolder})
+	protoPaths := append(s.params.protoPaths, protos...)
 	if len(protoPaths) == 0 {
 		log.Println("No proto files found. Skipping stub and grpc boot.")
 		return nil
@@ -160,9 +194,9 @@ func (s *servers) boot(ctx context.Context) error {
 
 	var importDirs []string
 	if s.params.importSubdirs {
-		importDirs = append(s.params.imports, expandImports(s.params.protoPaths)...)
+		importDirs = append(s.params.imports, importSudDirs([]string{upProtoFolder})...)
 	} else {
-		importDirs = append(s.params.imports, s.params.protoPaths...)
+		importDirs = append(s.params.imports, upProtoFolder)
 	}
 
 	pp := protocParam{
@@ -442,7 +476,7 @@ func Unzip(src []byte, dest string) error {
 	return nil
 }
 
-func expandImports(names []string) []string {
+func importSudDirs(names []string) []string {
 	dirs := []string{}
 	for _, name := range names {
 		files, err := ioutil.ReadDir(name)
@@ -460,8 +494,9 @@ func expandImports(names []string) []string {
 	return dirs
 }
 
-func expandDirs(names []string) []string {
+func expandDirs(names []string) ([]string, []string) {
 	paths := []string{}
+	imps := []string{}
 	for _, name := range names {
 		fi, err := os.Stat(name)
 		if err != nil {
@@ -470,6 +505,7 @@ func expandDirs(names []string) []string {
 		}
 		switch mode := fi.Mode(); {
 		case mode.IsDir():
+			imps = append(imps, name)
 			err := filepath.Walk(name,
 				func(path string, info os.FileInfo, err error) error {
 					if err != nil {
@@ -484,9 +520,9 @@ func expandDirs(names []string) []string {
 			if err != nil {
 				log.Fatal(err)
 			}
-		case mode.IsRegular():
-			log.Fatal("Only dir are allowed. Not a dir " + name)
+		case mode.IsRegular() && strings.HasSuffix(name, ".proto"):
+			paths = append(paths, name)
 		}
 	}
-	return paths
+	return paths, imps
 }
