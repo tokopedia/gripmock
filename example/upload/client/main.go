@@ -8,6 +8,7 @@ import (
 
 	"github.com/tokopedia/gripmock/example/upload/client/bar"
 	"github.com/tokopedia/gripmock/example/upload/client/foo"
+	"github.com/tokopedia/gripmock/servers"
 	"github.com/tokopedia/gripmock/tool"
 	"google.golang.org/grpc"
 )
@@ -16,8 +17,14 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	_, err := tool.UploadAsJson("http://localhost:4772/reset", servers.Reset{
+		ImportSubDirs: false,
+	})
+	if err != nil {
+		log.Fatalf("did not reset upload server: %v", err)
+	}
 	// upload proto files
-	_, err := tool.ZipFolderAndUpload("http://localhost:4772/upload", "example/upload/proto")
+	_, err = tool.ZipFolderAndUpload("http://localhost:4772/upload", "example/upload/proto")
 	if err != nil {
 		log.Fatalf("did not upload proto: %v", err)
 	}

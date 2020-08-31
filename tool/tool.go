@@ -3,6 +3,7 @@ package tool
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -93,4 +94,12 @@ func Upload(addr string, mimeType string, payload []byte) (int, error) {
 	}
 
 	return res.StatusCode, nil
+}
+
+func UploadAsJson(addr string, payload interface{}) (int, error) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return 0, err
+	}
+	return Upload(addr, "application/json", data)
 }
