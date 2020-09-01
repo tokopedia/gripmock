@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option go_package="github.com/tokopedia/gripmock/bar";
+
+package bar;
+
+message Request{
+    string name = 1;
+}

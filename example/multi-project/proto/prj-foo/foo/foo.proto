@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package="gripmock/prj-foo/foo";
+
+package foo;
+
+message Response {
+    string message = 1;
+    int32 return_code = 2;
+}

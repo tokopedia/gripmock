@@ -9,7 +9,6 @@ RUN apk -U --no-cache add git protobuf
 RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 	google.golang.org/grpc \
 	google.golang.org/grpc/reflection \
-	golang.org/x/net/context \
 	github.com/go-chi/chi \
 	github.com/lithammer/fuzzysearch/fuzzy \
 	golang.org/x/tools/imports
@@ -45,6 +44,6 @@ WORKDIR /go/src/github.com/tokopedia/gripmock
 # install gripmock
 RUN go install -v
 
-EXPOSE 4770 4771
+EXPOSE 4770 4771 4772
 
 ENTRYPOINT ["gripmock"]

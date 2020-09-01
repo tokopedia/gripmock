@@ -67,6 +67,7 @@ type generatorParam struct {
 }
 
 type Service struct {
+	Package string
 	Name    string
 	Methods []methodTemplate
 }
@@ -109,8 +110,8 @@ func init() {
 }
 
 func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) error {
-	services := extractServices(protos)
 	deps := resolveDependencies(protos)
+	services := extractServices(protos, deps)
 
 	param := generatorParam{
 		Services:     services,
@@ -195,19 +196,19 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 		goPackage = splits[0]
 		alias = splits[1]
 	} else {
-		splitSlash := strings.Split(proto.GetName(), "/")
-		split := strings.Split(splitSlash[len(splitSlash)-1], ".")
-		alias = split[0]
+		splitSlash := strings.Split(goPackage, "/")
+		alias = splitSlash[len(splitSlash)-1]
 	}
 	return
 }
 
 // change the structure also translate method type
-func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
+func extractServices(protos []*descriptor.FileDescriptorProto, deps map[string]string) []Service {
 	svcTmp := []Service{}
 	for _, proto := range protos {
 		for _, svc := range proto.GetService() {
 			var s Service
+			s.Package = resolvePackage(deps, proto.GetPackage())
 			s.Name = svc.GetName()
 			methods := make([]methodTemplate, len(svc.Method))
 			for j, method := range svc.Method {
@@ -233,6 +234,15 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 		}
 	}
 	return svcTmp
+}
+
+func resolvePackage(deps map[string]string, pack string) string {
+	for _, alias := range deps {
+		if alias == pack {
+			return pack
+		}
+	}
+	return ""
 }
 
 func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tipe string) string {

@@ -34,4 +34,13 @@ jobs:
       uses: ./
       with:
         entrypoint: example/multi-files/entrypoint.sh
+    - name: Run upload Example
+      uses: ./
+      with:
+        entrypoint: example/upload/entrypoint.sh
+    - name: Run multi project Example
+      uses: ./
+      with:
+        entrypoint: example/multi-project/entrypoint.sh
+
 

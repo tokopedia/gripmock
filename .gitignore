@@ -1,3 +1,6 @@
 vendor
 Gopkg.lock
 gripmock
+
+# IDEs
+.vscode

@@ -140,3 +140,98 @@ Input matching has 3 rules to match an input. which is **equals**,**contains** a
 }
 ```
 
+## After Fork
+The above is still valid.
+
+The reason I created a fork was because I did a lot of changes and ended up drifting a bit from the original project.
+
+## New features
+
+This fork adds the following features:
+* Uploading proto files
+* When uploading protos, immediate sub directories can represent different imports, if tthe flag `--isd` is set
+* Packages at the same Level - proto files defined at their own folders and none of them is at the min package (top level)
+
+Changes:
+* modules
+* generating proto into GOPATH
+* Argument list now considers directories. These directories are added to the import list and all the proto files inside are also added to the list of compiled protos.
+
+Breaking changes:
+* `GOPATH` needs to be defined
+
+
+### Packages at the same Level
+Now we can address the scenario where we have proto files packages where none is at the main package.
+Imagine that we have two projects. One is `foo` and the other is `bar`. `foo` has a dependency on `bar`.
+We should do the following.
+Create a folder that will have all proto files (eg: proto) and then underneath the folders for the proto files for `foo` and another for `bar`.
+
+We will end up with:
+
+```
+proto
+├── bar
+│   └── bar.proto
+└── foo
+    ├── foo.proto
+    └── hello.proto
+```
+
+Unfortunately just copying doesn't work for all projects, since some projects have their own particularities and a generic tool would have a hard time trying to cope with all of them.
+I am thinking about when some projects define the packages in the `protoc` command like `--go_out=Mbar/bar.proto=this/is/a/package:.`.
+What we have to do is the opposite. Change the proto files used for the mocks so that all have the option `go_package` and that the imports reflect the current structure.
+
+If sub dirs import flag is set `-isb`, all immediate sub dirs from the uploaded protos.
+Consider a zip file with the following tree dir.
+
+```
+proto
+├── prj-bar
+│   └── bar
+│       ├── bar.pb.go
+│       └── bar.proto
+└── prj-foo
+    └── foo
+        ├── foo.pb.go
+        ├── foo.proto
+        ├── hello.pb.go
+        └── hello.prot
+``` 
+
+`prj-foo` and `prj-bar` inside `/proto`, will be imported by the `protoc` with the compile option `-I` allowing us to have different packages in different sub directories.
+
+Please make you proto well behaved:
+* all proto files have the `option go_package`.
+  * eg: `option go_package = "github.com/quintans/foo";`
+* all the imports must be relative to the current file structure
+  * eg: `import "github.com/quintans/bar/bar.proto";` ==> `import "bar/bar.proto";`
+* do not use `.` in the package name.
+  * eg: `svc.foo` => `foo`. It is best to make it consistent with the folder name.
+
+Finally start gripmock specifying the top level proto folder
+```sh
+gripmock -o ./grpc ./proto
+```
+
+or without an initial proto folder 
+
+```sh
+gripmock -o ./grpc
+```
+
+Docker
+```sh
+docker run -p 4770:4770 -p 4771:4771 -p 4772:4772 -v /mypath:/proto -v /mystubs:/stub tkpd/gripmock --stub=/stub /proto
+```
+
+or without an initial proto folder or stubs
+
+```sh
+docker run -p 4770:4770 -p 4771:4771 -p 4772:4772 tkpd/gripmock
+```
+
+### Uploading proto files
+Proto files can be uploaded by zipping the proto folder and upload it to `http://localhost:4772/upload`. There is also an utility tool at the `tool` package. 
+
+This will add up to the existing proto files.

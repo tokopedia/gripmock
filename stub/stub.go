@@ -1,13 +1,14 @@
 package stub
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
-	
+
 	"github.com/go-chi/chi"
 )
 
@@ -19,7 +20,7 @@ type Options struct {
 
 const DEFAULT_PORT = "4771"
 
-func RunStubServer(opt Options) {
+func RunStubServer(ctx context.Context, opt Options) <-chan struct{} {
 	if opt.Port == "" {
 		opt.Port = DEFAULT_PORT
 	}
@@ -34,11 +35,29 @@ func RunStubServer(opt Options) {
 		readStubFromFile(opt.StubPath)
 	}
 
-	fmt.Println("Serving stub admin on http://" + addr)
+	log.Println("Serving stub admin on http://" + addr)
+	srv := http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+	done := make(chan struct{})
 	go func() {
-		err := http.ListenAndServe(addr, r)
-		log.Fatal(err)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			// Error starting or closing listener:
+			log.Fatalf("HTTP stub server ListenAndServe: %v", err)
+		}
+		close(done)
 	}()
+	go func() {
+		<-ctx.Done()
+		log.Printf("HTTP stub server Shutdown")
+		if err := srv.Shutdown(ctx); err != nil && err != context.Canceled {
+			// Error from closing listeners, or context cancel:
+			log.Printf("Error: HTTP stub server Shutdown: %v", err)
+		}
+	}()
+
+	return done
 }
 
 func responseError(err error, w http.ResponseWriter) {
@@ -106,7 +125,7 @@ func validateStub(stub *Stub) error {
 	if stub.Method == "" {
 		return fmt.Errorf("Method name can't be emtpy")
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
@@ -143,11 +162,11 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		responseError(err, w)
 		return
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
-	
+
 	output, err := findStub(stub)
 	if err != nil {
 		log.Println(err)

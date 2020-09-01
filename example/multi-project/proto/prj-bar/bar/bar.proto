@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option go_package="gripmock/prj-bar/bar";
+
+package bar;
+
+message Request{
+    string name = 1;
+}
