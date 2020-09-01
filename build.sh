@@ -7,4 +7,4 @@ fi
 
 go build ../.
 
-docker build -t "tkpd/gripmock:$1" .
+docker build -t "quintans/gripmock:$1" .
