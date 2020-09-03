@@ -2,7 +2,7 @@ syntax = "proto3";
 package bar;
 
 // this will be used to determine import path in gripmock's generated server
-option go_package  = "github.com/tokopedia/gripmock/example/multi-package/bar";
+option go_package  = "github.com/quintans/gripmock/example/multi-package/bar";
 
 message Bar{
     string name = 1;

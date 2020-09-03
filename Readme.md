@@ -16,12 +16,12 @@ basic syntax to run GripMock is
 `gripmock <protofile>`
 
 - Install [Docker](https://docs.docker.com/install/)
-- Run `docker pull tkpd/gripmock` to pull the image
-- We gonna mount `/mypath/hello.proto` (it must a fullpath) into container and also we expose ports needed. Run `docker run -p 4770:4770 -p 4771:4771 -v /mypath:/proto tkpd/gripmock /proto/hello.proto`
+- Run `docker pull quintans/gripmock` to pull the image
+- We gonna mount `/mypath/hello.proto` (it must a fullpath) into container and also we expose ports needed. Run `docker run -p 4770:4770 -p 4771:4771 -v /mypath:/proto quintans/gripmock /proto/hello.proto`
 - On separate terminal we gonna add stub into stub service. Run `curl -X POST -d '{"service":"Greeter","method":"SayHello","input":{"equals":{"name":"gripmock"}},"output":{"data":{"message":"Hello GripMock"}}}' localhost:4771/add `
 - Now we are ready to test it with our client. you can find client example file under `example/client/`. Execute one of your preferred language. Example for go: `go run example/client/go/*.go`
 
-Check [`example`](https://github.com/tokopedia/gripmock/tree/master/example) folder for various usecase of gripmock.
+Check [`example`](https://github.com/quintans/gripmock/tree/master/example) folder for various usecase of gripmock.
 
 ## Stubbing
 
@@ -74,7 +74,7 @@ For our `hello` service example we put stub with below text:
 You could initialize gripmock with stub json files and provide the path using `--stub` argument. For example you may 
 mount  your stub file in `/mystubs` folder then mount it to docker like
  
- `docker run -p 4770:4770 -p 4771:4771 -v /mypath:/proto -v /mystubs:/stub tkpd/gripmock --stub=/stub /proto/hello.proto`
+ `docker run -p 4770:4770 -p 4771:4771 -v /mypath:/proto -v /mystubs:/stub quintans/gripmock --stub=/stub /proto/hello.proto`
  
 Please note that Gripmock still serve http stubbing to modify stored stubs on the fly.
  
@@ -222,13 +222,13 @@ gripmock -o ./grpc
 
 Docker
 ```sh
-docker run -p 4770:4770 -p 4771:4771 -p 4772:4772 -v /mypath:/proto -v /mystubs:/stub tkpd/gripmock --stub=/stub /proto
+docker run -p 4770:4770 -p 4771:4771 -p 4772:4772 -v /mypath:/proto -v /mystubs:/stub quintans/gripmock --stub=/stub /proto
 ```
 
 or without an initial proto folder or stubs
 
 ```sh
-docker run -p 4770:4770 -p 4771:4771 -p 4772:4772 tkpd/gripmock
+docker run -p 4770:4770 -p 4771:4771 -p 4772:4772 quintans/gripmock
 ```
 
 ### Uploading proto files

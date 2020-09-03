@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package="github.com/tokopedia/gripmock/bar";
+option go_package="github.com/quintans/gripmock/bar";
 
 package bar;
 

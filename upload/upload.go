@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/tokopedia/gripmock/servers"
+	"github.com/quintans/gripmock/servers"
 )
 
 type Options struct {

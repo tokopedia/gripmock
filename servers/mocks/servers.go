@@ -7,7 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	servers "github.com/tokopedia/gripmock/servers"
+	servers "github.com/quintans/gripmock/servers"
 	reflect "reflect"
 )
 

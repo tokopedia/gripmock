@@ -5,7 +5,7 @@ import (
 	reflect "reflect"
 
 	proto "github.com/golang/protobuf/proto"
-	bar "github.com/tokopedia/gripmock/example/upload/client/bar"
+	bar "github.com/quintans/gripmock/example/upload/client/bar"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

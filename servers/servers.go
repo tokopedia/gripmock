@@ -12,8 +12,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/tokopedia/gripmock/stub"
-	"github.com/tokopedia/gripmock/tool"
+	"github.com/quintans/gripmock/stub"
+	"github.com/quintans/gripmock/tool"
 )
 
 //go:generate mockgen -source=servers.go -destination mocks/servers.go -package=mocks Rebooter

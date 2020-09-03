@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	pb "github.com/tokopedia/gripmock/example/well_known_types"
+	pb "github.com/quintans/gripmock/example/well_known_types"
 	"google.golang.org/grpc"
 )
 

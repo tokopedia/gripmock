@@ -1,4 +1,4 @@
-module github.com/tokopedia/gripmock
+module github.com/quintans/gripmock
 
 go 1.15
 

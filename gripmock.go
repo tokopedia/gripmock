@@ -9,9 +9,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/tokopedia/gripmock/servers"
-	"github.com/tokopedia/gripmock/stub"
-	"github.com/tokopedia/gripmock/upload"
+	"github.com/quintans/gripmock/servers"
+	"github.com/quintans/gripmock/stub"
+	"github.com/quintans/gripmock/upload"
 )
 
 func main() {

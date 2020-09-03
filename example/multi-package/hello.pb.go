@@ -6,7 +6,7 @@ package hello
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import bar "github.com/tokopedia/gripmock/example/multi-package/bar"
+import bar "github.com/quintans/gripmock/example/multi-package/bar"
 
 import (
 	context "golang.org/x/net/context"

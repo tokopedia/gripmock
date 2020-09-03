@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/tokopedia/gripmock/example/upload/client/bar"
-	"github.com/tokopedia/gripmock/example/upload/client/foo"
-	"github.com/tokopedia/gripmock/servers"
-	"github.com/tokopedia/gripmock/tool"
+	"github.com/quintans/gripmock/example/upload/client/bar"
+	"github.com/quintans/gripmock/example/upload/client/foo"
+	"github.com/quintans/gripmock/servers"
+	"github.com/quintans/gripmock/tool"
 	"google.golang.org/grpc"
 )
 

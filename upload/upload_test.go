@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/quintans/gripmock/servers"
+	"github.com/quintans/gripmock/servers/mocks"
+	"github.com/quintans/gripmock/tool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tokopedia/gripmock/servers"
-	"github.com/tokopedia/gripmock/servers/mocks"
-	"github.com/tokopedia/gripmock/tool"
 )
 
 func TestUploader(t *testing.T) {
