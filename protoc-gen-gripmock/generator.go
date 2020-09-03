@@ -166,7 +166,9 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 
 			// skip whether its not intended deps
 			// or has empty Go package
-			if proto.GetName() != dep || pkg == "" {
+			// or it already has an alias
+			_, ok := deps[pkg]
+			if proto.GetName() != dep || pkg == "" || ok {
 				continue
 			}
 

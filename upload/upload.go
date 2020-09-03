@@ -37,6 +37,12 @@ func RunUploadServer(ctx context.Context, opt Options, rebooter servers.Rebooter
 	r := chi.NewRouter()
 	r.Post("/upload", us.handleUpload)
 	r.Post("/reset", us.handleReset)
+	r.Get("/alive", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("I'm alive: " + servers.Version))
+	})
+	fs := http.FileServer(http.Dir("/"))
+	http.StripPrefix("/dir/", fs)
+	r.Get("/dir/*", http.StripPrefix("/dir/", fs).ServeHTTP)
 
 	log.Println("Serving proto upload on http://" + addr)
 	srv := http.Server{

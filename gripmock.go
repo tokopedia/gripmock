@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -13,10 +12,6 @@ import (
 	"github.com/tokopedia/gripmock/servers"
 	"github.com/tokopedia/gripmock/stub"
 	"github.com/tokopedia/gripmock/upload"
-)
-
-const (
-	version = "v0.0.1"
 )
 
 func main() {
@@ -37,12 +32,12 @@ func main() {
 	}
 
 	if *ver {
-		fmt.Println("version:", version)
+		log.Println("version:", servers.Version)
 		return
 	}
 
 	flag.Parse()
-	log.Println("Starting GripMock", version)
+	log.Println("Starting GripMock", servers.Version)
 	goPath := os.Getenv("GOPATH")
 	if goPath == "" {
 		log.Fatal("GOPATH is empty")

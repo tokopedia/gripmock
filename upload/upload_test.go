@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -30,7 +31,7 @@ func TestUploader(t *testing.T) {
 			rebooterMock: func(t *testing.T) (*mocks.MockRebooter, *gomock.Controller) {
 				ctrl := gomock.NewController(t)
 				rebooter := mocks.NewMockRebooter(ctrl)
-				rebooter.EXPECT().UploadDir().Return("ip").Times(1)
+				rebooter.EXPECT().UploadDir().Return("test-upload-dir").Times(1)
 				rebooter.EXPECT().Shutdown().Times(1)
 				rebooter.EXPECT().Boot(gomock.Any()).Times(1)
 				return rebooter, ctrl
@@ -41,6 +42,9 @@ func TestUploader(t *testing.T) {
 				return httptest.NewRequest("POST", "/upload", bytes.NewReader([]byte(payload)))
 			},
 			handler: func(us uploadServer, w http.ResponseWriter, r *http.Request) {
+				// created when downloading the zip
+				defer os.RemoveAll("test-upload-dir")
+
 				us.handleUpload(w, r)
 			},
 			expect: "",

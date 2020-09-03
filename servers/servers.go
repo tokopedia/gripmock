@@ -18,6 +18,7 @@ import (
 
 const (
 	binaryName = "grpcserver"
+	Version    = "v0.0.2"
 )
 
 type Rebooter interface {
