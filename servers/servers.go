@@ -1,6 +1,7 @@
 package servers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 	"syscall"
 
 	"github.com/tokopedia/gripmock/stub"
+	"github.com/tokopedia/gripmock/tool"
 )
 
 //go:generate mockgen -source=servers.go -destination mocks/servers.go -package=mocks Rebooter
@@ -150,6 +152,7 @@ func (s *Servers) Reset(reset Reset) {
 
 func generateProtoc(goPath string, other ProtocParam, output string) error {
 	src := goPath + "/src"
+	log.Println("Generating *.pb.go to", src)
 	args := []string{}
 	// include well-known-types
 	for _, i := range other.Imports {
@@ -161,9 +164,7 @@ func generateProtoc(goPath string, other ProtocParam, output string) error {
 		other.AdminPort, other.GrpcAddress, other.GrpcPort, output))
 	args = append(args, other.ProtoPaths...)
 	protoc := exec.Command("protoc", args...)
-	protoc.Stdout = os.Stdout
-	protoc.Stderr = os.Stderr
-	err := protoc.Run()
+	err := runCmd(protoc)
 	if err != nil {
 		return fmt.Errorf("Fail on protoc: %w", err)
 	}
@@ -179,13 +180,12 @@ func generateProtoc(goPath string, other ProtocParam, output string) error {
 		if fi.Mode().IsRegular() && strings.HasSuffix(name, ".pb.go") {
 			source := filepath.Join(src, name)
 			sed := exec.Command("sed", "-i", `s/^package \w*$/package main/`, source)
-			sed.Stderr = os.Stderr
-			sed.Stdout = os.Stdout
-			err = sed.Run()
+			err := runCmd(sed)
 			if err != nil {
 				return fmt.Errorf("Fail on sed: %w", err)
 			}
 			target := filepath.Join(output, name)
+			log.Println("Moving", source, "to", target)
 			err = os.Remove(target)
 			if err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("Fail to remove target go file after sed: %w", err)
@@ -201,6 +201,7 @@ func generateProtoc(goPath string, other ProtocParam, output string) error {
 }
 
 func buildServer(goPath string, output string) error {
+	log.Println("Building", output, "and outputting", binaryName)
 	files, err := ioutil.ReadDir(output)
 	if err != nil {
 		log.Fatalf("Can't read dir for go files %s. %v\n", output, err)
@@ -221,20 +222,16 @@ func buildServer(goPath string, output string) error {
 		"GOPATH=" + goPath,
 		"HOME=" + os.Getenv("HOME"),
 	}
-	build.Stdout = os.Stdout
-	build.Stderr = os.Stderr
-	err = build.Run()
-	return err
+	return runCmd(build)
 }
 
 func runGrpcServer(ctx context.Context, output string) (<-chan struct{}, error) {
 	run := exec.Command(output + binaryName)
-	run.Stdout = os.Stdout
-	run.Stderr = os.Stderr
-	err := run.Start()
+	err := runCmd(run)
 	if err != nil {
 		return nil, err
 	}
+
 	log.Printf("grpc server pid: %d\n", run.Process.Pid)
 	done := make(chan struct{})
 	go func() {
@@ -303,4 +300,18 @@ func ExpandDirs(names []string) ([]string, []string) {
 		}
 	}
 	return paths, imps
+}
+
+func runCmd(cmd *exec.Cmd) error {
+	buf := bytes.Buffer{}
+	wout := tool.NewMultiWriter(os.Stdout, &buf)
+	werr := tool.NewMultiWriter(os.Stderr, &buf)
+
+	cmd.Stdout = wout
+	cmd.Stderr = werr
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("%s\n: %w", buf.String(), err)
+	}
+	return nil
 }
