@@ -135,6 +135,8 @@ type uploadServer struct {
 }
 
 func (s uploadServer) handleUpload(w http.ResponseWriter, r *http.Request) {
+	log.Println("Receiving new proto files.")
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error Retrieving the File: %v\n", err)
@@ -171,6 +173,8 @@ func (s uploadServer) handleReset(w http.ResponseWriter, r *http.Request) {
 		responseError(w, err)
 		return
 	}
+
+	log.Printf("Resetting %+v\n", reset)
 
 	// shutdown
 	s.rebooter.Shutdown()

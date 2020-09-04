@@ -235,3 +235,18 @@ docker run -p 4770:4770 -p 4771:4771 -p 4772:4772 quintans/gripmock
 Proto files can be uploaded by zipping the proto folder and upload it to `http://localhost:4772/upload`. There is also an utility tool at the `tool` package. 
 
 This will add up to the existing proto files.
+
+## Troubleshooting
+
+When an error occurs it have the detail of what went wrong.
+If that is not enough you can browse the image file system through `http://localhost:4772/dir/`
+
+`/go/src/grpc` is the default location of the generated server code `server.go`.
+
+If you still can't figure out what is going on you can always run this project and try debug the problem.
+
+```sh
+svc-gripmock --imports=path/to/protos/folder1,path/to/protos/folder2 path/to/protos
+```
+
+then you can look in `$GOPATH/src/grpc` for the generated server

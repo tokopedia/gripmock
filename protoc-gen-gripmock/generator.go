@@ -168,7 +168,7 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 			// or has empty Go package
 			// or it already has an alias
 			_, ok := deps[pkg]
-			if proto.GetName() != dep || pkg == "" || ok {
+			if ok || proto.GetName() != dep || pkg == "" {
 				continue
 			}
 
@@ -210,7 +210,8 @@ func extractServices(protos []*descriptor.FileDescriptorProto, deps map[string]s
 	for _, proto := range protos {
 		for _, svc := range proto.GetService() {
 			var s Service
-			s.Package = resolvePackage(deps, proto.GetPackage())
+			alias, _ := getGoPackage(proto)
+			s.Package = alias
 			s.Name = svc.GetName()
 			methods := make([]methodTemplate, len(svc.Method))
 			for j, method := range svc.Method {
@@ -236,15 +237,6 @@ func extractServices(protos []*descriptor.FileDescriptorProto, deps map[string]s
 		}
 	}
 	return svcTmp
-}
-
-func resolvePackage(deps map[string]string, pack string) string {
-	for _, alias := range deps {
-		if alias == pack {
-			return pack
-		}
-	}
-	return ""
 }
 
 func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tipe string) string {
