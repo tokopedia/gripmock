@@ -20,7 +20,7 @@ import (
 
 const (
 	binaryName = "grpcserver"
-	Version    = "v0.0.2"
+	Version    = "v0.0.3"
 )
 
 type Rebooter interface {
@@ -227,11 +227,10 @@ func buildServer(goPath string, output string) error {
 
 func runGrpcServer(ctx context.Context, output string) (<-chan struct{}, error) {
 	run := exec.Command(output + binaryName)
-	err := runCmd(run)
+	err := startCmd(run)
 	if err != nil {
 		return nil, err
 	}
-
 	log.Printf("grpc server pid: %d\n", run.Process.Pid)
 	done := make(chan struct{})
 	go func() {
@@ -310,6 +309,20 @@ func runCmd(cmd *exec.Cmd) error {
 	cmd.Stdout = wout
 	cmd.Stderr = werr
 	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("%s\n: %w", buf.String(), err)
+	}
+	return nil
+}
+
+func startCmd(cmd *exec.Cmd) error {
+	buf := bytes.Buffer{}
+	wout := tool.NewMultiWriter(os.Stdout, &buf)
+	werr := tool.NewMultiWriter(os.Stderr, &buf)
+
+	cmd.Stdout = wout
+	cmd.Stderr = werr
+	err := cmd.Start()
 	if err != nil {
 		return fmt.Errorf("%s\n: %w", buf.String(), err)
 	}

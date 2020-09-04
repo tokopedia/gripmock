@@ -1,12 +1,14 @@
 package stub
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"reflect"
 	"regexp"
+	"sort"
 	"sync"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -152,12 +154,20 @@ func rankMatch(expect string, closeMatch map[string]interface{}) float32 {
 }
 
 func renderFieldAsString(fields map[string]interface{}) string {
-	template := "{\n"
-	for key, val := range fields {
-		template += fmt.Sprintf("\t%s: %v\n", key, val)
+	// lets make the rendering deterministic
+	keys := make([]string, 0, len(fields))
+	for k := range fields {
+		keys = append(keys, k)
 	}
-	template += "}"
-	return template
+	sort.Strings(keys)
+
+	buff := bytes.Buffer{}
+	buff.WriteString("{\n")
+	for _, k := range keys {
+		buff.WriteString(fmt.Sprintf("\t%s: %v\n", k, fields[k]))
+	}
+	buff.WriteString("}")
+	return buff.String()
 }
 
 func equals(input1, input2 map[string]interface{}) bool {
