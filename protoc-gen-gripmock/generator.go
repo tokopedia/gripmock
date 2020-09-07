@@ -210,8 +210,8 @@ func extractServices(protos []*descriptor.FileDescriptorProto, deps map[string]s
 	for _, proto := range protos {
 		for _, svc := range proto.GetService() {
 			var s Service
-			alias, _ := getGoPackage(proto)
-			s.Package = alias
+			_, pkg := getGoPackage(proto)
+			s.Package = deps[pkg]
 			s.Name = svc.GetName()
 			methods := make([]methodTemplate, len(svc.Method))
 			for j, method := range svc.Method {
