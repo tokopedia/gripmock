@@ -40,17 +40,26 @@ func ZipFolder(folder string) ([]byte, error) {
 	// Create a new zip archive.
 	w := zip.NewWriter(buf)
 
-	err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
+	dir, err := filepath.Abs(folder)
+	if err != nil {
+		return nil, err
+	}
+
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if path == folder {
+		// ignore top level folder
+		if path == dir {
 			return nil
 		}
-		relPath := path[len(folder)+1:]
+		// remove top level folder from path
+		relPath := path[len(dir)+1:]
+
 		if info.IsDir() {
 			relPath += "/"
 		}
+
 		f, err := w.Create(relPath)
 		if err != nil {
 			return err

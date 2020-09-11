@@ -9,27 +9,33 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/caarlos0/env/v6"
 	"github.com/quintans/gripmock/servers"
 	"github.com/quintans/gripmock/stub"
 	"github.com/quintans/gripmock/upload"
 )
+
+type Config struct {
+	GrpcAddr   string `env:"GRIPMOCK_GRPC_ADDRESS"`
+	GrpcPort   string `env:"GRIPMOCK_GRPC_PORT"`
+	StubAddr   string `env:"GRIPMOCK_STUB_ADDRESS"`
+	StubPort   string `env:"GRIPMOCK_STUB_PORT"`
+	UploadAddr string `env:"GRIPMOCK_UPLOAD_ADDRESS"`
+	UploadPort string `env:"GRIPMOCK_UPLOAD_PORT"`
+}
 
 func main() {
 	ver := flag.Bool("v", false, "returns the version")
 	output := flag.String("o", "", "directory to output server.go. Default is $GOPATH/src/grpc/")
 	grpcPort := flag.String("grpc-port", "4770", "Port of gRPC tcp server")
 	grpcBindAddr := flag.String("grpc-listen", "", "Address the gRPC server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
-	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
+	adminPort := flag.String("admin-port", "4771", "Port of stub admin server")
 	adminBindAddr := flag.String("admin-listen", "", "Address the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
 	upPort := flag.String("up-port", "4772", "Port of upload proto server")
 	upBindAddr := flag.String("up-listen", "", "Address the upload proto server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	imports := flag.String("imports", "", "comma separated imports path. Path /protobuf is always set. It is where gripmock Dockerfile install WKT protos")
 	importSubdirs := flag.Bool("isd", false, "Immediate sub dirs of the upload, will be imported")
-	// for backwards compatibility
-	if len(os.Args) > 1 && os.Args[1] == "gripmock" {
-		os.Args = append(os.Args[:1], os.Args[2:]...)
-	}
 
 	if *ver {
 		log.Println("version:", servers.Version)
@@ -38,6 +44,29 @@ func main() {
 
 	flag.Parse()
 	log.Println("Starting GripMock", servers.Version)
+
+	// override with env vars if present
+	cfg := Config{}
+	err := env.Parse(&cfg)
+	if cfg.GrpcAddr != "" {
+		*grpcBindAddr = cfg.GrpcAddr
+	}
+	if cfg.GrpcPort != "" {
+		*grpcPort = cfg.GrpcPort
+	}
+	if cfg.StubAddr != "" {
+		*adminBindAddr = cfg.StubAddr
+	}
+	if cfg.GrpcPort != "" {
+		*adminPort = cfg.StubPort
+	}
+	if cfg.UploadAddr != "" {
+		*upBindAddr = cfg.UploadAddr
+	}
+	if cfg.UploadPort != "" {
+		*upPort = cfg.UploadPort
+	}
+
 	goPath := os.Getenv("GOPATH")
 	if goPath == "" {
 		log.Fatal("GOPATH is empty")
@@ -98,12 +127,12 @@ func main() {
 		goPath,
 		stub.Options{
 			StubPath: *stubPath,
-			Port:     *adminport,
+			Port:     *adminPort,
 			BindAddr: *adminBindAddr,
 		},
 		servers.ProtocParam{
 			ProtoPaths:    protoPaths,
-			AdminPort:     *adminport,
+			AdminPort:     *adminPort,
 			GrpcAddress:   *grpcBindAddr,
 			GrpcPort:      *grpcPort,
 			Imports:       importDirs,
@@ -113,7 +142,7 @@ func main() {
 		upProtoFolder,
 	)
 
-	err := srvrs.CleanUploadDir()
+	err = srvrs.CleanUploadDir()
 	if err != nil {
 		log.Fatalf("Unable to clean upload dir: %v", err)
 	}

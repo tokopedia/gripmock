@@ -76,12 +76,12 @@ func responseError(w http.ResponseWriter, err error) {
 // Unzip will decompress a zip bytes, moving all files and folders
 // within the zip bytes (parameter 1) to an output directory (parameter 2).
 func Unzip(src []byte, dest string) error {
+	log.Println("Unzipping protos to", dest)
+
 	r, err := zip.NewReader(bytes.NewReader(src), int64(len(src)))
 	if err != nil {
 		return err
 	}
-
-	var filenames []string
 
 	for _, f := range r.File {
 
@@ -92,8 +92,6 @@ func Unzip(src []byte, dest string) error {
 		if !strings.HasPrefix(fPath, filepath.Clean(dest)+string(os.PathSeparator)) {
 			return fmt.Errorf("%s: illegal file path", fPath)
 		}
-
-		filenames = append(filenames, fPath)
 
 		if f.FileInfo().IsDir() {
 			// Make Folder

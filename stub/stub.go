@@ -163,8 +163,6 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// due to golang implementation
-	// method name must capital
 	stub.Method = strings.Title(stub.Method)
 
 	output, err := findStub(stub)

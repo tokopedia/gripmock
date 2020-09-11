@@ -3,6 +3,7 @@ module github.com/quintans/gripmock
 go 1.15
 
 require (
+	github.com/caarlos0/env/v6 v6.3.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/golang/mock v1.4.3
