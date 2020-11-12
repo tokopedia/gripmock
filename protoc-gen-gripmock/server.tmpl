@@ -178,8 +178,6 @@ func findStub(service, method string, in, out protoiface.MessageV1) error {
 		return fmt.Errorf(respRPC.Error)
 	}
 
-    log.Printf("respRPC: %v", respRPC.Data)
-
 	data, _ := json.Marshal(respRPC.Data)
 	return jsonpb.Unmarshal(bytes.NewReader(data), out)
 }
