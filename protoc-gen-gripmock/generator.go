@@ -10,52 +10,67 @@ import (
 	"strings"
 	"text/template"
 
+	"google.golang.org/protobuf/types/pluginpb"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/golang/protobuf/protoc-gen-go/generator"
-	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/markbates/pkger"
 	"golang.org/x/tools/imports"
+	"google.golang.org/protobuf/compiler/protogen"
 )
 
 func main() {
-	gen := generator.New()
-	byt, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		log.Fatalf("Failed to read input: %v", err)
+	// Tip of the hat to Tim Coulson
+	// https://medium.com/@tim.r.coulson/writing-a-protoc-plugin-with-google-golang-org-protobuf-cd5aa75f5777
+
+	// Protoc passes pluginpb.CodeGeneratorRequest in via stdin
+	// marshalled with Protobuf
+	input, _ := ioutil.ReadAll(os.Stdin)
+	var request pluginpb.CodeGeneratorRequest
+	if err := proto.Unmarshal(input, &request); err != nil {
+		log.Fatalf("error unmarshalling [%s]: %v", string(input), err)
 	}
 
-	err = proto.Unmarshal(byt, gen.Request)
+	// Initialise our plugin with default options
+	opts := protogen.Options{}
+	plugin, err := opts.New(&request)
 	if err != nil {
-		log.Fatalf("Failed to unmarshal proto: %v", err)
+		log.Fatalf("error initializing plugin: %v", err)
 	}
 
-	gen.CommandLineParameters(gen.Request.GetParameter())
+	protos := make([]*descriptor.FileDescriptorProto, len(plugin.Files))
+	for index, file := range plugin.Files {
+		protos[index] = file.Proto
+	}
+
+	params := make(map[string]string)
+	for _, param := range strings.Split(request.GetParameter(), ",") {
+		split := strings.Split(param, "=")
+		params[split[0]] = split[1]
+	}
 
 	buf := new(bytes.Buffer)
-	err = generateServer(gen.Request.ProtoFile, &Options{
+	err = generateServer(protos, &Options{
 		writer:    buf,
-		adminPort: gen.Param["admin-port"],
-		grpcAddr:  fmt.Sprintf("%s:%s", gen.Param["grpc-address"], gen.Param["grpc-port"]),
+		adminPort: params["admin-port"],
+		grpcAddr:  fmt.Sprintf("%s:%s", params["grpc-address"], params["grpc-port"]),
 	})
+
 	if err != nil {
 		log.Fatalf("Failed to generate server %v", err)
 	}
-	gen.Response.File = []*plugin_go.CodeGeneratorResponse_File{
-		{
-			Name:    proto.String("server.go"),
-			Content: proto.String(buf.String()),
-		},
+
+	file := plugin.NewGeneratedFile("server.go", ".")
+	file.Write(buf.Bytes())
+
+	// Generate a response from our plugin and marshall as protobuf
+	out, err := proto.Marshal(plugin.Response())
+	if err != nil {
+		log.Fatalf("error marshalling plugin response: %v", err)
 	}
 
-	data, err := proto.Marshal(gen.Response)
-	if err != nil {
-		gen.Error(err, "failed to marshal output proto")
-	}
-	_, err = os.Stdout.Write(data)
-	if err != nil {
-		gen.Error(err, "failed to write output proto")
-	}
+	// Write the response to stdout, to be picked up by protoc
+	os.Stdout.Write(out)
 }
 
 type generatorParam struct {
@@ -203,6 +218,12 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 		split := strings.Split(splitSlash[len(splitSlash)-1], ".")
 		alias = split[0]
 	}
+
+	// Aliases can't be keywords
+	if isKeyword(alias) {
+		alias = fmt.Sprintf("%s_pb", alias)
+	}
+
 	return
 }
 
@@ -261,4 +282,42 @@ func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tip
 		}
 	}
 	return targetType
+}
+
+func isKeyword(word string) bool {
+	keywords := [...]string{
+		"break",
+		"case",
+		"chan",
+		"const",
+		"continue",
+		"default",
+		"defer",
+		"else",
+		"fallthrough",
+		"for",
+		"func",
+		"go",
+		"goto",
+		"if",
+		"import",
+		"interface",
+		"map",
+		"package",
+		"range",
+		"return",
+		"select",
+		"struct",
+		"switch",
+		"type",
+		"var",
+	}
+
+	for _, keyword := range keywords {
+		if strings.ToLower(word) == keyword {
+			return true
+		}
+	}
+
+	return false
 }
