@@ -10,11 +10,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/gobuffalo/packr/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"github.com/markbates/pkger"
 	"golang.org/x/tools/imports"
 )
 
@@ -99,13 +99,17 @@ type Options struct {
 var SERVER_TEMPLATE string
 
 func init() {
-	tmplBox := packr.New("template", "")
-
-	s, err := tmplBox.FindString("server.tmpl")
+	f, err := pkger.Open("/protoc-gen-gripmock/server.tmpl")
 	if err != nil {
-		log.Fatal("Can't find server.tmpl")
+		log.Fatalf("error opening server.tmpl: %s", err)
 	}
-	SERVER_TEMPLATE = s
+
+	bytes, err := ioutil.ReadAll(f)
+	if err != nil {
+		log.Fatalf("error reading server.tmpl: %s", err)
+	}
+
+	SERVER_TEMPLATE = string(bytes)
 }
 
 func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) error {
