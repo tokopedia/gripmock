@@ -11,9 +11,11 @@ import (
 	"net"
 	"net/http"
 
+    "github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/runtime/protoiface"
 )
 {{ range $package, $alias := .Dependencies }}
 import {{$alias}} "{{$package}}"
@@ -144,7 +146,7 @@ type response struct {
 	Error string      `json:"error"`
 }
 
-func findStub(service, method string, in, out interface{}) error {
+func findStub(service, method string, in, out protoiface.MessageV1) error {
 	url := fmt.Sprintf("http://localhost%s/find", HTTP_PORT)
 	pyl := payload{
 		Service: service,
@@ -176,7 +178,9 @@ func findStub(service, method string, in, out interface{}) error {
 		return fmt.Errorf(respRPC.Error)
 	}
 
+    log.Printf("respRPC: %v", respRPC.Data)
+
 	data, _ := json.Marshal(respRPC.Data)
-	return json.Unmarshal(data, out)
+	return jsonpb.Unmarshal(bytes.NewReader(data), out)
 }
 {{ end }}
