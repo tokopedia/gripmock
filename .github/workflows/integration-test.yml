@@ -34,4 +34,7 @@ jobs:
       uses: ./
       with:
         entrypoint: example/multi-files/entrypoint.sh
-
+    - name: Run one-of Example
+      uses: ./
+      with:
+        entrypoint: example/one-of/entrypoint.sh

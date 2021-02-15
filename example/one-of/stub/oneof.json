@@ -1,0 +1,16 @@
+{ 
+    "service":"Gripmock",
+    "method":"SayHello",
+    "input":{
+      "equals":{
+        "name":"tokopedia"
+      }
+    },
+    "output":{
+      "data":{
+        "reply1":{
+          "message":"Hello GripMock"
+        }
+      }
+    }
+  }
