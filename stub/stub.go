@@ -60,6 +60,7 @@ type Input struct {
 }
 
 type Output struct {
+	Delay int                    `json:"delay"`
 	Data  map[string]interface{} `json:"data"`
 	Error string                 `json:"error"`
 }

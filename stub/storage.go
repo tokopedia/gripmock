@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
@@ -71,6 +72,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Equals; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"equals", expect})
 			if equals(stub.Data, expect) {
+				time.Sleep(time.Duration(stubrange.Output.Delay)*time.Millisecond)
 				return &stubrange.Output, nil
 			}
 		}
@@ -78,6 +80,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Contains; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"contains", expect})
 			if contains(stubrange.Input.Contains, stub.Data) {
+				time.Sleep(time.Duration(stubrange.Output.Delay)*time.Millisecond)
 				return &stubrange.Output, nil
 			}
 		}
@@ -85,6 +88,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Matches; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"matches", expect})
 			if matches(stubrange.Input.Matches, stub.Data) {
+				time.Sleep(time.Duration(stubrange.Output.Delay)*time.Millisecond)
 				return &stubrange.Output, nil
 			}
 		}
