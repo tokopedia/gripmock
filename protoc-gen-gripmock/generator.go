@@ -61,8 +61,10 @@ func main() {
 	}
 
 	file := plugin.NewGeneratedFile("server.go", ".")
-	file.Write(buf.Bytes())
-
+	_, err = file.Write(buf.Bytes())
+	if err != nil {
+		log.Fatalf("Unable to write to file %v", err)
+	}
 	// Generate a response from our plugin and marshall as protobuf
 	out, err := proto.Marshal(plugin.Response())
 	if err != nil {
@@ -70,15 +72,19 @@ func main() {
 	}
 
 	// Write the response to stdout, to be picked up by protoc
-	os.Stdout.Write(out)
+	_, err = os.Stdout.Write(out)
+	if err != nil {
+		log.Printf("Error %v writing to stdout", err)
+	}
 }
 
 type generatorParam struct {
-	Services     []Service
-	Dependencies map[string]string
-	GrpcAddr     string
-	AdminPort    string
-	PbPath       string
+	Services             []Service
+	Dependencies         map[string]string
+	GrpcAddr             string
+	AdminPort            string
+	PbPath               string
+	KeepServerStreamOpen bool
 }
 
 type Service struct {

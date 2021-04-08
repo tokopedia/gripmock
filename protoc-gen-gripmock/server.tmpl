@@ -72,20 +72,27 @@ type {{.Name}} struct{}
 {{ define "standard_method" }}
 func (s *{{.ServiceName}}) {{.Name}}(ctx context.Context, in *{{.Input}}) (*{{.Output}},error){
 	out := &{{.Output}}{}
-	err := findStub("{{.ServiceName}}", "{{.Name}}", in, out)
+	_, err := findStub("{{.ServiceName}}", "{{.Name}}", in, out)
 	return out, err
 }
 {{ end }}
 
 {{ define "server_stream_method" }}
 func (s *{{.ServiceName}}) {{.Name}}(in *{{.Input}},stream {{.ServiceName}}_{{.Name}}Server) error {
-	out := &{{.Output}}{}
-	err := findStub("{{.ServiceName}}", "{{.Name}}", in, out)
-	if err!=nil {
-		return err
+	for {
+		out := &{{.Output}}{}
+		KeepServerStreamOpen, err := findStub("{{.ServiceName}}", "{{.Name}}", in, out)
+		if err!=nil {
+			return err
+		}
+	 	if err := stream.Send(out); err != nil {
+			 return err
+		 }
+		 if !KeepServerStreamOpen {
+			return nil
+		 }
+		 time.Sleep(25 * time.Second)
 	}
-
-	return stream.Send(out)
 }
 {{ end }}
 
@@ -142,11 +149,12 @@ type payload struct {
 }
 
 type response struct {
-	Data  interface{} `json:"data"`
-	Error string      `json:"error"`
+	Data  interface{} 			`json:"data"`
+	Error string      			`json:"error"`
+	KeepServerStreamOpen bool 	`json:"keepServerStreamOpen"`
 }
 
-func findStub(service, method string, in, out protoiface.MessageV1) error {
+func findStub(service, method string, in, out protoiface.MessageV1) (bool, error) {
 	url := fmt.Sprintf("http://localhost%s/find", HTTP_PORT)
 	pyl := payload{
 		Service: service,
@@ -155,30 +163,30 @@ func findStub(service, method string, in, out protoiface.MessageV1) error {
 	}
 	byt, err := json.Marshal(pyl)
 	if err != nil {
-		return err
+		return false, err
 	}
 	reader := bytes.NewReader(byt)
 	resp, err := http.DefaultClient.Post(url, "application/json", reader)
 	if err != nil {
-		return fmt.Errorf("Error request to stub server %v",err)
+		return false, fmt.Errorf("Error request to stub server %v",err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf(string(body))
+		return false, fmt.Errorf(string(body))
 	}
 
 	respRPC := new(response)
 	err = json.NewDecoder(resp.Body).Decode(respRPC)
 	if err != nil {
-		return fmt.Errorf("decoding json response %v",err)
+		return false, fmt.Errorf("decoding json response %v",err)
 	}
 
 	if respRPC.Error != "" {
-		return fmt.Errorf(respRPC.Error)
+		return false, fmt.Errorf(respRPC.Error)
 	}
 
 	data, _ := json.Marshal(respRPC.Data)
-	return jsonpb.Unmarshal(bytes.NewReader(data), out)
+	return respRPC.KeepServerStreamOpen, jsonpb.Unmarshal(bytes.NewReader(data), out)
 }
 {{ end }}
