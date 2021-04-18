@@ -3,12 +3,11 @@ package stub
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
-	
-	"github.com/go-chi/chi"
 )
 
 type Options struct {
@@ -60,6 +59,7 @@ type Input struct {
 }
 
 type Output struct {
+	Delay Duration          `json:"delay"`
 	Data  map[string]interface{} `json:"data"`
 	Error string                 `json:"error"`
 }
