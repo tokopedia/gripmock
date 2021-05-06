@@ -54,7 +54,7 @@ func main() {
 	protoPaths := flag.Args()
 
 	if len(protoPaths) == 0 {
-		log.Fatal("Need atleast one proto file")
+		log.Fatal("Need at least one proto file")
 	}
 
 	importDirs := strings.Split(*imports, ",")
