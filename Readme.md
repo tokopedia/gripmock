@@ -77,6 +77,8 @@ mount your stub file in `/mystubs` folder then mount it to docker like
  `docker run -p 4770:4770 -p 4771:4771 -v /mypath:/proto -v /mystubs:/stub tkpd/gripmock --stub=/stub /proto/hello.proto`
  
 Please note that Gripmock still serves http stubbing to modify stored stubs on the fly.
+
+You may pass `--stub-watch` option to watch changes in the stub directory. When you edit a file in the directory, it will clean the stubs and load all files in the directory again to make your changes available.
  
 ## <a name="input_matching"></a>Input Matching
 Stub will respond with the expected response only if the request matches any rule. Stub service will serve `/find` endpoint with format:
