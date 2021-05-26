@@ -7,14 +7,15 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	
+
 	"github.com/go-chi/chi"
 )
 
 type Options struct {
-	Port     string
-	BindAddr string
-	StubPath string
+	Port      string
+	BindAddr  string
+	StubPath  string
+	StubWatch bool
 }
 
 const DEFAULT_PORT = "4771"
@@ -32,6 +33,13 @@ func RunStubServer(opt Options) {
 
 	if opt.StubPath != "" {
 		readStubFromFile(opt.StubPath)
+
+		if opt.StubWatch {
+			fmt.Println("Watching for changes in " + opt.StubPath)
+			go func() {
+				watchStubDir(opt.StubPath)
+			}()
+		}
 	}
 
 	fmt.Println("Serving stub admin on http://" + addr)

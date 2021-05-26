@@ -3,6 +3,7 @@ module github.com/tokopedia/gripmock
 go 1.15
 
 require (
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/gobuffalo/here v0.6.2 // indirect
 	github.com/golang/protobuf v1.4.3

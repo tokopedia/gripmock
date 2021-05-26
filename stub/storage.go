@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
@@ -284,4 +285,40 @@ func readStubFromFile(path string) {
 
 		storeStub(stub)
 	}
+}
+
+func watchStubDir(path string) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Printf("Error when watching the stub directory. %v.", err)
+		return
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					clearStorage()
+					readStubFromFile(path)
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Printf("Error when watching the stub directory. %v.", err)
+			}
+		}
+	}()
+
+	err = watcher.Add(path)
+	if err != nil {
+		log.Printf("Error when watching the stub directory %s. %v.", path, err)
+	}
+	<-done
 }
