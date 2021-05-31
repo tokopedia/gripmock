@@ -269,6 +269,11 @@ func readStubFromFile(path string) {
 	}
 
 	for _, file := range files {
+		if file.IsDir() {
+			readStubFromFile(path + "/" + file.Name())
+			continue
+		}
+
 		byt, err := ioutil.ReadFile(path + "/" + file.Name())
 		if err != nil {
 			log.Printf("Error when reading file %s. %v. skipping...", file.Name(), err)
