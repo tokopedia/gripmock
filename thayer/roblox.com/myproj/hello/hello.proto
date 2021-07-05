@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package hello;
+option go_package = "roblox.com/myproj/hello";
+
+import "bar/bar.proto";
+import "foo.proto";
+
+service Gripmock {
+    rpc Greet (bar.Bar) returns (Response);
+}
+

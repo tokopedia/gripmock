@@ -117,6 +117,8 @@ func generateProtoc(param protocParam) {
 	args = append(args, "--go_out=plugins=grpc:"+param.output)
 	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
 		param.adminPort, param.grpcAddress, param.grpcPort, param.output))
+
+	log.Printf("Running: protoc %v", args)
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
@@ -128,12 +130,16 @@ func generateProtoc(param protocParam) {
 	// change package to "main" on generated code
 	for _, proto := range param.protoPath {
 		protoname := getProtoName(proto)
+		sed_cmd := []string{"sed", "-i", `s/^package \w*$/package main/`, param.output+protoname+".pb.go"}
+		log.Printf("Running: sed: %v", sed_cmd)
+		// sed := exec.Command(sed_cmd...)
 		sed := exec.Command("sed", "-i", `s/^package \w*$/package main/`, param.output+protoname+".pb.go")
 		sed.Stderr = os.Stderr
 		sed.Stdout = os.Stdout
 		err = sed.Run()
 		if err != nil {
-			log.Fatal("Fail on sed")
+			// log.Fatal("Fail on sed")
+			log.Println("Fail on sed, trying to continue...")
 		}
 	}
 }
@@ -143,6 +149,7 @@ func buildServer(output string, protoPaths []string) {
 	for _, path := range protoPaths {
 		args = append(args, output+getProtoName(path)+".pb.go")
 	}
+	log.Printf("Running: go %v", args)
 	build := exec.Command("go", args...)
 	build.Stdout = os.Stdout
 	build.Stderr = os.Stderr
@@ -153,6 +160,7 @@ func buildServer(output string, protoPaths []string) {
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
+	log.Printf("Running: %v", output + "grpcserver")
 	run := exec.Command(output + "grpcserver")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr

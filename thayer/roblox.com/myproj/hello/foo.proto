@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package hello;
+option go_package = "roblox.com/myproj/hello";
+
+message Response {
+    string response = 1;
+}
