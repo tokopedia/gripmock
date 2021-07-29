@@ -131,7 +131,7 @@ func (s *{{.ServiceName}}) {{.Name}}(stream {{.ServiceName}}_{{.Name}}Server) er
 
 
 {{ define "register_services" }}
-	Register{{.Name}}Server(s, &{{.Name}}{})
+	{{.Package}}Register{{.Name}}Server(s, &{{.Name}}{})
 {{ end }}
 
 {{ define "find_stub" }}

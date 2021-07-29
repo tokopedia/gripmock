@@ -83,6 +83,7 @@ type generatorParam struct {
 
 type Service struct {
 	Name    string
+	Package string
 	Methods []methodTemplate
 }
 
@@ -170,33 +171,26 @@ func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) erro
 }
 
 func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]string {
-	depsFile := []string{}
-	for _, proto := range protos {
-		depsFile = append(depsFile, proto.GetDependency()...)
-	}
 
 	deps := map[string]string{}
 	aliases := map[string]bool{}
 	aliasNum := 1
-	for _, dep := range depsFile {
-		for _, proto := range protos {
-			alias, pkg := getGoPackage(proto)
+	for _, proto := range protos {
+		alias, pkg := getGoPackage(proto)
 
-			// skip whether its not intended deps
-			// or has empty Go package
-			if proto.GetName() != dep || pkg == "" {
-				continue
-			}
-
-			// in case of found same alias
-			if ok := aliases[alias]; ok {
-				alias = fmt.Sprintf("%s%d", alias, aliasNum)
-				aliasNum++
-			} else {
-				aliases[alias] = true
-			}
-			deps[pkg] = alias
+		// skip if it has empty go package
+		if pkg == "" {
+			continue
 		}
+
+		// in case of found same alias
+		if ok := aliases[alias]; ok {
+			alias = fmt.Sprintf("%s%d", alias, aliasNum)
+			aliasNum++
+		} else {
+			aliases[alias] = true
+		}
+		deps[pkg] = alias
 	}
 
 	return deps
@@ -234,6 +228,10 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 		for _, svc := range proto.GetService() {
 			var s Service
 			s.Name = svc.GetName()
+			alias, _ := getGoPackage(proto)
+			if alias != "" {
+				s.Package = alias + "."
+			}
 			methods := make([]methodTemplate, len(svc.Method))
 			for j, method := range svc.Method {
 				tipe := methodTypeStandard
