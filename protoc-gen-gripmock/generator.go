@@ -173,8 +173,6 @@ func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) erro
 func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]string {
 
 	deps := map[string]string{}
-	aliases := map[string]bool{}
-	aliasNum := 1
 	for _, proto := range protos {
 		alias, pkg := getGoPackage(proto)
 
@@ -183,18 +181,19 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 			continue
 		}
 
-		// in case of found same alias
-		if ok := aliases[alias]; ok {
-			alias = fmt.Sprintf("%s%d", alias, aliasNum)
-			aliasNum++
-		} else {
-			aliases[alias] = true
+		if _, ok := deps[pkg]; ok {
+			continue
 		}
+
 		deps[pkg] = alias
 	}
 
 	return deps
 }
+
+var aliases = map[string]bool{}
+var aliasNum = 1
+var packages = map[string]string{}
 
 func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackage string) {
 	goPackage = proto.GetOptions().GetGoPackage()
@@ -208,15 +207,32 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 		goPackage = splits[0]
 		alias = splits[1]
 	} else {
-		splitSlash := strings.Split(proto.GetName(), "/")
-		split := strings.Split(splitSlash[len(splitSlash)-1], ".")
-		alias = split[0]
+		// get the alias based on the latest folder
+		splitSlash := strings.Split(goPackage, "/")
+		// replace - with _
+		alias = strings.ReplaceAll(splitSlash[len(splitSlash)-1], "-", "_")
+	}
+
+	// if package already discovered just return
+	if al, ok := packages[goPackage]; ok {
+		alias = al
+		return
 	}
 
 	// Aliases can't be keywords
 	if isKeyword(alias) {
 		alias = fmt.Sprintf("%s_pb", alias)
 	}
+
+	// in case of found same alias
+	// add numbers on it
+	if ok := aliases[alias]; ok {
+		alias = fmt.Sprintf("%s%d", alias, aliasNum)
+		aliasNum++
+	}
+
+	packages[goPackage] = alias
+	aliases[alias] = true
 
 	return
 }
