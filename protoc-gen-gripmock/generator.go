@@ -115,7 +115,7 @@ type Options struct {
 var SERVER_TEMPLATE string
 
 func init() {
-	f, err := pkger.Open("/protoc-gen-gripmock/server.tmpl")
+	f, err := pkger.Open("/server.tmpl")
 	if err != nil {
 		log.Fatalf("error opening server.tmpl: %s", err)
 	}
