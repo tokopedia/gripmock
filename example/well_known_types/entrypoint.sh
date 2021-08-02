@@ -2,6 +2,9 @@
 
 # this file is used by .github/workflows/integration-test.yml
 
-gripmock --stub=example/well_known_types/stub example/well_known_types/wkt.proto &
+gripmock --stub=${GRIPMOCK_DIR}example/well_known_types/stub ${GRIPMOCK_DIR}example/well_known_types/wkt.proto &
 
-go run example/well_known_types/client/*.go
+# wait for generated files to be available and gripmock is up
+sleep 2
+
+go run ${GRIPMOCK_DIR}example/well_known_types/client/*.go

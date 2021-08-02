@@ -2,6 +2,9 @@
 
 # this file is used by .github/workflows/integration-test.yml
 
-gripmock --stub=example/stream/stub example/stream/stream.proto &
+gripmock --stub=${GRIPMOCK_DIR}example/stream/stub ${GRIPMOCK_DIR}example/stream/stream.proto &
 
-go run example/stream/client/*.go
+# wait for generated files to be available and gripmock is up
+sleep 2
+
+go run ${GRIPMOCK_DIR}example/stream/client/*.go

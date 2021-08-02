@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package simple;
 
+option go_package = "github.com/tokopedia/gripmock/example/simple";
+
 // The Gripmock service definition.
 service Gripmock {
   // simple unary method
