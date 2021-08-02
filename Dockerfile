@@ -41,6 +41,8 @@ RUN go install -v
 
 WORKDIR /go/src/github.com/tokopedia/gripmock
 
+RUN go mod tidy -v
+
 # install gripmock
 RUN go install -v
 
