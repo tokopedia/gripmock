@@ -32,6 +32,8 @@ COPY . /go/src/github.com/tokopedia/gripmock
 
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
+RUN go mod tidy -v
+
 RUN pkger
 
 # install generator plugin
@@ -39,17 +41,14 @@ RUN go install -v
 
 WORKDIR /go/src/github.com/tokopedia/gripmock
 
+RUN go mod tidy -v
+
 # install gripmock
 RUN go install -v
 
 # remove all .pb.go generated files
 # since generating go file is part of the test
 RUN find . -name "*.pb.go" -delete -type f
-
-# since go module, we need to execute the server in the same folder
-WORKDIR /go/src/grpc
-
-ENV GRIPMOCK_DIR /go/src/github.com/tokopedia/gripmock/
 
 EXPOSE 4770 4771
 

@@ -78,24 +78,24 @@ func (s *{{.ServiceName}}) {{.Name}}(ctx context.Context, in *{{.Input}}) (*{{.O
 {{ end }}
 
 {{ define "server_stream_method" }}
-func (s *{{.ServiceName}}) {{.Name}}(in *{{.Input}},stream {{.ServiceName}}_{{.Name}}Server) error {
+func (s *{{.ServiceName}}) {{.Name}}(in *{{.Input}},srv {{.SvcPackage}}{{.ServiceName}}_{{.Name}}Server) error {
 	out := &{{.Output}}{}
 	err := findStub("{{.ServiceName}}", "{{.Name}}", in, out)
 	if err!=nil {
 		return err
 	}
 
-	return stream.Send(out)
+	return srv.Send(out)
 }
 {{ end }}
 
 {{ define "client_stream_method"}}
-func (s *{{.ServiceName}}) {{.Name}}(stream {{.ServiceName}}_{{.Name}}Server) error {
+func (s *{{.ServiceName}}) {{.Name}}(srv {{.SvcPackage}}{{.ServiceName}}_{{.Name}}Server) error {
 	out := &{{.Output}}{}
 	for {
-		input,err := stream.Recv()
+		input,err := srv.Recv()
 		if err == io.EOF {
-			return stream.SendAndClose(out)
+			return srv.SendAndClose(out)
 		}
 		err = findStub("{{.ServiceName}}","{{.Name}}",input,out)
 		if err != nil {
@@ -106,9 +106,9 @@ func (s *{{.ServiceName}}) {{.Name}}(stream {{.ServiceName}}_{{.Name}}Server) er
 {{ end }}
 
 {{ define "bidirectional_method"}}
-func (s *{{.ServiceName}}) {{.Name}}(stream {{.ServiceName}}_{{.Name}}Server) error {
+func (s *{{.ServiceName}}) {{.Name}}(srv {{.SvcPackage}}{{.ServiceName}}_{{.Name}}Server) error {
 	for {
-		in, err := stream.Recv()
+		in, err := srv.Recv()
 		if err == io.EOF {
 			return nil
 		}
@@ -122,7 +122,7 @@ func (s *{{.ServiceName}}) {{.Name}}(stream {{.ServiceName}}_{{.Name}}Server) er
 			return err
 		}
 
-		if err := stream.Send(out); err != nil{
+		if err := srv.Send(out); err != nil{
 			return err
 		}
 	}
