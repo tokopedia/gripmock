@@ -88,6 +88,7 @@ type Service struct {
 }
 
 type methodTemplate struct {
+	SvcPackage  string
 	Name        string
 	ServiceName string
 	MethodType  string
@@ -261,6 +262,7 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 
 				methods[j] = methodTemplate{
 					Name:        strings.Title(*method.Name),
+					SvcPackage:  s.Package,
 					ServiceName: svc.GetName(),
 					Input:       getMessageType(protos, proto.GetDependency(), method.GetInputType()),
 					Output:      getMessageType(protos, proto.GetDependency(), method.GetOutputType()),
