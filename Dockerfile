@@ -55,6 +55,8 @@ WORKDIR /go/src/grpc
 
 ENV GRIPMOCK_DIR /go/src/github.com/tokopedia/gripmock/
 
+ENV GO111MODULE on
+
 EXPOSE 4770 4771
 
 ENTRYPOINT ["gripmock"]
