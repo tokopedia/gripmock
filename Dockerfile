@@ -32,6 +32,8 @@ COPY . /go/src/github.com/tokopedia/gripmock
 
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
+RUN go mod tidy -v
+
 RUN pkger
 
 # install generator plugin
