@@ -69,7 +69,7 @@ func main() {
 	})
 
 	// build the server
-	buildServer(output)
+	//buildServer(output)
 
 	// and run
 	run, runerr := runGrpcServer(output)
@@ -143,7 +143,7 @@ func buildServer(output string) {
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
-	run := exec.Command(output + "grpcserver")
+	run := exec.Command("go", "run", output+"server.go")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	err := run.Start()
