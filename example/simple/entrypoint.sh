@@ -4,6 +4,8 @@
 
 gripmock --stub=${GRIPMOCK_DIR}example/simple/stub ${GRIPMOCK_DIR}example/simple/simple.proto &
 
+pwd
+
 # wait for generated files to be available and gripmock is up
 sleep 2
 
