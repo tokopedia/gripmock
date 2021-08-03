@@ -50,12 +50,7 @@ RUN go install -v
 # since generating go file is part of the test
 RUN find . -name "*.pb.go" -delete -type f
 
-# since go module, we need to execute the server in the same folder
-WORKDIR /go/src/grpc
-
 ENV GRIPMOCK_DIR /go/src/github.com/tokopedia/gripmock/
-
-ENV GO111MODULE on
 
 EXPOSE 4770 4771
 
