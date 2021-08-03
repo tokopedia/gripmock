@@ -10,6 +10,9 @@ import (
 	"google.golang.org/grpc"
 )
 
+// in order to generate this .pb.go you need to have https://github.com/google/protobuf.git cloned
+// then use it as protobuf_dir below
+// protoc --go_out=plugins=grpc:${GOPATH}/src -I=.. -I=<protobuf_dir>  ../wkt.proto
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

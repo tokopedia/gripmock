@@ -7,10 +7,11 @@ import (
 	"time"
 
 	pb "github.com/tokopedia/gripmock/example/multi-package"
-	"github.com/tokopedia/gripmock/example/multi-package/bar"
+	multi_package "github.com/tokopedia/gripmock/example/multi-package/bar"
 	"google.golang.org/grpc"
 )
 
+//go:generate protoc --go_out=plugins=grpc:${GOPATH}/src -I=.. ../hello.proto ../foo.proto ../bar/bar.proto
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -29,7 +30,7 @@ func main() {
 	if len(os.Args) > 1 {
 		name = os.Args[1]
 	}
-	r, err := c.Greet(context.Background(), &bar.Bar{Name: name})
+	r, err := c.Greet(context.Background(), &multi_package.Bar{Name: name})
 	if err != nil {
 		log.Fatalf("error from grpc: %v", err)
 	}

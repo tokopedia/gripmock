@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+//go:generate protoc --go_out=plugins=grpc:${GOPATH}/src -I=.. ../file1.proto ../file2.proto
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

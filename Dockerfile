@@ -42,6 +42,10 @@ WORKDIR /go/src/github.com/tokopedia/gripmock
 # install gripmock
 RUN go install -v
 
+# remove all .pb.go generated files
+# since generating go file is part of the test
+RUN find . -name "*.pb.go" -delete -type f
+
 EXPOSE 4770 4771
 
 ENTRYPOINT ["gripmock"]
