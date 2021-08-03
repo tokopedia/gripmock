@@ -50,8 +50,6 @@ RUN go install -v
 # since generating go file is part of the test
 RUN find . -name "*.pb.go" -delete -type f
 
-ENV GRIPMOCK_DIR /go/src/github.com/tokopedia/gripmock/
-
 EXPOSE 4770 4771
 
 ENTRYPOINT ["gripmock"]
