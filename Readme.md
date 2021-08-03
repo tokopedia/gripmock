@@ -2,6 +2,11 @@
 GripMock is a **mock server** for **GRPC** services. It's using a `.proto` file to generate implementation of gRPC service for you.
 If you are already familiar with [Apiary](https://apiary.io) or [WireMock](http://wiremock.org) for mocking API service and looking for similiar thing for GRPC then this is the perfect fit for that.
 
+---
+
+### Announcement: From [version 1.10](https://github.com/tokopedia/gripmock/releases/tag/v1.10) gripmock will require `go_package` declaration in the `.proto` file.
+
+---
 
 ## How It Works
 GripMock has 2 main components:
