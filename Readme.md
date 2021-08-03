@@ -16,7 +16,7 @@ GripMock has 2 main components:
 Matched stub will be returned to GRPC service then further parse it to response the rpc call.
 
 ## Quick Usage
-First, prepare your `.proto` file. Or you can use `hello.proto` in `example/pb/` folder. Suppose you put it in `/mypath/hello.proto`. We are gonna use Docker image for easier example test.
+First, prepare your `.proto` file. Or you can use `hello.proto` in `example/simple/` folder. Suppose you put it in `/mypath/hello.proto`. We are gonna use Docker image for easier example test.
 basic syntax to run GripMock is 
 `gripmock <protofile>`
 
