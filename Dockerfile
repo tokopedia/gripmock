@@ -32,16 +32,12 @@ COPY . /go/src/github.com/tokopedia/gripmock
 
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
-RUN go mod tidy -v
-
 RUN pkger
 
 # install generator plugin
 RUN go install -v
 
 WORKDIR /go/src/github.com/tokopedia/gripmock
-
-RUN go mod tidy -v
 
 # install gripmock
 RUN go install -v
