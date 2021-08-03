@@ -177,9 +177,9 @@ func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]st
 	for _, proto := range protos {
 		alias, pkg := getGoPackage(proto)
 
-		// skip if it has empty go package
+		// fatal if go_package is not present
 		if pkg == "" {
-			continue
+			log.Fatalf("option go_package is required. but %s doesn't have any", proto.GetName())
 		}
 
 		if _, ok := deps[pkg]; ok {
@@ -264,8 +264,8 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 					Name:        strings.Title(*method.Name),
 					SvcPackage:  s.Package,
 					ServiceName: svc.GetName(),
-					Input:       getMessageType(protos, proto.GetDependency(), method.GetInputType()),
-					Output:      getMessageType(protos, proto.GetDependency(), method.GetOutputType()),
+					Input:       getMessageType(protos, method.GetInputType()),
+					Output:      getMessageType(protos, method.GetOutputType()),
 					MethodType:  tipe,
 				}
 			}
@@ -276,7 +276,7 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 	return svcTmp
 }
 
-func getMessageType(protos []*descriptor.FileDescriptorProto, deps []string, tipe string) string {
+func getMessageType(protos []*descriptor.FileDescriptorProto, tipe string) string {
 	split := strings.Split(tipe, ".")[1:]
 	targetPackage := strings.Join(split[:len(split)-1], ".")
 	targetType := split[len(split)-1]
