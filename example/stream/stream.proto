@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package stream;
 
-option go_package = "github.com/tokopedia/gripmock/example/stream";
 // The Gripmock service definition.
 service Gripmock {
   // server to client sreaming

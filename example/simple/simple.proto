@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package simple;
 
-option go_package = "github.com/tokopedia/gripmock/example/simple";
+option go_package="./";
 
 // The Gripmock service definition.
 service Gripmock {
