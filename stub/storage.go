@@ -167,11 +167,18 @@ func deepEqual(expect, actual interface{}) bool {
 }
 
 func regexMatch(expect, actual interface{}) bool {
-	match, err := regexp.Match(expect.(string), []byte(actual.(string)))
-	if err != nil {
-		log.Printf("Error on matching regex %s with %s error:%v\n", expect, actual, err)
+	var expectedStr, expectedStringOk = expect.(string)
+	var actualStr, actualStringOk = actual.(string)
+
+	if expectedStringOk && actualStringOk {
+		match, err := regexp.Match(expectedStr, []byte(actualStr))
+		if err != nil {
+			log.Printf("Error on matching regex %s with %s error:%v\n", expect, actual, err)
+		}
+		return match
 	}
-	return match
+
+	return deepEqual(expect, actual)
 }
 
 func equals(expect, actual map[string]interface{}) bool {
