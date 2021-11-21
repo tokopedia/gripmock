@@ -17,7 +17,7 @@ RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
 RUN go get github.com/markbates/pkger/cmd/pkger
 
 # cloning well-known-types
-RUN git clone https://github.com/google/protobuf.git /protobuf-repo
+RUN git clone --depth=1 https://github.com/google/protobuf.git /protobuf-repo
 
 RUN mkdir protobuf
 
