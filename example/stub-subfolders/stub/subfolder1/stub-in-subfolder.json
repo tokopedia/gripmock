@@ -1,0 +1,15 @@
+{
+  "service": "Gripmock",
+  "method": "SayHello",
+  "input": {
+    "equals": {
+      "name": "subtokopedia"
+    }
+  },
+  "output": {
+    "data": {
+      "message": "Hello Sub Tokopedia",
+      "return_code": 1
+    }
+  }
+}

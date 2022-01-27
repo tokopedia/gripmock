@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package stub_subfolders;
+
+// The Gripmock service definition.
+service Gripmock {
+  // simple unary method
+  rpc SayHello (Request) returns (Reply);
+}
+
+// The request message containing the user's name.
+message Request {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message Reply {
+  string message = 1;
+  int32 return_code = 2;
+}
