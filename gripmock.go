@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -101,13 +102,11 @@ type protocParam struct {
 }
 
 func generateProtoc(param protocParam) {
-	protodirs := strings.Split(param.protoPath[0], "/")
-	protodir := ""
-	if len(protodirs) > 0 {
-		protodir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
-	}
 
-	args := []string{"-I", protodir}
+	fixGoPackageUnderImportPath(getDirFromFile(param.protoPath[0]))
+	param.protoPath = fixGoPackage(param.protoPath)
+
+	args := []string{"-I", getDirFromFile(param.protoPath[0])}
 	// include well-known-types
 	for _, i := range param.imports {
 		args = append(args, "-I", i)
@@ -128,6 +127,42 @@ func generateProtoc(param protocParam) {
 		log.Fatal("Fail on protoc ", err)
 	}
 
+}
+
+func getDirFromFile(filepath string) string {
+	protodirs := strings.Split(filepath, "/")
+	dir := "."
+	if len(protodirs) > 0 {
+		dir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
+	}
+	return dir
+}
+
+func fixGoPackageUnderImportPath(importPath string) {
+	findProtos := exec.Command("find", importPath, "-mindepth", "2", "-name", "*.proto")
+	buf := &bytes.Buffer{}
+	findProtos.Stdout = buf
+	err := findProtos.Run()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	fixGoPackage(strings.Split(strings.TrimRight(buf.String(), "\n"), "\n"))
+}
+
+func fixGoPackage(protoPaths []string) []string {
+	fixgopackage := exec.Command("fix_gopackage.sh", protoPaths...)
+	buf := &bytes.Buffer{}
+	fixgopackage.Stdout = buf
+	fixgopackage.Stderr = os.Stderr
+	err := fixgopackage.Run()
+	if err != nil {
+		log.Println("error on fixGoPackage", err)
+		return protoPaths
+	}
+
+	return strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
 }
 
 func buildServer(output string) {
