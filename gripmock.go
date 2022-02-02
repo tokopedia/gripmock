@@ -86,12 +86,6 @@ func main() {
 	}
 }
 
-func getProtoName(path string) string {
-	paths := strings.Split(path, "/")
-	filename := paths[len(paths)-1]
-	return strings.Split(filename, ".")[0]
-}
-
 type protocParam struct {
 	protoPath   []string
 	adminPort   string
@@ -102,11 +96,14 @@ type protocParam struct {
 }
 
 func generateProtoc(param protocParam) {
-
-	fixGoPackageUnderImportPath(getDirFromFile(param.protoPath[0]))
 	param.protoPath = fixGoPackage(param.protoPath)
+	protodirs := strings.Split(param.protoPath[0], "/")
+	protodir := ""
+	if len(protodirs) > 0 {
+		protodir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
+	}
 
-	args := []string{"-I", getDirFromFile(param.protoPath[0])}
+	args := []string{"-I", protodir}
 	// include well-known-types
 	for _, i := range param.imports {
 		args = append(args, "-I", i)
@@ -129,28 +126,7 @@ func generateProtoc(param protocParam) {
 
 }
 
-func getDirFromFile(filepath string) string {
-	protodirs := strings.Split(filepath, "/")
-	dir := "."
-	if len(protodirs) > 0 {
-		dir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
-	}
-	return dir
-}
-
-func fixGoPackageUnderImportPath(importPath string) {
-	findProtos := exec.Command("find", importPath, "-mindepth", "2", "-name", "*.proto")
-	buf := &bytes.Buffer{}
-	findProtos.Stdout = buf
-	err := findProtos.Run()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	fixGoPackage(strings.Split(strings.TrimRight(buf.String(), "\n"), "\n"))
-}
-
+// append gopackage in proto files if doesn't have any
 func fixGoPackage(protoPaths []string) []string {
 	fixgopackage := exec.Command("fix_gopackage.sh", protoPaths...)
 	buf := &bytes.Buffer{}
@@ -163,18 +139,6 @@ func fixGoPackage(protoPaths []string) []string {
 	}
 
 	return strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
-}
-
-func buildServer(output string) {
-	args := []string{"build", "-o", output + "grpcserver", output}
-
-	build := exec.Command("go", args...)
-	build.Stdout = os.Stdout
-	build.Stderr = os.Stderr
-	err := build.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {

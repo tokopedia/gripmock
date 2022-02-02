@@ -26,7 +26,7 @@ do
 
   syntaxLineNum="$(grep -n "syntax" "$newfile" | head -n 1 | cut -d: -f1)"
 
-  goPackageString="option go_package = \"github.com/tokopedia/gripmock/$dir\";"
+  goPackageString="option go_package = \"github.com/tokopedia/gripmock/protogen/$dir\";"
   sed -i "${syntaxLineNum}s~$~\n$goPackageString~" $newfile
   echo $newfile
 done
