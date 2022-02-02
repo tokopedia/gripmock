@@ -4,7 +4,7 @@ syntax = "proto3";
 // but different package
 package foo;
 
-import "deep/bar/bar.proto";
+import "bar/deep/bar.proto";
 
 message Response {
     string response = 1;
