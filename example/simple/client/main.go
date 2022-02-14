@@ -25,7 +25,7 @@ func main() {
 	c := pb.NewGripmockClient(conn)
 
 	// Contact the server and print out its response.
-	name := "tokopedia"
+	name := "gripmock"
 	if len(os.Args) > 1 {
 		name = os.Args[1]
 	}
