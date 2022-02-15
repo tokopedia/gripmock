@@ -1,10 +1,19 @@
 # GripMock
 GripMock is a **mock server** for **GRPC** services. It's using a `.proto` file to generate implementation of gRPC service for you.
-If you are already familiar with [Apiary](https://apiary.io) or [WireMock](http://wiremock.org) for mocking API service and looking for similiar thing for GRPC then this is the perfect fit for that.
+You can use gripmock for setting up end-to-end testing or as a dummy server in a software development phase.
+The server implementation is in GoLang but the client can be any programming language that support gRPC.
 
 ---
 
-### Announcement: From [version 1.10](https://github.com/tokopedia/gripmock/releases/tag/v1.10) gripmock will require `go_package` declaration in the `.proto` file.
+### Announcement:
+The latest [version (v1.10)](https://github.com/tokopedia/gripmock/releases/tag/v1.10) of gripmock is requiring `go_package` declaration in the `.proto` file. This is due to the latest update of `protoc` plugin that being used by gripmock is making the `go_package` declaration mandatory.
+
+**Update Feb 2022:**
+
+[Version 1.11-beta](https://github.com/tokopedia/gripmock/releases/tag/v1.11-beta) release is available.
+It supports **NO** declaration of `go_package`, please download and test before it can be tagged as stable.
+
+you can get the docker image using `docker pull tkpd/gripmock:v1.11-beta`.
 
 ---
 
@@ -17,7 +26,7 @@ Matched stub will be returned to GRPC service then further parse it to response 
 
 ## Quick Usage
 First, prepare your `.proto` file. Or you can use `hello.proto` in `example/simple/` folder. Suppose you put it in `/mypath/hello.proto`. We are gonna use Docker image for easier example test.
-basic syntax to run GripMock is 
+basic syntax to run GripMock is
 `gripmock <protofile>`
 
 - Install [Docker](https://docs.docker.com/install/)
@@ -76,13 +85,13 @@ For our `hello` service example we put a stub with the text below:
 ```
 
 ### Static stubbing
-You could initialize gripmock with stub json files and provide the path using `--stub` argument. For example you may 
+You could initialize gripmock with stub json files and provide the path using `--stub` argument. For example you may
 mount your stub file in `/mystubs` folder then mount it to docker like
- 
- `docker run -p 4770:4770 -p 4771:4771 -v /mypath:/proto -v /mystubs:/stub tkpd/gripmock --stub=/stub /proto/hello.proto`
- 
+
+`docker run -p 4770:4770 -p 4771:4771 -v /mypath:/proto -v /mystubs:/stub tkpd/gripmock --stub=/stub /proto/hello.proto`
+
 Please note that Gripmock still serves http stubbing to modify stored stubs on the fly.
- 
+
 ## <a name="input_matching"></a>Input Matching
 Stub will respond with the expected response only if the request matches any rule. Stub service will serve `/find` endpoint with format:
 ```
