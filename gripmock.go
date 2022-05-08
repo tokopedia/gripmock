@@ -39,7 +39,11 @@ func main() {
 	// for safety
 	output += "/"
 	if _, err := os.Stat(output); os.IsNotExist(err) {
-		os.Mkdir(output, os.ModePerm)
+		if err := os.Mkdir(output, os.ModePerm); err != nil {
+			log.Fatalf("mkdir: %v", err)
+		}
+	} else if err != nil {
+		log.Fatalf("os.stat: %v", err)
 	}
 
 	// run admin stub server
@@ -101,13 +105,13 @@ type protocParam struct {
 }
 
 func generateProtoc(param protocParam) {
-	protodirs := strings.Split(param.protoPath[0], "/")
-	protodir := ""
-	if len(protodirs) > 0 {
-		protodir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
+	protoDirs := strings.Split(param.protoPath[0], "/")
+	protoDir := ""
+	if len(protoDirs) > 0 {
+		protoDir = strings.Join(protoDirs[:len(protoDirs)-1], "/") + "/"
 	}
 
-	args := []string{"-I", protodir}
+	args := []string{"-I", protoDir}
 	// include well-known-types
 	for _, i := range param.imports {
 		args = append(args, "-I", i)
@@ -151,9 +155,9 @@ func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
 		log.Fatal(err)
 	}
 	fmt.Printf("grpc server pid: %d\n", run.Process.Pid)
-	runerr := make(chan error)
+	runErr := make(chan error)
 	go func() {
-		runerr <- run.Wait()
+		runErr <- run.Wait()
 	}()
-	return run, runerr
+	return run, runErr
 }

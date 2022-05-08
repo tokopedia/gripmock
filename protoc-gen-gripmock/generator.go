@@ -61,7 +61,9 @@ func main() {
 	}
 
 	file := plugin.NewGeneratedFile("server.go", ".")
-	file.Write(buf.Bytes())
+	if _, err := file.Write(buf.Bytes()); err != nil {
+		log.Fatalf("wrtie generated file: %v", err)
+	}
 
 	// Generate a response from our plugin and marshall as protobuf
 	out, err := proto.Marshal(plugin.Response())
@@ -70,7 +72,9 @@ func main() {
 	}
 
 	// Write the response to stdout, to be picked up by protoc
-	os.Stdout.Write(out)
+	if _, err := os.Stdout.Write(out); err != nil {
+		log.Fatalf("write response: %v", err)
+	}
 }
 
 type generatorParam struct {
@@ -121,12 +125,12 @@ func init() {
 		log.Fatalf("error opening server.tmpl: %s", err)
 	}
 
-	bytes, err := ioutil.ReadAll(f)
+	serverTemplateBytes, err := ioutil.ReadAll(f)
 	if err != nil {
 		log.Fatalf("error reading server.tmpl: %s", err)
 	}
 
-	SERVER_TEMPLATE = string(bytes)
+	SERVER_TEMPLATE = string(serverTemplateBytes)
 }
 
 func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) error {
@@ -174,12 +178,12 @@ func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) erro
 func resolveDependencies(protos []*descriptor.FileDescriptorProto) map[string]string {
 
 	deps := map[string]string{}
-	for _, proto := range protos {
-		alias, pkg := getGoPackage(proto)
+	for _, prt := range protos {
+		alias, pkg := getGoPackage(prt)
 
 		// fatal if go_package is not present
 		if pkg == "" {
-			log.Fatalf("option go_package is required. but %s doesn't have any", proto.GetName())
+			log.Fatalf("option go_package is required. but %s doesn't have any", prt.GetName())
 		}
 
 		if _, ok := deps[pkg]; ok {
@@ -240,12 +244,12 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 
 // change the structure also translate method type
 func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
-	svcTmp := []Service{}
-	for _, proto := range protos {
-		for _, svc := range proto.GetService() {
+	var svcTmp []Service
+	for _, prt := range protos {
+		for _, svc := range prt.GetService() {
 			var s Service
 			s.Name = svc.GetName()
-			alias, _ := getGoPackage(proto)
+			alias, _ := getGoPackage(prt)
 			if alias != "" {
 				s.Package = alias + "."
 			}
@@ -280,14 +284,14 @@ func getMessageType(protos []*descriptor.FileDescriptorProto, tipe string) strin
 	split := strings.Split(tipe, ".")[1:]
 	targetPackage := strings.Join(split[:len(split)-1], ".")
 	targetType := split[len(split)-1]
-	for _, proto := range protos {
-		if proto.GetPackage() != targetPackage {
+	for _, prt := range protos {
+		if prt.GetPackage() != targetPackage {
 			continue
 		}
 
-		for _, msg := range proto.GetMessageType() {
+		for _, msg := range prt.GetMessageType() {
 			if msg.GetName() == targetType {
-				alias, _ := getGoPackage(proto)
+				alias, _ := getGoPackage(prt)
 				if alias != "" {
 					alias += "."
 				}
