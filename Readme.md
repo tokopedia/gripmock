@@ -32,7 +32,7 @@ basic syntax to run GripMock is
 - Install [Docker](https://docs.docker.com/install/)
 - Run `docker pull tkpd/gripmock` to pull the image
 - We are gonna mount `/mypath/hello.proto` (it must be a fullpath) into a container and also we expose ports needed. Run `docker run -p 4770:4770 -p 4771:4771 -v /mypath:/proto tkpd/gripmock /proto/hello.proto`
-- On a separate terminal we are gonna add a stub into the stub service. Run `curl -X POST -d '{"service":"Greeter","method":"SayHello","input":{"equals":{"name":"gripmock"}},"output":{"data":{"message":"Hello GripMock"}}}' localhost:4771/add `
+- On a separate terminal we are gonna add a stub into the stub service. Run `curl -X POST -d '{"service":"Gripmock","method":"SayHello","input":{"equals":{"name":"gripmock"}},"output":{"data":{"message":"Hello GripMock"}}}' localhost:4771/add `
 - Now we are ready to test it with our client. You can find a client example file under `example/simple/client/`. Execute one of your preferred language. Example for go: `go run example/simple/client/go/*.go`
 
 Check [`example`](https://github.com/tokopedia/gripmock/tree/master/example) folder for various usecase of gripmock.
