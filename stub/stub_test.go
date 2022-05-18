@@ -226,7 +226,7 @@ func TestStub(t *testing.T) {
 			expect:  "{\"data\":{\"reply\":\"OK\"},\"error\":\"\"}\n",
 		},
 		{
-			name: "add nested stub nested matches regex",
+			name: "add nested stub matches regex",
 			mock: func() *http.Request {
 				payload := `{
 						"service":"NestedTesting2",
@@ -235,11 +235,12 @@ func TestStub(t *testing.T) {
 							"matches":{
 										"key": "[a-z]{3}ue",
 										"greetings": {
-											"hola": "mundo",
-											"merhaba": "dunya",
+											"hola": 1,
+											"merhaba": true,
 											"hello": "^he[l]{2,}o$"
 										},
-										"cities": ["Istanbul", "Jakarta", ".*"]
+										"cities": ["Istanbul", "Jakarta", ".*"],
+										"mixed": [5.5, false, ".*"]
 							}
 						},
 						"output":{
@@ -262,11 +263,12 @@ func TestStub(t *testing.T) {
 						"data":{
 								"key": "value",
 								"greetings": {
-									"hola": "mundo",
-									"merhaba": "dunya",
+									"hola": 1,
+									"merhaba": true,
 									"hello": "helllllo"
 								},
-								"cities": ["Istanbul", "Jakarta", "Gotham"]
+								"cities": ["Istanbul", "Jakarta", "Gotham"],
+								"mixed": [5.5, false, "Gotham"]
 							}
 						}
 					}`
