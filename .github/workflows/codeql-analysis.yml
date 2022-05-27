@@ -17,7 +17,10 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: [self-hosted, linux, x64, auto-scale, aws, cluster2]
+    runs-on: [self-hosted, env=staging, owner=it-security, runnerset=code-scanning-runners]
+    env: 
+      CODEQL_RAM: 4092
+      GOPRIVATE: github.com/tokopedia/*
 
     strategy:
       fail-fast: false
@@ -31,11 +34,23 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-    - run: rm -rf /home/ec2-user/actions-runner/_work/_temp/codeql_databases
-    - run: eval "$(ssh-agent -s)"
-       ssh-add /home/ec2-user/.ssh/id_ed25519
     - run: git config --global --add url."git@github.com:".insteadOf "https://github.com/"
-
+    - name: Set Up Go
+      if: matrix.language == 'go'
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.14
+    - name: Set Up Node
+      if: matrix.language == 'javascript'
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
+    - name: Set Up Python
+      if: matrix.language == 'python'
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+        architecture: 'x64'
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
