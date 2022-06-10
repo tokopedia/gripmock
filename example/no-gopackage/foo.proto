@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+// simulating neighboring .proto file
+// but different package
+package foo;
+
+import "bar/deep/bar.proto";
+
+message Response {
+    string response = 1;
+    bar.DeepBar deepbar = 2;
+}

@@ -1,0 +1,17 @@
+{
+ "service":"Gripmock",
+  "method":"Greet",
+  "input":{
+    "equals":{
+      "name":"tokopedia"
+    }
+  },
+  "output":{
+    "data":{
+      "response":"Hello Tokopedia",
+      "deepbar": {
+        "address": "Jakarta"
+      }
+    }
+  }
+}
