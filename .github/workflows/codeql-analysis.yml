@@ -3,9 +3,12 @@
 #
 # You may wish to alter this file to override the set of languages analyzed,
 # or to provide custom queries or build logic.
-name: "CodeQL"
+name: "IT Security Code Scan"
 
 on:
+  push:
+    # The branches below must be a subset of the branches above
+    branches: [master]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [master]
@@ -14,7 +17,10 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: [self-hosted, linux, x64, aws-runner-1]
+    runs-on: [self-hosted, env=staging, owner=it-security, runnerset=code-scanning-runners]
+    env: 
+      CODEQL_RAM: 4092
+      GOPRIVATE: github.com/tokopedia/*
 
     strategy:
       fail-fast: false
@@ -28,7 +34,23 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-
+    - run: git config --global --add url."git@github.com:".insteadOf "https://github.com/"
+    - name: Set Up Go
+      if: matrix.language == 'go'
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.14
+    - name: Set Up Node
+      if: matrix.language == 'javascript'
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
+    - name: Set Up Python
+      if: matrix.language == 'python'
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+        architecture: 'x64'
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
