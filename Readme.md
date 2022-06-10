@@ -31,10 +31,10 @@ Matched stub will be returned to GRPC service then further parse it to response 
 
 
 From technical perspective, GripMock consists of 2 binaries. 
-The first binary is the gripmock itself, when it will generate the gRPC server using the plugin installed in the system (see ![Dockerfile](Dockerfile)). 
+The first binary is the gripmock itself, when it will generate the gRPC server using the plugin installed in the system (see [Dockerfile](Dockerfile)). 
 When the server sucessfully generated, it will be invoked in parallel with stub server which ends up opening 2 ports for client to use.
 
-The second binary is the protoc plugin which located in folder ![protoc-gen-gripmock](/protoc-gen-gripmock). This plugin is the one who translates protobuf declaration into a gRPC server in Go programming language. 
+The second binary is the protoc plugin which located in folder [protoc-gen-gripmock](/protoc-gen-gripmock). This plugin is the one who translates protobuf declaration into a gRPC server in Go programming language. 
 
 ![Inside GripMock](/assets/images/gripmock_readme-inside.png)
 
