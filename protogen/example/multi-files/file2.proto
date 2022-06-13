@@ -1,0 +1,21 @@
+syntax = "proto3";
+option go_package = "github.com/tokopedia/gripmock/protogen/example/multi-files";
+
+package multifiles;
+
+
+service Gripmock2 {
+  // simple unary method
+  rpc SayHello (Request2) returns (Reply2);
+}
+
+// The request message containing the user's name.
+message Request2 {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message Reply2 {
+  string message = 1;
+  int32 return_code = 2;
+}

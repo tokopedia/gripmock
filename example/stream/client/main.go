@@ -7,11 +7,10 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/tokopedia/gripmock/example/stream"
+	pb "github.com/tokopedia/gripmock/protogen/example/stream"
 	"google.golang.org/grpc"
 )
 
-//go:generate protoc --go_out=plugins=grpc:${GOPATH}/src -I=.. ../stream.proto
 func main() {
 	// Set up a connection to the server.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

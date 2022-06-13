@@ -1,6 +1,0 @@
-syntax = "proto3";
-package bar;
-
-message DeepBar{
-    string address = 1;
-}

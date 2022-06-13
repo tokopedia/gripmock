@@ -6,11 +6,10 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/tokopedia/gripmock/example/simple"
+	pb "github.com/tokopedia/gripmock/protogen/example/simple"
 	"google.golang.org/grpc"
 )
 
-//go:generate protoc -I=.. --go_out=plugins=grpc:${GOPATH}/src ../simple.proto
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -25,7 +24,7 @@ func main() {
 	c := pb.NewGripmockClient(conn)
 
 	// Contact the server and print out its response.
-	name := "gripmock"
+	name := "tokopedia"
 	if len(os.Args) > 1 {
 		name = os.Args[1]
 	}

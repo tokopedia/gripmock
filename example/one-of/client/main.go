@@ -6,12 +6,11 @@ import (
 	"os"
 	"time"
 
-	oneof "github.com/tokopedia/gripmock/example/one-of"
+	oneof "github.com/tokopedia/gripmock/protogen/example/one-of"
 
 	"google.golang.org/grpc"
 )
 
-//go:generate protoc --go_out=plugins=grpc:${GOPATH}/src -I=.. ../oneof.proto
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

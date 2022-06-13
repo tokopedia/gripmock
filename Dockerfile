@@ -4,17 +4,13 @@ RUN mkdir /proto
 
 RUN mkdir /stubs
 
-RUN apk -U --no-cache add git protobuf
+RUN apk -U --no-cache add git protobuf bash
 
-RUN go get -u -v github.com/golang/protobuf/protoc-gen-go \
-	google.golang.org/grpc \
-	google.golang.org/grpc/reflection \
-	golang.org/x/net/context \
-	github.com/go-chi/chi \
-	github.com/lithammer/fuzzysearch/fuzzy \
-	golang.org/x/tools/imports
+RUN go install -v github.com/golang/protobuf/protoc-gen-go@latest
 
-RUN go get github.com/markbates/pkger/cmd/pkger
+RUN go install -v google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+RUN go install github.com/markbates/pkger/cmd/pkger@latest
 
 # cloning well-known-types
 RUN git clone --depth=1 https://github.com/google/protobuf.git /protobuf-repo
@@ -30,6 +26,8 @@ RUN mkdir -p /go/src/github.com/tokopedia/gripmock
 
 COPY . /go/src/github.com/tokopedia/gripmock
 
+RUN ln -s /go/src/github.com/tokopedia/gripmock/fix_gopackage.sh /bin/
+
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
 RUN pkger
@@ -41,6 +39,9 @@ WORKDIR /go/src/github.com/tokopedia/gripmock
 
 # install gripmock
 RUN go install -v
+
+# to cache necessary imports
+RUN go build ./example/simple/client
 
 # remove all .pb.go generated files
 # since generating go file is part of the test
