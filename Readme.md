@@ -5,25 +5,6 @@ The server implementation is in GoLang but the client can be any programming lan
 
 ---
 
-### Announcement:
-The latest [version (v1.10)](https://github.com/tokopedia/gripmock/releases/tag/v1.10) of gripmock is requiring `go_package` declaration in the `.proto` file. This is due to the latest update of `protoc` plugin that being used by gripmock is making the `go_package` declaration mandatory.
-
-**Update Feb 2022:**
-
-[Version 1.11-beta](https://github.com/tokopedia/gripmock/releases/tag/v1.11-beta) release is available.
-It supports **NO** declaration of `go_package`, please download and test before it can be tagged as stable.
-
-you can get the docker image using `docker pull tkpd/gripmock:v1.11-beta`.
-
----
-
-## How It Works
-GripMock has 2 main components:
-1. GRPC server that serves on `tcp://localhost:4770`. Its main job is to serve incoming rpc call from client and then parse the input so that it can be posted to Stub service to find the perfect stub match.
-2. Stub server that serves on `http://localhost:4771`. Its main job is to store all the stub mapping. We can add a new stub or list existing stub using http request.
-
-Matched stub will be returned to GRPC service then further parse it to response the rpc call.
-
 ## Quick Usage
 First, prepare your `.proto` file. Or you can use `hello.proto` in `example/simple/` folder. Suppose you put it in `/mypath/hello.proto`. We are gonna use Docker image for easier example test.
 basic syntax to run GripMock is
@@ -36,6 +17,28 @@ basic syntax to run GripMock is
 - Now we are ready to test it with our client. You can find a client example file under `example/simple/client/`. Execute one of your preferred language. Example for go: `go run example/simple/client/go/*.go`
 
 Check [`example`](https://github.com/tokopedia/gripmock/tree/master/example) folder for various usecase of gripmock.
+
+---
+
+## How It Works
+![Running Gripmock](/assets/images/gripmock_readme-running%20system.png)
+
+From client perspective, GripMock has 2 main components:
+1. GRPC server that serves on `tcp://localhost:4770`. Its main job is to serve incoming rpc call from client and then parse the input so that it can be posted to Stub service to find the perfect stub match.
+2. Stub server that serves on `http://localhost:4771`. Its main job is to store all the stub mapping. We can add a new stub or list existing stub using http request.
+
+Matched stub will be returned to GRPC service then further parse it to response the rpc call.
+
+
+From technical perspective, GripMock consists of 2 binaries. 
+The first binary is the gripmock itself, when it will generate the gRPC server using the plugin installed in the system (see [Dockerfile](Dockerfile)). 
+When the server sucessfully generated, it will be invoked in parallel with stub server which ends up opening 2 ports for client to use.
+
+The second binary is the protoc plugin which located in folder [protoc-gen-gripmock](/protoc-gen-gripmock). This plugin is the one who translates protobuf declaration into a gRPC server in Go programming language. 
+
+![Inside GripMock](/assets/images/gripmock_readme-inside.png)
+
+---
 
 ## Stubbing
 
