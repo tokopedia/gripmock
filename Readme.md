@@ -5,6 +5,18 @@ The server implementation is in GoLang but the client can be any programming lan
 
 ---
 
+### Announcement:
+The latest [version (v1.10)](https://github.com/tokopedia/gripmock/releases/tag/v1.10) of gripmock is requiring `go_package` declaration in the `.proto` file. This is due to the latest update of `protoc` plugin that being used by gripmock is making the `go_package` declaration mandatory.
+
+**Update Feb 2022:**
+
+[Version 1.11-beta](https://github.com/tokopedia/gripmock/releases/tag/v1.11-beta) release is available.
+It supports **NO** declaration of `go_package`, please download and test before it can be tagged as stable.
+
+you can get the docker image using `docker pull tkpd/gripmock:v1.11-beta`.
+
+---
+
 ## Quick Usage
 First, prepare your `.proto` file. Or you can use `hello.proto` in `example/simple/` folder. Suppose you put it in `/mypath/hello.proto`. We are gonna use Docker image for easier example test.
 basic syntax to run GripMock is
