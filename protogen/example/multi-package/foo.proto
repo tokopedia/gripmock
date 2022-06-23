@@ -1,12 +1,13 @@
 syntax = "proto3";
+option go_package = "github.com/tokopedia/gripmock/protogen/example/multi-package";
 
 // simulating neighboring .proto file
 // but different package
 package foo;
 
-import "bar/deep/bar.proto";
+// simulating dummy private repo
+
 
 message Response {
     string response = 1;
-    bar.DeepBar deepbar = 2;
 }

@@ -42,7 +42,3 @@ jobs:
       uses: ./
       with:
         entrypoint: example/stub-subfolders/entrypoint.sh
-    - name: Run no go_package example
-      uses: ./
-      with:
-        entrypoint: example/no-gopackage/entrypoint.sh

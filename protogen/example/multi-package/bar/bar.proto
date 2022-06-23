@@ -1,0 +1,10 @@
+syntax = "proto3";
+option go_package = "github.com/tokopedia/gripmock/protogen/example/multi-package/bar";
+package bar;
+
+// this go_package is simulating alias collision
+
+
+message Bar{
+    string name = 1;
+}

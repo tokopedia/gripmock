@@ -5,8 +5,7 @@ package multi_package;
 import "bar/bar.proto";
 import "foo.proto";
 
-// simulate go_package alias with -
-option go_package = "github.com/tokopedia/gripmock/example/multi-package";
+// simulate no go_package and folder with -
 
 service Gripmock {
     rpc Greet (bar.Bar) returns (foo.Response);

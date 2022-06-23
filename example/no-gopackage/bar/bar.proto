@@ -1,6 +1,0 @@
-syntax = "proto3";
-package bar;
-
-message Bar{
-    string name = 1;
-}
