@@ -38,3 +38,7 @@ jobs:
       uses: ./
       with:
         entrypoint: example/one-of/entrypoint.sh
+    - name: Run stub subfolders example
+      uses: ./
+      with:
+        entrypoint: example/stub-subfolders/entrypoint.sh

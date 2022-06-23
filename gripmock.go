@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -89,12 +90,6 @@ func main() {
 	}
 }
 
-func getProtoName(path string) string {
-	paths := strings.Split(path, "/")
-	filename := paths[len(paths)-1]
-	return strings.Split(filename, ".")[0]
-}
-
 type protocParam struct {
 	protoPath   []string
 	adminPort   string
@@ -105,6 +100,7 @@ type protocParam struct {
 }
 
 func generateProtoc(param protocParam) {
+  param.protoPath = fixGoPackage(param.protoPath)
 	protoDirs := strings.Split(param.protoPath[0], "/")
 	protoDir := ""
 	if len(protoDirs) > 0 {
@@ -134,16 +130,19 @@ func generateProtoc(param protocParam) {
 
 }
 
-func buildServer(output string) {
-	args := []string{"build", "-o", output + "grpcserver", output}
-
-	build := exec.Command("go", args...)
-	build.Stdout = os.Stdout
-	build.Stderr = os.Stderr
-	err := build.Run()
+// append gopackage in proto files if doesn't have any
+func fixGoPackage(protoPaths []string) []string {
+	fixgopackage := exec.Command("fix_gopackage.sh", protoPaths...)
+	buf := &bytes.Buffer{}
+	fixgopackage.Stdout = buf
+	fixgopackage.Stderr = os.Stderr
+	err := fixgopackage.Run()
 	if err != nil {
-		log.Fatal(err)
+		log.Println("error on fixGoPackage", err)
+		return protoPaths
 	}
+
+	return strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {

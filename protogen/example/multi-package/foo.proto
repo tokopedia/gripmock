@@ -1,11 +1,12 @@
 syntax = "proto3";
+option go_package = "github.com/tokopedia/gripmock/protogen/example/multi-package";
 
 // simulating neighboring .proto file
 // but different package
 package foo;
 
 // simulating dummy private repo
-option go_package = "github.com/my/private/repo/multi-package";
+
 
 message Response {
     string response = 1;

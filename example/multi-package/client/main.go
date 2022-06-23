@@ -6,12 +6,11 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/tokopedia/gripmock/example/multi-package"
-	multi_package "github.com/tokopedia/gripmock/example/multi-package/bar"
+	pb "github.com/tokopedia/gripmock/protogen/example/multi-package"
+	multi_package "github.com/tokopedia/gripmock/protogen/example/multi-package/bar"
 	"google.golang.org/grpc"
 )
 
-//go:generate protoc --go_out=plugins=grpc:${GOPATH}/src -I=.. ../hello.proto ../foo.proto ../bar/bar.proto
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

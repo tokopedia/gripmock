@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.27.1
 // 	protoc        v3.17.3
-// source: file2.proto
+// source: file1.proto
 
 package multi_files
 
@@ -25,7 +25,7 @@ const (
 )
 
 // The request message containing the user's name.
-type Request2 struct {
+type Request1 struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -33,23 +33,23 @@ type Request2 struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 }
 
-func (x *Request2) Reset() {
-	*x = Request2{}
+func (x *Request1) Reset() {
+	*x = Request1{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_file2_proto_msgTypes[0]
+		mi := &file_file1_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *Request2) String() string {
+func (x *Request1) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Request2) ProtoMessage() {}
+func (*Request1) ProtoMessage() {}
 
-func (x *Request2) ProtoReflect() protoreflect.Message {
-	mi := &file_file2_proto_msgTypes[0]
+func (x *Request1) ProtoReflect() protoreflect.Message {
+	mi := &file_file1_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,12 +60,12 @@ func (x *Request2) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Request2.ProtoReflect.Descriptor instead.
-func (*Request2) Descriptor() ([]byte, []int) {
-	return file_file2_proto_rawDescGZIP(), []int{0}
+// Deprecated: Use Request1.ProtoReflect.Descriptor instead.
+func (*Request1) Descriptor() ([]byte, []int) {
+	return file_file1_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Request2) GetName() string {
+func (x *Request1) GetName() string {
 	if x != nil {
 		return x.Name
 	}
@@ -73,7 +73,7 @@ func (x *Request2) GetName() string {
 }
 
 // The response message containing the greetings
-type Reply2 struct {
+type Reply1 struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -82,23 +82,23 @@ type Reply2 struct {
 	ReturnCode int32  `protobuf:"varint,2,opt,name=return_code,json=returnCode,proto3" json:"return_code,omitempty"`
 }
 
-func (x *Reply2) Reset() {
-	*x = Reply2{}
+func (x *Reply1) Reset() {
+	*x = Reply1{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_file2_proto_msgTypes[1]
+		mi := &file_file1_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *Reply2) String() string {
+func (x *Reply1) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Reply2) ProtoMessage() {}
+func (*Reply1) ProtoMessage() {}
 
-func (x *Reply2) ProtoReflect() protoreflect.Message {
-	mi := &file_file2_proto_msgTypes[1]
+func (x *Reply1) ProtoReflect() protoreflect.Message {
+	mi := &file_file1_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -109,66 +109,67 @@ func (x *Reply2) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Reply2.ProtoReflect.Descriptor instead.
-func (*Reply2) Descriptor() ([]byte, []int) {
-	return file_file2_proto_rawDescGZIP(), []int{1}
+// Deprecated: Use Reply1.ProtoReflect.Descriptor instead.
+func (*Reply1) Descriptor() ([]byte, []int) {
+	return file_file1_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Reply2) GetMessage() string {
+func (x *Reply1) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
 	return ""
 }
 
-func (x *Reply2) GetReturnCode() int32 {
+func (x *Reply1) GetReturnCode() int32 {
 	if x != nil {
 		return x.ReturnCode
 	}
 	return 0
 }
 
-var File_file2_proto protoreflect.FileDescriptor
+var File_file1_proto protoreflect.FileDescriptor
 
-var file_file2_proto_rawDesc = []byte{
-	0x0a, 0x0b, 0x66, 0x69, 0x6c, 0x65, 0x32, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0a, 0x6d,
+var file_file1_proto_rawDesc = []byte{
+	0x0a, 0x0b, 0x66, 0x69, 0x6c, 0x65, 0x31, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0a, 0x6d,
 	0x75, 0x6c, 0x74, 0x69, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x22, 0x1e, 0x0a, 0x08, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x32, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20,
+	0x75, 0x65, 0x73, 0x74, 0x31, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x43, 0x0a, 0x06, 0x52, 0x65, 0x70,
-	0x6c, 0x79, 0x32, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01,
+	0x6c, 0x79, 0x31, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1f, 0x0a,
 	0x0b, 0x72, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x5f, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x02, 0x20, 0x01,
 	0x28, 0x05, 0x52, 0x0a, 0x72, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x43, 0x6f, 0x64, 0x65, 0x32, 0x41,
-	0x0a, 0x09, 0x47, 0x72, 0x69, 0x70, 0x6d, 0x6f, 0x63, 0x6b, 0x32, 0x12, 0x34, 0x0a, 0x08, 0x53,
+	0x0a, 0x09, 0x47, 0x72, 0x69, 0x70, 0x6d, 0x6f, 0x63, 0x6b, 0x31, 0x12, 0x34, 0x0a, 0x08, 0x53,
 	0x61, 0x79, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x12, 0x14, 0x2e, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x66,
-	0x69, 0x6c, 0x65, 0x73, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x32, 0x1a, 0x12, 0x2e,
+	0x69, 0x6c, 0x65, 0x73, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x31, 0x1a, 0x12, 0x2e,
 	0x6d, 0x75, 0x6c, 0x74, 0x69, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x2e, 0x52, 0x65, 0x70, 0x6c, 0x79,
-	0x32, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x31, 0x42, 0x3c, 0x5a, 0x3a, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
 	0x74, 0x6f, 0x6b, 0x6f, 0x70, 0x65, 0x64, 0x69, 0x61, 0x2f, 0x67, 0x72, 0x69, 0x70, 0x6d, 0x6f,
-	0x63, 0x6b, 0x2f, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2f, 0x6d, 0x75, 0x6c, 0x74, 0x69,
-	0x2d, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x63, 0x6b, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x67, 0x65, 0x6e, 0x2f, 0x65, 0x78, 0x61, 0x6d,
+	0x70, 0x6c, 0x65, 0x2f, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x2d, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_file2_proto_rawDescOnce sync.Once
-	file_file2_proto_rawDescData = file_file2_proto_rawDesc
+	file_file1_proto_rawDescOnce sync.Once
+	file_file1_proto_rawDescData = file_file1_proto_rawDesc
 )
 
-func file_file2_proto_rawDescGZIP() []byte {
-	file_file2_proto_rawDescOnce.Do(func() {
-		file_file2_proto_rawDescData = protoimpl.X.CompressGZIP(file_file2_proto_rawDescData)
+func file_file1_proto_rawDescGZIP() []byte {
+	file_file1_proto_rawDescOnce.Do(func() {
+		file_file1_proto_rawDescData = protoimpl.X.CompressGZIP(file_file1_proto_rawDescData)
 	})
-	return file_file2_proto_rawDescData
+	return file_file1_proto_rawDescData
 }
 
-var file_file2_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_file2_proto_goTypes = []interface{}{
-	(*Request2)(nil), // 0: multifiles.Request2
-	(*Reply2)(nil),   // 1: multifiles.Reply2
+var file_file1_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_file1_proto_goTypes = []interface{}{
+	(*Request1)(nil), // 0: multifiles.Request1
+	(*Reply1)(nil),   // 1: multifiles.Reply1
 }
-var file_file2_proto_depIdxs = []int32{
-	0, // 0: multifiles.Gripmock2.SayHello:input_type -> multifiles.Request2
-	1, // 1: multifiles.Gripmock2.SayHello:output_type -> multifiles.Reply2
+var file_file1_proto_depIdxs = []int32{
+	0, // 0: multifiles.Gripmock1.SayHello:input_type -> multifiles.Request1
+	1, // 1: multifiles.Gripmock1.SayHello:output_type -> multifiles.Reply1
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -176,14 +177,14 @@ var file_file2_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_file2_proto_init() }
-func file_file2_proto_init() {
-	if File_file2_proto != nil {
+func init() { file_file1_proto_init() }
+func file_file1_proto_init() {
+	if File_file1_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_file2_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Request2); i {
+		file_file1_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Request1); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -194,8 +195,8 @@ func file_file2_proto_init() {
 				return nil
 			}
 		}
-		file_file2_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Reply2); i {
+		file_file1_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Reply1); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -211,20 +212,20 @@ func file_file2_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_file2_proto_rawDesc,
+			RawDescriptor: file_file1_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_file2_proto_goTypes,
-		DependencyIndexes: file_file2_proto_depIdxs,
-		MessageInfos:      file_file2_proto_msgTypes,
+		GoTypes:           file_file1_proto_goTypes,
+		DependencyIndexes: file_file1_proto_depIdxs,
+		MessageInfos:      file_file1_proto_msgTypes,
 	}.Build()
-	File_file2_proto = out.File
-	file_file2_proto_rawDesc = nil
-	file_file2_proto_goTypes = nil
-	file_file2_proto_depIdxs = nil
+	File_file1_proto = out.File
+	file_file1_proto_rawDesc = nil
+	file_file1_proto_goTypes = nil
+	file_file1_proto_depIdxs = nil
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -235,76 +236,76 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// Gripmock2Client is the client API for Gripmock2 service.
+// Gripmock1Client is the client API for Gripmock1 service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type Gripmock2Client interface {
+type Gripmock1Client interface {
 	// simple unary method
-	SayHello(ctx context.Context, in *Request2, opts ...grpc.CallOption) (*Reply2, error)
+	SayHello(ctx context.Context, in *Request1, opts ...grpc.CallOption) (*Reply1, error)
 }
 
-type gripmock2Client struct {
+type gripmock1Client struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewGripmock2Client(cc grpc.ClientConnInterface) Gripmock2Client {
-	return &gripmock2Client{cc}
+func NewGripmock1Client(cc grpc.ClientConnInterface) Gripmock1Client {
+	return &gripmock1Client{cc}
 }
 
-func (c *gripmock2Client) SayHello(ctx context.Context, in *Request2, opts ...grpc.CallOption) (*Reply2, error) {
-	out := new(Reply2)
-	err := c.cc.Invoke(ctx, "/multifiles.Gripmock2/SayHello", in, out, opts...)
+func (c *gripmock1Client) SayHello(ctx context.Context, in *Request1, opts ...grpc.CallOption) (*Reply1, error) {
+	out := new(Reply1)
+	err := c.cc.Invoke(ctx, "/multifiles.Gripmock1/SayHello", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Gripmock2Server is the server API for Gripmock2 service.
-type Gripmock2Server interface {
+// Gripmock1Server is the server API for Gripmock1 service.
+type Gripmock1Server interface {
 	// simple unary method
-	SayHello(context.Context, *Request2) (*Reply2, error)
+	SayHello(context.Context, *Request1) (*Reply1, error)
 }
 
-// UnimplementedGripmock2Server can be embedded to have forward compatible implementations.
-type UnimplementedGripmock2Server struct {
+// UnimplementedGripmock1Server can be embedded to have forward compatible implementations.
+type UnimplementedGripmock1Server struct {
 }
 
-func (*UnimplementedGripmock2Server) SayHello(context.Context, *Request2) (*Reply2, error) {
+func (*UnimplementedGripmock1Server) SayHello(context.Context, *Request1) (*Reply1, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SayHello not implemented")
 }
 
-func RegisterGripmock2Server(s *grpc.Server, srv Gripmock2Server) {
-	s.RegisterService(&_Gripmock2_serviceDesc, srv)
+func RegisterGripmock1Server(s *grpc.Server, srv Gripmock1Server) {
+	s.RegisterService(&_Gripmock1_serviceDesc, srv)
 }
 
-func _Gripmock2_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Request2)
+func _Gripmock1_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request1)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(Gripmock2Server).SayHello(ctx, in)
+		return srv.(Gripmock1Server).SayHello(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/multifiles.Gripmock2/SayHello",
+		FullMethod: "/multifiles.Gripmock1/SayHello",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(Gripmock2Server).SayHello(ctx, req.(*Request2))
+		return srv.(Gripmock1Server).SayHello(ctx, req.(*Request1))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _Gripmock2_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "multifiles.Gripmock2",
-	HandlerType: (*Gripmock2Server)(nil),
+var _Gripmock1_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "multifiles.Gripmock1",
+	HandlerType: (*Gripmock1Server)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "SayHello",
-			Handler:    _Gripmock2_SayHello_Handler,
+			Handler:    _Gripmock1_SayHello_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "file2.proto",
+	Metadata: "file1.proto",
 }
