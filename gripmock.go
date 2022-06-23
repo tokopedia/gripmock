@@ -100,7 +100,7 @@ type protocParam struct {
 }
 
 func generateProtoc(param protocParam) {
-  param.protoPath = fixGoPackage(param.protoPath)
+	param.protoPath = fixGoPackage(param.protoPath)
 	protoDirs := strings.Split(param.protoPath[0], "/")
 	protoDir := ""
 	if len(protoDirs) > 0 {
