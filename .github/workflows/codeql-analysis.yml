@@ -59,7 +59,7 @@ jobs:
 
     - name: Set Up Python
       if: matrix.language == 'python'
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     # Initializes the CodeQL tools for scanning.
