@@ -7,4 +7,4 @@ fi
 
 go build ../.
 
-docker buildx build --load -t "tkpd/gripmock:$1" --platform linux/arm64 .
+docker buildx build --load -t "tkpd/gripmock:$1" --platform linux/amd64 .
