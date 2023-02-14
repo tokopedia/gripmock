@@ -27,6 +27,10 @@ type storage struct {
 }
 
 func storeStub(stub *Stub) error {
+	return stubStorage.storeStub(stub)
+}
+
+func (sm *stubMapping) storeStub(stub *Stub) error {
 	mx.Lock()
 	defer mx.Unlock()
 
@@ -34,10 +38,10 @@ func storeStub(stub *Stub) error {
 		Input:  stub.Input,
 		Output: stub.Output,
 	}
-	if stubStorage[stub.Service] == nil {
-		stubStorage[stub.Service] = make(map[string][]storage)
+	if (*sm)[stub.Service] == nil {
+		(*sm)[stub.Service] = make(map[string][]storage)
 	}
-	stubStorage[stub.Service][stub.Method] = append(stubStorage[stub.Service][stub.Method], strg)
+	(*sm)[stub.Service][stub.Method] = append((*sm)[stub.Service][stub.Method], strg)
 	return nil
 }
 
@@ -269,6 +273,10 @@ func clearStorage() {
 }
 
 func readStubFromFile(path string) {
+	stubStorage.readStubFromFile(path)
+}
+
+func (sm *stubMapping) readStubFromFile(path string) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Printf("Can't read stub from %s. %v\n", path, err)
@@ -287,13 +295,26 @@ func readStubFromFile(path string) {
 			continue
 		}
 
-		stub := new(Stub)
-		err = json.Unmarshal(byt, stub)
-		if err != nil {
-			log.Printf("Error when reading file %s. %v. skipping...", file.Name(), err)
+		if byt[0] == '[' && byt[len(byt)-1] == ']' {
+			var stubs []*Stub
+			err = json.Unmarshal(byt, &stubs)
+			if err != nil {
+				log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
+				continue
+			}
+			for _, s := range stubs {
+				sm.storeStub(s)
+			}
 			continue
 		}
 
-		storeStub(stub)
+		stub := new(Stub)
+		err = json.Unmarshal(byt, stub)
+		if err != nil {
+			log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
+			continue
+		}
+
+		sm.storeStub(stub)
 	}
 }
