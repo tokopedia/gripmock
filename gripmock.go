@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path"
 	"strings"
 	"syscall"
 
@@ -95,18 +96,45 @@ type protocParam struct {
 	imports     []string
 }
 
-func generateProtoc(param protocParam) {
-	param.protoPath = fixGoPackage(param.protoPath)
-	protodirs := strings.Split(param.protoPath[0], "/")
+func getProtodirs(protoPath string, imports []string) []string {
+	// deduced protodir from protoPath
+	splitpath := strings.Split(protoPath, "/")
 	protodir := ""
-	if len(protodirs) > 0 {
-		protodir = strings.Join(protodirs[:len(protodirs)-1], "/") + "/"
+	if len(splitpath) > 0 {
+		protodir = path.Join(splitpath[:len(splitpath)-1]...)
 	}
 
-	args := []string{"-I", protodir}
-	// include well-known-types
-	for _, i := range param.imports {
-		args = append(args, "-I", i)
+	// search protodir prefix
+	protodirIdx := -1
+	for i := range imports {
+		dir := path.Join("protogen", imports[i])
+		if strings.HasPrefix(protodir, dir) {
+			protodir = dir
+			protodirIdx = i
+			break
+		}
+	}
+
+	protodirs := make([]string, 0, len(imports)+1)
+	protodirs = append(protodirs, protodir)
+	// include all dir in imports, skip if it has been added before
+	for i, dir := range imports {
+		if i == protodirIdx {
+			continue
+		}
+		protodirs = append(protodirs, dir)
+	}
+	return protodirs
+}
+
+func generateProtoc(param protocParam) {
+	param.protoPath = fixGoPackage(param.protoPath)
+	protodirs := getProtodirs(param.protoPath[0], param.imports)
+
+	// estimate args length to prevent expand
+	args := make([]string, 0, len(protodirs)+len(param.protoPath)+2)
+	for _, dir := range protodirs {
+		args = append(args, "-I", dir)
 	}
 
 	// the latest go-grpc plugin will generate subfolders under $GOPATH/src based on go_package option
