@@ -42,3 +42,7 @@ jobs:
       uses: ./
       with:
         entrypoint: example/stub-subfolders/entrypoint.sh
+    - name: Run gzip example
+      uses: ./
+      with:
+        entrypoint: example/simple-with-gzip/entrypoint.sh
