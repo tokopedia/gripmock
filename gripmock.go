@@ -70,8 +70,8 @@ func main() {
 		imports:     importDirs,
 	})
 
-	// build the server
-	//buildServer(output)
+	// Build the server binary
+	buildServer(output)
 
 	// and run
 	run, runerr := runGrpcServer(output)
@@ -128,6 +128,7 @@ func getProtodirs(protoPath string, imports []string) []string {
 }
 
 func generateProtoc(param protocParam) {
+	log.Printf("Generating server protocol %s to %s...", param.protoPath, param.output)
 	param.protoPath = fixGoPackage(param.protoPath)
 	protodirs := getProtodirs(param.protoPath[0], param.imports)
 
@@ -152,6 +153,7 @@ func generateProtoc(param protocParam) {
 		log.Fatal("Fail on protoc ", err)
 	}
 
+	log.Print("Generated protocol")
 }
 
 // append gopackage in proto files if doesn't have any
@@ -170,7 +172,7 @@ func fixGoPackage(protoPaths []string) []string {
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
-	run := exec.Command("go", "run", output+"server.go")
+	run := exec.Command(output+"server")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	err := run.Start()
@@ -183,4 +185,48 @@ func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
 		runerr <- run.Wait()
 	}()
 	return run, runerr
+}
+
+func buildServer(output string) {
+	log.Print("Building server...")
+	oldCwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := os.Chdir(output); err != nil {
+		log.Fatal(err)
+	}
+
+	run := exec.Command("go", "mod", "init", "server")
+	run.Stdout = os.Stdout
+	run.Stderr = os.Stderr
+	if err := run.Run(); err != nil {
+		log.Fatal("go mod init: ", err)
+	}
+
+	run = exec.Command("go", "mod", "tidy")
+	run.Stdout = os.Stdout
+	run.Stderr = os.Stderr
+	if err := run.Run(); err != nil {
+		log.Fatal("go mod tidy: ", err)
+	}
+
+	run = exec.Command("go", "get")
+	run.Stdout = os.Stdout
+	run.Stderr = os.Stderr
+	if err := run.Run(); err != nil {
+		log.Fatal("go get: ", err)
+	}
+
+	run = exec.Command("go", "build", ".")
+	run.Stdout = os.Stdout
+	run.Stderr = os.Stderr
+	if err := run.Run(); err != nil {
+		log.Fatal("go build .: ", err)
+	}
+
+	if err := os.Chdir(oldCwd); err != nil {
+		log.Fatal(err)
+	}
+	log.Print("Built ", output+"server")
 }

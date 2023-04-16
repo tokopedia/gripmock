@@ -10,12 +10,27 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 
     "github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/runtime/protoiface"
+	
+	"github.com/go-logr/stdr"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/contrib/propagators/autoprop"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	otlpzipkin "go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 )
 {{ range $package, $alias := .Dependencies }}
 import {{$alias}} "{{$package}}"
@@ -23,6 +38,7 @@ import {{$alias}} "{{$package}}"
 const (
 	TCP_ADDRESS  = "{{.GrpcAddr}}"
 	HTTP_PORT = ":{{.AdminPort}}"
+	trace_name = "github.com/tokopedia/gripmock/protoc-gen-gripmock/main"
 )
 
 {{ range .Services }}
@@ -35,7 +51,10 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	traceOpts, traceShutdownCallback := serverInstrumentationOptions(context.Background())
+	defer traceShutdownCallback()
+
+	s := grpc.NewServer(traceOpts...)
 	{{ range .Services }}
 	{{ template "register_services" . }}
 	{{ end }}
@@ -180,5 +199,127 @@ func findStub(service, method string, in, out protoiface.MessageV1) error {
 
 	data, _ := json.Marshal(respRPC.Data)
 	return jsonpb.Unmarshal(bytes.NewReader(data), out)
+}
+
+// Initialize OpenTelemetry tracer and exporter(s), return gRPC interceptors to
+// emit trace events and a callback to shut down the tracer.
+func serverInstrumentationOptions(ctx context.Context) ([]grpc.ServerOption, func()) {
+	log.Printf("setting up tracing...")
+
+	logger := stdr.New(log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile))
+	otel.SetLogger(logger)
+
+	traceOpts := []tracesdk.TracerProviderOption{}
+
+	// the golang otel sdk doesn't support automatic exporter selection
+	// by env-vars. See
+	// https://github.com/open-telemetry/opentelemetry-go-contrib/pull/2753
+	// and https://github.com/open-telemetry/opentelemetry-go/issues/2310
+	//
+	// See https://opentelemetry.io/docs/reference/specification/sdk-environment-variables/#exporter-selection
+	// for the env-var
+	//
+	// This mess can go away once the golang SDK has an automatic exporter
+	// selection package.
+	//
+	exporter_names := strings.Split(os.Getenv("OTEL_TRACES_EXPORTER"), ",")
+	for _, e := range(exporter_names) {
+		if e == "" {
+			continue
+		}
+		switch (e) {
+			case "otlp":
+				// The golang opentelemetry sdk doesn't
+				// properly support auto-selection of client
+				// based on OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+				// or OTEL_EXPORTER_OTLP_PROTOCOL environment
+				// variables, so we have to do it ourselves here.
+				// The spec is't clear about which env-var takes
+				// precendence if both are set, so we'll prefer
+				// the most specific.
+				otlpProto := os.Getenv("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL")
+				if otlpProto == "" {
+					otlpProto = os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL")
+				}
+				switch (otlpProto) {
+					case "http":
+						fallthrough
+					case "http/protobuf":
+						// Use OTEL_EXPORTER_OTLP_TRACES_ENDPOINT env-var
+						hxt, err := otlptracehttp.New(ctx)
+						if err != nil {
+							log.Fatal("initializing opentelemetry HTTP exporter: ", err)
+						}
+						traceOpts = append(traceOpts, tracesdk.WithBatcher(hxt))
+					case "grpc":
+						// Use OTEL_EXPORTER_OTLP_TRACES_ENDPOINT env-var
+						gxt, err := otlptracegrpc.New(ctx)
+						if err != nil {
+							log.Fatal("initializing opentelemetry gRPC exporter: ", err)
+						}
+						traceOpts = append(traceOpts, tracesdk.WithBatcher(gxt))
+					default:
+						log.Fatal("unsupported value \"%s\" for OTEL_EXPORTER_OTLP_TRACES_PROTOCOL or OTEL_EXPORTER_OTLP_PROTOCOL env-var")
+					}
+			case "zipkin":
+				// Use OTEL_EXPORTER_ZIPKIN_ENDPOINT env-var
+				zx, err := otlpzipkin.New("")
+				if err != nil {
+					log.Fatalf("initializing opentelemetry Zipkin exporter: ", err)
+				}
+				traceOpts = append(traceOpts, tracesdk.WithBatcher(zx))
+			case "stdout":
+				sx, err := stdouttrace.New()
+				if err != nil {
+					log.Fatalf("initializing opentelemetry stdout exporter: ", err)
+				}
+				// Sync span export is used for the stdout
+				// exporter; this is slow and high overhead,
+				// but immediate. Production use should use a
+				// collector instead.
+				traceOpts = append(traceOpts, tracesdk.WithSyncer(sx))
+			case "":
+				continue
+			default:
+				log.Fatalf("OTEL_TRACES_EXPORTER=%s does not specify a supported exporter; supported exporters are \"otlp\", \"zipkin\", \"stdout\"", e)
+		}
+	}
+
+	if len(traceOpts) == 0 {
+		// No tracing exporter was configured, so no tracing will be
+		// configured.
+		return []grpc.ServerOption{}, func(){}
+	}
+
+	rsrc, _ := resource.Merge(
+			resource.Default(),
+			resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceName(trace_name),
+				),
+			)
+	traceOpts = append(traceOpts, tracesdk.WithResource(rsrc))
+
+	// Respect OTEL_PROPAGATORS env-var for propagators.
+	// Recommend using OTEL_PROPAGATORS=tracecontext,baggage,b3,b3multi
+	otel.SetTextMapPropagator(autoprop.NewTextMapPropagator())
+
+	tp := tracesdk.NewTracerProvider(traceOpts...)
+	otel.SetTracerProvider(tp)
+
+	shutdownCallback := func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	serverOpts := []grpc.ServerOption{
+		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+	}
+
+	log.Printf("Tracing configured")
+
+	return serverOpts, shutdownCallback
 }
 {{ end }}

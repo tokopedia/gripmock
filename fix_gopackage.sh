@@ -15,8 +15,9 @@ do
   # example value: example/foo/bar/
   dir=${proto%/*}
 
-  # remove prefix / if any
-  dir=$(echo $dir | sed -n 's:^/*\(.*\)$:\1:p')
+  # remove prefix / or ./ if any
+  dir=$(echo $dir | sed -n 's:^/*\(.*\)$:\1:p;s:^\.\(.*\)$/:\1:p')
+
 
   # get string from right until the first /
   # example value: hello.proto

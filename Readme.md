@@ -185,3 +185,68 @@ Nested fields are allowed for input matching too for all JSON data types. (`stri
 }
 ```
 
+## Tracing requests and responses with OpoenTelemetry
+
+Gripmock generates an OpenTelemetry-enabled gRPC server that will send trace
+events to the OpenTelemetry collector, a zipkin server, or write them as json
+to stdout.
+
+Simple example:
+
+    OTEL_TRACES_EXPORTER=stdout gripmock
+
+### Available trace exporters
+
+To enable tracing, set the env-var `OTEL_TRACES_EXPORTER` to a comma-separated list
+of one or more of `otlp`, `zipkin` and `stdout`
+
+#### OpenTelemetry exporter
+
+`OTEL_TRACES_EXPORTER=otlp` will send traces to an [OpenTelemetry collector endpoint](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options) at `OTEL_EXPORTER_OTLP_ENDPOINT` in format `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`.
+
+For a HTTP exporter endpoint:
+
+    OTEL_TRACES_EXPORTER=otlp OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf" OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 gripmock ...
+
+For a gRPC exporter endpoint:
+
+    OTEL_TRACES_EXPORTER=otlp OTEL_EXPORTER_OTLP_PROTOCOL="grpc" OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 gripmock ...
+
+Optionally `OTEL_EXPORTER_OTLP_INSECURE=true` may be set to disable the use of
+TLS for trace event delivery. See [the spec](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md) for certificate configuration and other options.
+
+#### Zipkin exporter
+
+`OTEL_TRACES_EXPORTER=zipkin` will send traces to Zipkin-compatible server at [`OTEL_EXPORTER_ZIPKIN_ENDPOINT`](https://opentelemetry.io/docs/reference/specification/sdk-environment-variables/#zipkin-exporter), e.g.:
+
+    OTEL_TRACES_EXPORTER=zipkin OTEL_EXPORTER_ZIPKIN_ENDPOINT=http://localhost:9411/api/v2/spans gripmock ...
+
+#### stdout exporter
+
+`OTEL_TRACES_EXPORTER=stdout` will write json trace events to stdout.
+
+Unlike the other exporters, the stdout writer is configured to be *synchonous*,
+so it has a greater performance impact. It's intended for debug use only. Use a
+server based collector if performance is a concern.
+
+### Trace context propagation
+
+Gripmock recognises inbound trace contexts in w3c format and baggage format by
+default. To use support zipkin B3 headers or other propagators, run gripmock
+with the environment variable `OTEL_PROPAGATORS` set to
+[any supported set of propagators](https://pkg.go.dev/go.opentelemetry.io/contrib/propagators/autoprop)
+e.g.
+
+    OTEL_PROPAGATORS=tracecontext,baggage,b3,b3multi gripmock ....
+
+### Tracing demo
+
+To test the tracing, you can set appropriate trace headers in 
+[`grpcurl`](https://github.com/fullstorydev/grpcurl) requests. For example, in
+one session run `gripmock` to serve `example/simple/simple.proto`;
+set the env-vars `OTEL_PROPAGATORS=tracecontext,baggage,b3,b3multi`
+and `OTEL_TRACES_EXPORTER=stdout`. Then in another session run:
+
+    curl -X POST -d '{"service":"Gripmock","method":"SayHello","input":{"equals":{}},"output":{"data":{"message":"Hello GripMock"}}}' localhost:4771/add
+
+   grpcurl -H 'b3: 80f198ee56343ba864fe8b2a57d3eff7-e457b5a2e4d86bd1-1' -plaintext localhost:4770 simple.Gripmock/SayHello

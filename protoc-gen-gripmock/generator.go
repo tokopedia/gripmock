@@ -69,6 +69,8 @@ func main() {
 		log.Fatalf("error marshalling plugin response: %v", err)
 	}
 
+	// Create the required go.mod and go.sum
+
 	// Write the response to stdout, to be picked up by protoc
 	os.Stdout.Write(out)
 }

@@ -6,3 +6,5 @@ protogen/*
 !protogen/go.mod
 !protogen/example/
 temp
+protoc-gen-gripmock/protoc-gen-gripmock
+protoc-gen-gripmock/server.go
