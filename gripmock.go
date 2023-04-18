@@ -1,5 +1,22 @@
 package main
 
+/*
+ * "gripmock" is a wrapper to generate the golang protocol files and server
+ * implementation from the input .proto files.
+ *
+ * It invokes protoc to generate the regular golang protobuf client/server
+ * packages and a custom "protoc-gen-gripmock" plugin to generate the server
+ * implementation.
+ * 
+ * The server implementation is based on a "server.tmpl" file that's populated
+ * with setup code based on the protocol(s) it should support and linked with
+ * the stub loading support code.
+ *
+ * Once the files are all generated, gripmock compiles them to generate a
+ * server binary and by default invokes the server binary. The main gripmock
+ * binary runs to serve stubs for the API server(s).
+ */
+
 import (
 	"bytes"
 	"flag"
@@ -15,8 +32,13 @@ import (
 	"github.com/tokopedia/gripmock/stub"
 )
 
+const (
+	GENERATED_MODULE_NAME="gripmock/generated"
+)
+
 func main() {
-	outputPointer := flag.String("o", "", "directory to output server.go. Default is $GOPATH/src/grpc/")
+	outputPointer := flag.String("o", "generated", "directory to output generated files and binaries. Default is \"generated\"")
+	templateDir := flag.String("template-dir", "server_template", "path to directory containing server.tmpl and its go.mod, default \"server_tmpl\"")
 	grpcPort := flag.String("grpc-port", "4770", "Port of gRPC tcp server")
 	grpcBindAddr := flag.String("grpc-listen", "", "Adress the gRPC server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
@@ -30,13 +52,7 @@ func main() {
 
 	flag.Parse()
 	fmt.Println("Starting GripMock")
-	if os.Getenv("GOPATH") == "" {
-		log.Fatal("$GOPATH is empty")
-	}
 	output := *outputPointer
-	if output == "" {
-		output = os.Getenv("GOPATH") + "/src/grpc"
-	}
 
 	// for safety
 	output += "/"
@@ -68,6 +84,7 @@ func main() {
 		grpcPort:    *grpcPort,
 		output:      output,
 		imports:     importDirs,
+		templateDir:    *templateDir,
 	})
 
 	// Build the server binary
@@ -94,57 +111,35 @@ type protocParam struct {
 	grpcPort    string
 	output      string
 	imports     []string
-}
-
-func getProtodirs(protoPath string, imports []string) []string {
-	// deduced protodir from protoPath
-	splitpath := strings.Split(protoPath, "/")
-	protodir := ""
-	if len(splitpath) > 0 {
-		protodir = path.Join(splitpath[:len(splitpath)-1]...)
-	}
-
-	// search protodir prefix
-	protodirIdx := -1
-	for i := range imports {
-		dir := path.Join("protogen", imports[i])
-		if strings.HasPrefix(protodir, dir) {
-			protodir = dir
-			protodirIdx = i
-			break
-		}
-	}
-
-	protodirs := make([]string, 0, len(imports)+1)
-	protodirs = append(protodirs, protodir)
-	// include all dir in imports, skip if it has been added before
-	for i, dir := range imports {
-		if i == protodirIdx {
-			continue
-		}
-		protodirs = append(protodirs, dir)
-	}
-	return protodirs
+	templateDir string
 }
 
 func generateProtoc(param protocParam) {
 	log.Printf("Generating server protocol %s to %s...", param.protoPath, param.output)
 	param.protoPath = fixGoPackage(param.protoPath)
-	protodirs := getProtodirs(param.protoPath[0], param.imports)
 
-	// estimate args length to prevent expand
-	args := make([]string, 0, len(protodirs)+len(param.protoPath)+2)
-	for _, dir := range protodirs {
-		args = append(args, "-I", dir)
+	args := []string{
+		"-I", "protogen",
 	}
-
-	// the latest go-grpc plugin will generate subfolders under $GOPATH/src based on go_package option
-	pbOutput := os.Getenv("GOPATH") + "/src"
-
+	for _, imp := range param.imports {
+		args = append(args, "-I", imp)
+	}
 	args = append(args, param.protoPath...)
-	args = append(args, "--go_out=plugins=grpc:"+pbOutput)
-	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
-		param.adminPort, param.grpcAddress, param.grpcPort, param.output))
+	args = append(args,
+		"--go_out="+param.output,
+		"--go_opt=module="+GENERATED_MODULE_NAME,
+		"--go-grpc_out="+param.output,
+		"--go-grpc_opt=module="+GENERATED_MODULE_NAME,
+	)
+	args = append(args,
+		"--gripmock_out="+param.output,
+		"--gripmock_opt=paths=source_relative",
+		"--gripmock_opt=admin-port="+param.adminPort,
+		"--gripmock_opt=grpc-address="+param.grpcAddress,
+		"--gripmock_opt=grpc-port="+param.grpcPort,
+		"--gripmock_opt=template-dir="+param.templateDir,
+	)
+	log.Printf("invoking \"protoc\" with args %v", args)
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
@@ -156,23 +151,28 @@ func generateProtoc(param protocParam) {
 	log.Print("Generated protocol")
 }
 
-// append gopackage in proto files if doesn't have any
+// Rewrite the .proto file to replace any go_package directive with one based
+// on our local package path for generated servers, GENERATED_MODULE_NAME
+//
+// Currently delegated to a hacky shell script
+//
 func fixGoPackage(protoPaths []string) []string {
 	fixgopackage := exec.Command("fix_gopackage.sh", protoPaths...)
+	fixgopackage.Env = append(fixgopackage.Environ(),
+		"GENERATED_MODULE_NAME="+GENERATED_MODULE_NAME)
 	buf := &bytes.Buffer{}
 	fixgopackage.Stdout = buf
 	fixgopackage.Stderr = os.Stderr
 	err := fixgopackage.Run()
 	if err != nil {
-		log.Println("error on fixGoPackage", err)
-		return protoPaths
+		log.Fatal("error on fixGoPackage", err)
 	}
 
 	return strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
-	run := exec.Command(output+"server")
+	run := exec.Command(path.Join(output,"server"))
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	err := run.Start()
@@ -197,13 +197,15 @@ func buildServer(output string) {
 		log.Fatal(err)
 	}
 
-	run := exec.Command("go", "mod", "init", "server")
+	log.Printf("setting module name")
+	run := exec.Command("go", "mod", "edit", "-module", GENERATED_MODULE_NAME)
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	if err := run.Run(); err != nil {
-		log.Fatal("go mod init: ", err)
+		log.Fatal("go mod edit: ", err)
 	}
 
+	log.Printf("go mod tidy")
 	run = exec.Command("go", "mod", "tidy")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
@@ -211,22 +213,16 @@ func buildServer(output string) {
 		log.Fatal("go mod tidy: ", err)
 	}
 
-	run = exec.Command("go", "get")
+	log.Printf("go build")
+	run = exec.Command("go", "build", "-o", "server", ".")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	if err := run.Run(); err != nil {
-		log.Fatal("go get: ", err)
-	}
-
-	run = exec.Command("go", "build", ".")
-	run.Stdout = os.Stdout
-	run.Stderr = os.Stderr
-	if err := run.Run(); err != nil {
-		log.Fatal("go build .: ", err)
+		log.Fatal("go build -o server .: ", err)
 	}
 
 	if err := os.Chdir(oldCwd); err != nil {
 		log.Fatal(err)
 	}
-	log.Print("Built ", output+"server")
+	log.Print("Built ", path.Join(output,"server"))
 }

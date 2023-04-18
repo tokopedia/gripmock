@@ -5,6 +5,10 @@ if [ "$1" = "" ]; then
 	exit 0
 fi
 
-go build ../.
+go mod vendor
+(cd protoc-gen-gripmock && go mod vendor)
 
-docker build -t "tkpd/gripmock:$1" .
+rm -rf protogen
+mkdir -p protogen 
+
+docker buildx build --progress=plain -t "tkpd/gripmock:$1" .
