@@ -185,6 +185,14 @@ Nested fields are allowed for input matching too for all JSON data types. (`stri
 }
 ```
 
+## Discovering methods
+
+The server stubs print the methods they expose on startup, but the gripmock
+server exposes a reflection interface so you can also use
+[grpcurl](https://github.com/fullstorydev/grpcurl) to list them with e.g.:
+
+    grpcurl -plaintext localhost:5880 list
+
 ## Tracing requests and responses with OpoenTelemetry
 
 Gripmock generates an OpenTelemetry-enabled gRPC server that will send trace
