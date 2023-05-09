@@ -1,0 +1,4 @@
+assets
+.git
+.github
+*.pb.go

@@ -1,51 +1,32 @@
-FROM golang:alpine
+FROM golang:alpine3.17
 
-RUN mkdir /proto
-
-RUN mkdir /stubs
-
-RUN apk -U --no-cache add git protobuf bash
-
-RUN go install -v github.com/golang/protobuf/protoc-gen-go@latest
-
-RUN go install -v google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-
-RUN go install github.com/markbates/pkger/cmd/pkger@latest
+# install tools (bash, git, protobuf, protoc-gen-go, protoc-grn-go-grpc, pkger)
+RUN apk -U --no-cache add bash git protobuf &&\
+    go install -v github.com/golang/protobuf/protoc-gen-go@latest &&\
+    go install -v google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest &&\
+    go install github.com/markbates/pkger/cmd/pkger@latest
 
 # cloning well-known-types
-RUN git clone --depth=1 https://github.com/google/protobuf.git /protobuf-repo
-
-RUN mkdir protobuf
-
 # only use needed files
-RUN mv /protobuf-repo/src/ /protobuf/
-
-RUN rm -rf /protobuf-repo
-
-RUN mkdir -p /go/src/github.com/tokopedia/gripmock
+RUN git clone --depth=1 https://github.com/google/protobuf.git /protobuf-repo &&\
+    mv /protobuf-repo/src/ /protobuf/ &&\
+    rm -rf /protobuf-repo
 
 COPY . /go/src/github.com/tokopedia/gripmock
 
-RUN ln -s /go/src/github.com/tokopedia/gripmock/fix_gopackage.sh /bin/
+# create necessary dirs and export fix_gopackage.sh
+RUN mkdir /proto /stubs &&\
+    ln -s /go/src/github.com/tokopedia/gripmock/fix_gopackage.sh /bin/
 
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
-RUN pkger
-
 # install generator plugin
-RUN go install -v
+RUN pkger && go install -v
 
 WORKDIR /go/src/github.com/tokopedia/gripmock
 
-# install gripmock
-RUN go install -v
-
-# to cache necessary imports
-RUN go build ./example/simple/client
-
-# remove all .pb.go generated files
-# since generating go file is part of the test
-RUN find . -name "*.pb.go" -delete -type f
+# install gripmock & build example to cache necessary imports
+RUN go install -v && go build ./example/simple/client
 
 EXPOSE 4770 4771
 
