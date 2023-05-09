@@ -38,6 +38,8 @@ func main() {
 		log.Fatalf("error initializing plugin: %v", err)
 	}
 
+	plugin.SupportedFeatures = uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)
+
 	protos := make([]*descriptor.FileDescriptorProto, len(plugin.Files))
 	for index, file := range plugin.Files {
 		protos[index] = file.Proto
