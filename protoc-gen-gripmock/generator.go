@@ -14,7 +14,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/markbates/pkger"
 	"golang.org/x/tools/imports"
 	"google.golang.org/protobuf/compiler/protogen"
 )
@@ -115,21 +114,8 @@ type Options struct {
 	format    bool
 }
 
+//go:embed server.tmpl
 var SERVER_TEMPLATE string
-
-func init() {
-	f, err := pkger.Open("/server.tmpl")
-	if err != nil {
-		log.Fatalf("error opening server.tmpl: %s", err)
-	}
-
-	bytes, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatalf("error reading server.tmpl: %s", err)
-	}
-
-	SERVER_TEMPLATE = string(bytes)
-}
 
 func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) error {
 	services := extractServices(protos)
