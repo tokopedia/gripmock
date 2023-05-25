@@ -3,11 +3,12 @@ package stub
 import (
 	"encoding/json"
 	"fmt"
+	"google.golang.org/grpc/codes"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
-	
+
 	"github.com/go-chi/chi"
 )
 
@@ -62,6 +63,7 @@ type Input struct {
 type Output struct {
 	Data  map[string]interface{} `json:"data"`
 	Error string                 `json:"error"`
+	Code  *codes.Code            `json:"code,omitempty"`
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +108,7 @@ func validateStub(stub *Stub) error {
 	if stub.Method == "" {
 		return fmt.Errorf("Method name can't be emtpy")
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
@@ -124,7 +126,7 @@ func validateStub(stub *Stub) error {
 
 	// TODO: validate all input case
 
-	if stub.Output.Error == "" && stub.Output.Data == nil {
+	if stub.Output.Error == "" && stub.Output.Data == nil && stub.Output.Code == nil {
 		return fmt.Errorf("Output can't be empty")
 	}
 	return nil
@@ -143,11 +145,11 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		responseError(err, w)
 		return
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
-	
+
 	output, err := findStub(stub)
 	if err != nil {
 		log.Println(err)
