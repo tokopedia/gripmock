@@ -41,7 +41,7 @@ func main() {
 	// for safety
 	output += "/"
 	if _, err := os.Stat(output); os.IsNotExist(err) {
-		os.Mkdir(output, os.ModePerm)
+		os.MkdirAll(output, os.ModePerm)
 	}
 
 	// run admin stub server
@@ -131,6 +131,10 @@ func generateProtoc(param protocParam) {
 	param.protoPath = fixGoPackage(param.protoPath)
 	protodirs := getProtodirs(param.protoPath[0], param.imports)
 
+	// prepare ouput dir inside working dir
+	tempOut := "grpc/"
+	os.Mkdir(tempOut, os.ModePerm)
+
 	// estimate args length to prevent expand
 	args := make([]string, 0, len(protodirs)+len(param.protoPath)+2)
 	for _, dir := range protodirs {
@@ -143,7 +147,7 @@ func generateProtoc(param protocParam) {
 	args = append(args, param.protoPath...)
 	args = append(args, "--go_out=plugins=grpc:"+pbOutput)
 	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
-		param.adminPort, param.grpcAddress, param.grpcPort, param.output))
+		param.adminPort, param.grpcAddress, param.grpcPort, tempOut))
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
@@ -152,6 +156,9 @@ func generateProtoc(param protocParam) {
 		log.Fatal("Fail on protoc ", err)
 	}
 
+	if err := exec.Command("cp", tempOut+"server.go", param.output).Run(); err != nil {
+		log.Fatal("Fail copy output ", err)
+	}
 }
 
 // append gopackage in proto files if doesn't have any
@@ -170,6 +177,11 @@ func fixGoPackage(protoPaths []string) []string {
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
+	modtidy := exec.Command("go", "mod", "tidy")
+	if err := modtidy.Run(); err != nil {
+		log.Fatal(err)
+	}
+
 	run := exec.Command("go", "run", output+"server.go")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr

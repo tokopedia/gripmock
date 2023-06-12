@@ -29,6 +29,10 @@ do
   mkdir -p "$newdir" && \
     cp "$proto" "$_" && \
 
+  existingGoPackage=$(grep -n '^option go_package.*$' "$newfile")
+
+  if [[ "$existingGoPackage" != *"// external"* ]]; then 
+  
     # Force remove any declaration of go_package
     # then replace it with our own declaration below
     sed -i 's/^option go_package.*$//g' $newfile
@@ -41,6 +45,9 @@ do
 
   # append our own go_package delcaration just below "syntax" declaration
   sed -i "${syntaxLineNum}s~$~\n$goPackageString~" $newfile
+
+  fi;
+
   echo $newfile
 done
 
