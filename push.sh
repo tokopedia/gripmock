@@ -7,4 +7,4 @@ fi
 
 go build ../.
 
-docker buildx build --push -t "tkpd/gripmock:$1" --platform linux/amd64,linux/arm64 .
+docker buildx build --push -t "tkpd/stubby-gripmock:$1" --platform linux/amd64,linux/arm64 .
