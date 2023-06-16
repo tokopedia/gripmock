@@ -76,21 +76,33 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	for _, stubrange := range stubs {
 		if expect := stubrange.Input.Equals; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"equals", expect})
-			if equals(stub.Data, expect) && equals(stub.) {
+			if !equals(stub.Data, expect) {
+				continue
+			}
+
+			if headersConstraintsApply(stubrange.Input, stub) {
 				return &stubrange.Output, nil
 			}
 		}
 
 		if expect := stubrange.Input.Contains; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"contains", expect})
-			if contains(stubrange.Input.Contains, stub.Data) {
+			if !contains(expect, stub.Data) {
+				continue
+			}
+
+			if headersConstraintsApply(stubrange.Input, stub) {
 				return &stubrange.Output, nil
 			}
 		}
 
 		if expect := stubrange.Input.Matches; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"matches", expect})
-			if matches(stubrange.Input.Matches, stub.Data) {
+			if !matches(expect, stub.Data) {
+				continue
+			}
+
+			if headersConstraintsApply(stubrange.Input, stub) {
 				return &stubrange.Output, nil
 			}
 		}
@@ -99,6 +111,85 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	return nil, stubNotFoundError(stub, closestMatch)
 }
 
+func headersConstraintsApply(expectedInput Input, stub *findStubPayload) bool {
+	if !stub.Input.CheckHeaders {
+		return &stubrange.Output, nil
+	}
+
+	if expected := expectedInput.EqualsHeaders; expected != nil {
+		if headersEqual(expected, stub.Headers) {
+			return true
+		}
+	}
+
+	if expected := expectedInput.ContainsHeaders; expected != nil {
+		if headersContain(expected, stub.Headers) {
+			return true
+		}
+	}
+
+	if expected := expectedInput.MatchesHeaders; expected != nil {
+		if headersMatch(expected, stub.Headers) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func headersEqual(expected, actual map[string][]string) bool {
+	if len(expected) != len(actual) {
+		return false
+	}
+
+	for header, values := range expected {
+		actualValues, ok := actual[header]
+		if !ok {
+			return false
+		}
+
+		if !reflect.DeepEqual(actualValues, values) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func headersContain(expected, actual map[string][]string) bool {
+	for key, valuesB := range expected {
+		valuesA, ok := actual[key]
+		if !ok {
+			return false
+		}
+
+		if !containsStrings(valuesA, valuesB) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func containsStrings(A, B []string) bool {
+	stringMap := make(map[string]bool)
+
+	for _, str := range A {
+		stringMap[str] = true
+	}
+
+	for _, str := range B {
+		if !stringMap[str] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func headersMatch(expected, actual map[string][]string) bool {
+
+}
 func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error {
 	template := fmt.Sprintf("Can't find stub \n\nService: %s \n\nMethod: %s \n\nInput\n\n", stub.Service, stub.Method)
 	expectString := renderFieldAsString(stub.Data)

@@ -57,9 +57,10 @@ type Input struct {
 	Equals          map[string]interface{} `json:"equals"`
 	Contains        map[string]interface{} `json:"contains"`
 	Matches         map[string]interface{} `json:"matches"`
-	EqualsHeaders   map[string]interface{} `json:"equals_headers"`
-	ContainsHeaders map[string]interface{} `json:"contains_headers"`
-	MatchesHeaders  map[string]interface{} `json:"matches_headers"`
+	CheckHeaders    bool                   `json:"check_headers"`
+	EqualsHeaders   map[string][]string    `json:"equals_headers"`
+	ContainsHeaders map[string][]string    `json:"contains_headers"`
+	MatchesHeaders  map[string][]string    `json:"matches_headers"`
 }
 
 type Output struct {
@@ -138,7 +139,7 @@ type findStubPayload struct {
 	Service string                 `json:"service"`
 	Method  string                 `json:"method"`
 	Data    map[string]interface{} `json:"data"`
-	Headers map[string]string      `json:"headers"`
+	Headers map[string][]string    `json:"headers"`
 }
 
 func handleFindStub(w http.ResponseWriter, r *http.Request) {
