@@ -76,7 +76,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	for _, stubrange := range stubs {
 		if expect := stubrange.Input.Equals; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"equals", expect})
-			if equals(stub.Data, expect) {
+			if equals(stub.Data, expect) && equals(stub.) {
 				return &stubrange.Output, nil
 			}
 		}

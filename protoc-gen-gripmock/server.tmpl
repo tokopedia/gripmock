@@ -14,6 +14,7 @@ import (
     "github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/runtime/protoiface"
 )
@@ -72,7 +73,12 @@ type {{.Name}} struct{}
 {{ define "standard_method" }}
 func (s *{{.ServiceName}}) {{.Name}}(ctx context.Context, in *{{.Input}}) (*{{.Output}},error){
 	out := &{{.Output}}{}
-	err := findStub("{{.ServiceName}}", "{{.Name}}", in, out)
+	headers, _ := metadata.FromIncomingContext(ctx)
+	err := findStub(ctx, "{{.ServiceName}}", "{{.Name}}", headers, in, out)
+	if err != nil {
+		return nil, err
+	}
+
 	return out, err
 }
 {{ end }}
@@ -80,7 +86,8 @@ func (s *{{.ServiceName}}) {{.Name}}(ctx context.Context, in *{{.Input}}) (*{{.O
 {{ define "server_stream_method" }}
 func (s *{{.ServiceName}}) {{.Name}}(in *{{.Input}},srv {{.SvcPackage}}{{.ServiceName}}_{{.Name}}Server) error {
 	out := &{{.Output}}{}
-	err := findStub("{{.ServiceName}}", "{{.Name}}", in, out)
+	headers, _ := metadata.FromIncomingContext(srv.Context())
+	err := findStub(srv.Context(), "{{.ServiceName}}", "{{.Name}}", headers, in, out)
 	if err!=nil {
 		return err
 	}
@@ -97,7 +104,8 @@ func (s *{{.ServiceName}}) {{.Name}}(srv {{.SvcPackage}}{{.ServiceName}}_{{.Name
 		if err == io.EOF {
 			return srv.SendAndClose(out)
 		}
-		err = findStub("{{.ServiceName}}","{{.Name}}",input,out)
+		headers, _ := metadata.FromIncomingContext(srv.Context())
+		err = findStub(srv.Context(), "{{.ServiceName}}","{{.Name}}", headers, input, out)
 		if err != nil {
 			return err
 		}
@@ -116,8 +124,9 @@ func (s *{{.ServiceName}}) {{.Name}}(srv {{.SvcPackage}}{{.ServiceName}}_{{.Name
 			return err
 		}
 
+		headers, _ := metadata.FromIncomingContext(srv.Context())
 		out := &{{.Output}}{}
-		err = findStub("{{.ServiceName}}","{{.Name}}",in,out)
+		err = findStub(srv.Context(), "{{.ServiceName}}","{{.Name}}", headers, in, out)
 		if err != nil {
 			return err
 		}
@@ -136,22 +145,25 @@ func (s *{{.ServiceName}}) {{.Name}}(srv {{.SvcPackage}}{{.ServiceName}}_{{.Name
 
 {{ define "find_stub" }}
 type payload struct {
-	Service string      `json:"service"`
-	Method  string      `json:"method"`
-	Data    interface{} `json:"data"`
+	Service string            `json:"service"`
+	Method  string            `json:"method"`
+	Data    interface{}       `json:"data"`
+	Headers map[string]string `json:"headers"`
 }
 
 type response struct {
-	Data  interface{} `json:"data"`
-	Error string      `json:"error"`
+	Data    interface{}       `json:"data"`
+	Headers map[string]string `json:"headers"`
+	Error   string            `json:"error"`
 }
 
-func findStub(service, method string, in, out protoiface.MessageV1) error {
+func findStub(ctx context.Context, service, method string, headers map[string]string, in, out protoiface.MessageV1) error {
 	url := fmt.Sprintf("http://localhost%s/find", HTTP_PORT)
 	pyl := payload{
 		Service: service,
 		Method:  method,
 		Data:    in,
+		Headers: 
 	}
 	byt, err := json.Marshal(pyl)
 	if err != nil {
@@ -178,7 +190,8 @@ func findStub(service, method string, in, out protoiface.MessageV1) error {
 		return fmt.Errorf(respRPC.Error)
 	}
 
+	md := metadata.New(respRPC.Headers)
+	grpc.SetHeader(ctx, md)
+
 	data, _ := json.Marshal(respRPC.Data)
 	return jsonpb.Unmarshal(bytes.NewReader(data), out)
-}
-{{ end }}
