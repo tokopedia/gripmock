@@ -112,8 +112,8 @@ func findStub(stub *findStubPayload) (*Output, error) {
 }
 
 func headersConstraintsApply(expectedInput Input, stub *findStubPayload) bool {
-	if !stub.Input.CheckHeaders {
-		return &stubrange.Output, nil
+	if !expectedInput.CheckHeaders {
+		return true
 	}
 
 	if expected := expectedInput.EqualsHeaders; expected != nil {
@@ -188,8 +188,34 @@ func containsStrings(A, B []string) bool {
 }
 
 func headersMatch(expected, actual map[string][]string) bool {
+	for headerName, values := range expected {
+		actualHeaders, ok := actual[headerName]
+		if !ok {
+			return false
+		}
 
+		matches := false
+		for _, value := range values {
+			for _, actualValue := range actualHeaders {
+				if regexMatch(value, actualValue) {
+					matches = true
+					break
+				}
+			}
+
+			if matches {
+				break
+			}
+		}
+
+		if !matches {
+			return false
+		}
+	}
+
+	return true
 }
+
 func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error {
 	template := fmt.Sprintf("Can't find stub \n\nService: %s \n\nMethod: %s \n\nInput\n\n", stub.Service, stub.Method)
 	expectString := renderFieldAsString(stub.Data)

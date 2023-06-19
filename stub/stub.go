@@ -57,15 +57,15 @@ type Input struct {
 	Equals          map[string]interface{} `json:"equals"`
 	Contains        map[string]interface{} `json:"contains"`
 	Matches         map[string]interface{} `json:"matches"`
-	CheckHeaders    bool                   `json:"check_headers"`
-	EqualsHeaders   map[string][]string    `json:"equals_headers"`
-	ContainsHeaders map[string][]string    `json:"contains_headers"`
-	MatchesHeaders  map[string][]string    `json:"matches_headers"`
+	CheckHeaders    bool                   `json:"check_headers,omitempty"`
+	EqualsHeaders   map[string][]string    `json:"equals_headers,omitempty"`
+	ContainsHeaders map[string][]string    `json:"contains_headers,omitempty"`
+	MatchesHeaders  map[string][]string    `json:"matches_headers,omitempty"`
 }
 
 type Output struct {
 	Data    map[string]interface{} `json:"data"`
-	Headers map[string]string      `json:"headers"`
+	Headers map[string]string      `json:"headers,omitempty"`
 	Error   string                 `json:"error"`
 }
 
