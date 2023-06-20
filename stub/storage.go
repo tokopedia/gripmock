@@ -111,109 +111,44 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	return nil, stubNotFoundError(stub, closestMatch)
 }
 
+func copyHeaders(headers map[string][]string) map[string]interface{} {
+	cpy := make(map[string]interface{})
+	for k, v := range headers {
+		cpy[k] = v
+	}
+
+	return cpy
+}
+
 func headersConstraintsApply(expectedInput Input, stub *findStubPayload) bool {
 	if !expectedInput.CheckHeaders {
 		return true
 	}
 
+	headersCopy := copyHeaders(stub.Headers)
+
 	if expected := expectedInput.EqualsHeaders; expected != nil {
-		if headersEqual(expected, stub.Headers) {
+		expectedCopy := copyHeaders(expected)
+		if equals(expectedCopy, headersCopy) {
 			return true
 		}
 	}
 
 	if expected := expectedInput.ContainsHeaders; expected != nil {
-		if headersContain(expected, stub.Headers) {
+		expectedCopy := copyHeaders(expected)
+		if contains(expectedCopy, headersCopy) {
 			return true
 		}
 	}
 
 	if expected := expectedInput.MatchesHeaders; expected != nil {
-		if headersMatch(expected, stub.Headers) {
+		expectedCopy := copyHeaders(expected)
+		if matches(expectedCopy, headersCopy) {
 			return true
 		}
 	}
 
 	return false
-}
-
-func headersEqual(expected, actual map[string][]string) bool {
-	if len(expected) != len(actual) {
-		return false
-	}
-
-	for header, values := range expected {
-		actualValues, ok := actual[header]
-		if !ok {
-			return false
-		}
-
-		if !reflect.DeepEqual(actualValues, values) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func headersContain(expected, actual map[string][]string) bool {
-	for key, valuesB := range expected {
-		valuesA, ok := actual[key]
-		if !ok {
-			return false
-		}
-
-		if !containsStrings(valuesA, valuesB) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func containsStrings(A, B []string) bool {
-	stringMap := make(map[string]bool)
-
-	for _, str := range A {
-		stringMap[str] = true
-	}
-
-	for _, str := range B {
-		if !stringMap[str] {
-			return false
-		}
-	}
-
-	return true
-}
-
-func headersMatch(expected, actual map[string][]string) bool {
-	for headerName, values := range expected {
-		actualHeaders, ok := actual[headerName]
-		if !ok {
-			return false
-		}
-
-		matches := false
-		for _, value := range values {
-			for _, actualValue := range actualHeaders {
-				if regexMatch(value, actualValue) {
-					matches = true
-					break
-				}
-			}
-
-			if matches {
-				break
-			}
-		}
-
-		if !matches {
-			return false
-		}
-	}
-
-	return true
 }
 
 func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error {

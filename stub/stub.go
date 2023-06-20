@@ -65,7 +65,7 @@ type Input struct {
 
 type Output struct {
 	Data    map[string]interface{} `json:"data"`
-	Headers map[string]string      `json:"headers,omitempty"`
+	Headers map[string][]string    `json:"headers,omitempty"`
 	Error   string                 `json:"error"`
 }
 
