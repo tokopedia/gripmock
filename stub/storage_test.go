@@ -26,47 +26,46 @@ func Test_findStub(t *testing.T) {
 			name:           "input equals",
 			service:        "user",
 			method:         "getName",
-			stubInput:      Input{Equals: map[string]interface{}{"id": float64(1)}},
+			stubInput:      Input{Equals: map[string]interface{}{"id": 1}},
 			stubOutput:     Output{Data: map[string]interface{}{"name": "user1"}},
 			input:          map[string]interface{}{"id": 1},
 			checkHeaders:   false,
 			expectedOutput: map[string]interface{}{"name": "user1"},
 		},
-		/*
-					{
-						name: "input contains",
-			                        service: "user",
-			                        method: "getName",
-			                        stubInput: Input{Equals: map[string]interface{}{"id": float64(1)}},
-						stubOutput: Output{Data: map[string]interface{}{"name": "user1"}},
-			                        input: map[string]interface{} {
-			                                "id": 1,
-			                        },
-			                        checkHeaders: false,
-			                        expectedOutput: map[string]interface{} {
-			                                "name": "user1",
-			                        },
-					},
-					{
-						name: "input matches",
-			                        service: "user",
-			                        method: "getName",
-			                        stubInput: Input{Equals: map[string]interface{}{"id": float64(1)}},
-						stubOutput: Output{Data: map[string]interface{}{"name": "user1"}},
-			                        input: map[string]interface{} {
-			                                "id": 1,
-			                        },
-			                        checkHeaders: false,
-			                        expectedOutput: map[string]interface{} {
-			                                "name": "user1",
-			                        },
-					},
-					{
+		{
+			name:       "input contains",
+			service:    "user",
+			method:     "getName",
+			stubInput:  Input{Equals: map[string]interface{}{"id": 1}},
+			stubOutput: Output{Data: map[string]interface{}{"name": "user1"}},
+			input: map[string]interface{}{
+				"id": 1,
+			},
+			checkHeaders: false,
+			expectedOutput: map[string]interface{}{
+				"name": "user1",
+			},
+		},
+		{
+			name:       "input matches",
+			service:    "user",
+			method:     "getName",
+			stubInput:  Input{Equals: map[string]interface{}{"id": 1}},
+			stubOutput: Output{Data: map[string]interface{}{"name": "user1"}},
+			input: map[string]interface{}{
+				"id": 1,
+			},
+			checkHeaders: false,
+			expectedOutput: map[string]interface{}{
+				"name": "user1",
+			},
+		},
+{
 						name: "input equals and input headers equals",
 			                        service: "user",
 			                        method: "getName",
 			                        stubInput: Input{
-			                                Equals: map[string]interface{}{"id": float64(1)}},
+			                                Equals: map[string]interface{}{"id": 1}},
 			                                CheckHeaders: true,
 			                                EqulsHeaders: map[string][]string{
 			                                        "header-1": []string{"value-1", "value-2"},
@@ -76,7 +75,7 @@ func Test_findStub(t *testing.T) {
 						stubOutput: Output{
 			                                Data: map[string]interface{}{"name": "user1"},
 			                                Headers: map[string][]string{
-			                                        "return-header": []string{"value-1", value-2"},
+								"return-header": []string{"value-1", "value-2"},
 			                                },
 			                        },
 			                        input: map[string]interface{} {
@@ -91,7 +90,41 @@ func Test_findStub(t *testing.T) {
 			                                "name": "user1",
 			                        },
 			                        expectedOutputHeaders: map[string][]string{
-			                                "return-header": []string{"value-1", value-2"},
+			                                "return-header": []string{"value-1", "value-2"},
+			                        },
+					},
+		/*
+					{
+						name: "input equals and input headers equals",
+			                        service: "user",
+			                        method: "getName",
+			                        stubInput: Input{
+			                                Equals: map[string]interface{}{"id": 1}},
+			                                CheckHeaders: true,
+			                                EqulsHeaders: map[string][]string{
+			                                        "header-1": []string{"value-1", "value-2"},
+			                                        "header-2": []string{"value-3", "value-4"},
+			                                },
+			                        },
+						stubOutput: Output{
+			                                Data: map[string]interface{}{"name": "user1"},
+			                                Headers: map[string][]string{
+								"return-header": []string{"value-1", "value-2"},
+			                                },
+			                        },
+			                        input: map[string]interface{} {
+			                                "id": 1,
+			                        },
+			                        inputHeaders: map[string][]string{
+			                                "header-1": []string{"value-1", "value-2"},
+			                                "header-2": []string{"value-3", "value-4"},
+			                        },
+			                        checkHeaders: true,
+			                        expectedOutput: map[string]interface{} {
+			                                "name": "user1",
+			                        },
+			                        expectedOutputHeaders: map[string][]string{
+			                                "return-header": []string{"value-1", "value-2"},
 			                        },
 					},
 					{
@@ -166,14 +199,14 @@ func Test_findStub(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sm := stubMapping{}
-			err := sm.storeStub(&Stub{
+			err := storeStub(&Stub{
 				Service: tt.service,
 				Method:  tt.method,
 				Input:   tt.stubInput,
 				Output:  tt.stubOutput,
 			})
 			require.NoError(t, err)
+			defer delete(stubStorage, tt.service)
 
 			output, err := findStub(&findStubPayload{
 				Service: tt.service,
@@ -183,8 +216,10 @@ func Test_findStub(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			require.True(t, reflect.DeepEqual(tt.expectedOutput, output.Data))
-			require.True(t, reflect.DeepEqual(tt.expectedOutputHeaders, output.Headers))
+			require.True(t, reflect.DeepEqual(tt.expectedOutput, output.Data), "Expected output should equal the actual output")
+			if tt.checkHeaders {
+				require.True(t, reflect.DeepEqual(tt.expectedOutputHeaders, output.Headers), "Expected output headers should equal the actual headers")
+			}
 		})
 	}
 }
