@@ -290,7 +290,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\n{\n\tfield1: hello field1\n}\n\nClosest Match \n\ncontains:{\n\tfield1: hello field1\n\tfield3: hello field3\n}",
+			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\nData:\n{\n\tfield1: hello field1\n}\nHeaders:\n{\n}\nClosest Match \n\ncontains:{\n\tfield1: hello field1\n\tfield3: hello field3\n}",
 		},
 		{
 			name: "error find stub equals",

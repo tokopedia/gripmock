@@ -52,8 +52,10 @@ func allStub() stubMapping {
 }
 
 type closeMatch struct {
-	rule   string
-	expect map[string]interface{}
+	rule        string
+	expect      map[string]interface{}
+	headersRule string
+	headers     map[string][]string
 }
 
 func findStub(stub *findStubPayload) (*Output, error) {
@@ -75,34 +77,37 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	closestMatch := []closeMatch{}
 	for _, stubrange := range stubs {
 		if expect := stubrange.Input.Equals; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"equals", expect})
 			if !equals(stub.Data, expect) {
 				continue
 			}
 
-			if headersConstraintsApply(stubrange.Input, stub) {
+			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
+			closestMatch = append(closestMatch, closeMatch{"equals", expect, closeMtch.headersRule, closeMtch.headers})
+			if applies {
 				return &stubrange.Output, nil
 			}
 		}
 
 		if expect := stubrange.Input.Contains; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"contains", expect})
 			if !contains(expect, stub.Data) {
 				continue
 			}
 
-			if headersConstraintsApply(stubrange.Input, stub) {
+			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
+			closestMatch = append(closestMatch, closeMatch{"contains", expect, closeMtch.headersRule, closeMtch.headers})
+			if applies {
 				return &stubrange.Output, nil
 			}
 		}
 
 		if expect := stubrange.Input.Matches; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"matches", expect})
 			if !matches(expect, stub.Data) {
 				continue
 			}
 
-			if headersConstraintsApply(stubrange.Input, stub) {
+			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
+			closestMatch = append(closestMatch, closeMatch{"matches", expect, closeMtch.headersRule, closeMtch.headers})
+			if applies {
 				return &stubrange.Output, nil
 			}
 		}
@@ -120,40 +125,47 @@ func copyHeaders(headers map[string][]string) map[string]interface{} {
 	return cpy
 }
 
-func headersConstraintsApply(expectedInput Input, stub *findStubPayload) bool {
+func headersConstraintsApply(expectedInput Input, stub *findStubPayload) (closeMatch, bool) {
 	if !expectedInput.CheckHeaders {
-		return true
+		return closeMatch{}, true
 	}
 
 	headersCopy := copyHeaders(stub.Headers)
+	var closestMatch closeMatch
 
 	if expected := expectedInput.EqualsHeaders; expected != nil {
 		expectedCopy := copyHeaders(expected)
+		closestMatch = closeMatch{headersRule: "headers equal", headers: expectedInput.EqualsHeaders}
 		if equals(expectedCopy, headersCopy) {
-			return true
+			return closestMatch, true
 		}
 	}
 
 	if expected := expectedInput.ContainsHeaders; expected != nil {
 		expectedCopy := copyHeaders(expected)
+		closestMatch = closeMatch{headersRule: "headers contain", headers: expectedInput.ContainsHeaders}
 		if contains(expectedCopy, headersCopy) {
-			return true
+			return closestMatch, true
 		}
 	}
 
 	if expected := expectedInput.MatchesHeaders; expected != nil {
 		expectedCopy := copyHeaders(expected)
+		closestMatch = closeMatch{headersRule: "headers match", headers: expectedInput.MatchesHeaders}
 		if matches(expectedCopy, headersCopy) {
-			return true
+			return closestMatch, true
 		}
 	}
 
-	return false
+	return closestMatch, false
 }
 
 func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error {
 	template := fmt.Sprintf("Can't find stub \n\nService: %s \n\nMethod: %s \n\nInput\n\n", stub.Service, stub.Method)
-	expectString := renderFieldAsString(stub.Data)
+	expectString := "Data:\n" + renderFieldAsString(stub.Data)
+	template += expectString
+	headers := copyHeaders(stub.Headers)
+	expectString = "\nHeaders:\n" + renderFieldAsString(headers)
 	template += expectString
 
 	if len(closestMatches) == 0 {
@@ -183,6 +195,8 @@ func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error
 
 	closestMatchString := renderFieldAsString(closestMatch.expect)
 	template += fmt.Sprintf("\n\nClosest Match \n\n%s:%s", closestMatch.rule, closestMatchString)
+	headers = copyHeaders(closestMatch.headers)
+	template += "\nHeaders " + closestMatch.headersRule + ":\n" + renderFieldAsString(headers)
 
 	return fmt.Errorf(template)
 }
