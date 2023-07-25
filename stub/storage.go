@@ -78,6 +78,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	for _, stubrange := range stubs {
 		if expect := stubrange.Input.Equals; expect != nil {
 			if !equals(stub.Data, expect) {
+				closestMatch = append(closestMatch, closeMatch{"equals", expect, "", nil})
 				continue
 			}
 
@@ -90,6 +91,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 
 		if expect := stubrange.Input.Contains; expect != nil {
 			if !contains(expect, stub.Data) {
+				closestMatch = append(closestMatch, closeMatch{"contains", expect, "", nil})
 				continue
 			}
 
@@ -102,6 +104,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 
 		if expect := stubrange.Input.Matches; expect != nil {
 			if !matches(expect, stub.Data) {
+				closestMatch = append(closestMatch, closeMatch{"matches", expect, "", nil})
 				continue
 			}
 
@@ -164,9 +167,11 @@ func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error
 	template := fmt.Sprintf("Can't find stub \n\nService: %s \n\nMethod: %s \n\nInput\n\n", stub.Service, stub.Method)
 	expectString := "Data:\n" + renderFieldAsString(stub.Data)
 	template += expectString
-	headers := copyHeaders(stub.Headers)
-	expectString = "\nHeaders:\n" + renderFieldAsString(headers)
-	template += expectString
+	if stub.Headers != nil {
+		headers := copyHeaders(stub.Headers)
+		expectString = "\nHeaders:\n" + renderFieldAsString(headers)
+		template += expectString
+	}
 
 	if len(closestMatches) == 0 {
 		return fmt.Errorf(template)
@@ -195,8 +200,10 @@ func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error
 
 	closestMatchString := renderFieldAsString(closestMatch.expect)
 	template += fmt.Sprintf("\n\nClosest Match \n\n%s:%s", closestMatch.rule, closestMatchString)
-	headers = copyHeaders(closestMatch.headers)
-	template += "\nHeaders " + closestMatch.headersRule + ":\n" + renderFieldAsString(headers)
+	if closestMatch.headers != nil {
+		headers := copyHeaders(closestMatch.headers)
+		template += "\nHeaders " + closestMatch.headersRule + ":\n" + renderFieldAsString(headers)
+	}
 
 	return fmt.Errorf(template)
 }
