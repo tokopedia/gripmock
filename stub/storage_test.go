@@ -133,7 +133,8 @@ func Test_findStub(t *testing.T) {
 				Equals:       map[string]interface{}{"id": 1},
 				CheckHeaders: true,
 				MatchesHeaders: map[string][]string{
-					"header-1": []string{"value.*"},
+					"header-1": []string{"value.*", "value-2"},
+					"header-2": []string{"value.*"},
 				},
 			},
 			stubOutput: Output{
@@ -146,7 +147,7 @@ func Test_findStub(t *testing.T) {
 				"id": 1,
 			},
 			inputHeaders: map[string][]string{
-				"header-1": []string{"value-1"},
+				"header-1": []string{"value-1", "value-2"},
 				"header-2": []string{"value-4"},
 			},
 			checkHeaders: true,
