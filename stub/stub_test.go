@@ -654,12 +654,12 @@ func TestStub(t *testing.T) {
 				// Set up a temporary directory with a non-json file
 				dir, err := ioutil.TempDir("", "")
 				require.NoError(t, err)
-				
+
 				// Create a .txt file (should be ignored)
 				tempF1, err := ioutil.TempFile(dir, "stub*.txt")
 				require.NoError(t, err)
 				defer tempF1.Close()
-				
+
 				// Create a valid JSON file
 				tempF2, err := ioutil.TempFile(dir, "stub*.json")
 				require.NoError(t, err)
@@ -675,7 +675,7 @@ func TestStub(t *testing.T) {
 				require.NoError(t, err)
 				_, err = tempF2.Write(byt)
 				require.NoError(t, err)
-				
+
 				// Write some non-JSON content to the .txt file
 				_, err = tempF1.WriteString("This is not a JSON file")
 				require.NoError(t, err)
@@ -703,12 +703,12 @@ func TestStub(t *testing.T) {
 				// Set up a temporary directory with nested directories
 				dir, err := ioutil.TempDir("", "")
 				require.NoError(t, err)
-				
+
 				// Create a subdirectory
 				subdir := filepath.Join(dir, "subdir")
 				err = os.Mkdir(subdir, 0755)
 				require.NoError(t, err)
-				
+
 				// Create a stub file in the root directory
 				stub1 := Stub{
 					Service: "Service1",
@@ -720,7 +720,7 @@ func TestStub(t *testing.T) {
 				require.NoError(t, err)
 				err = ioutil.WriteFile(filepath.Join(dir, "stub1.json"), byt1, 0644)
 				require.NoError(t, err)
-				
+
 				// Create a stub file in the subdirectory
 				stub2 := Stub{
 					Service: "Service2",
@@ -752,6 +752,14 @@ func TestStub(t *testing.T) {
 			cleanup: func(t *testing.T) {
 				os.RemoveAll(stubPath)
 			},
+		},
+		{
+			name: "get recorded requests",
+			mock: func() *http.Request {
+				return httptest.NewRequest("GET", "/requests", nil)
+			},
+			handler: listRequests,
+			expect:  "[{\"record\":{\"service\":\"Testing\",\"method\":\"TestMethod\",\"data\":{\"Hola\":\"Mundo\"}},\"count\":1},{\"record\":{\"service\":\"NestedTesting\",\"method\":\"TestMethod\",\"data\":{\"age\":1,\"cities\":[\"Istanbul\",\"Jakarta\"],\"girl\":true,\"greetings\":{\"hola\":\"mundo\",\"merhaba\":\"dunya\"},\"name\":\"Afra Gokce\",\"null\":null}},\"count\":1}]\n",
 		},
 	}
 
