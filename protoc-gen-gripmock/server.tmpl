@@ -195,3 +195,4 @@ func findStub(ctx context.Context, service, method string, headers metadata.MD, 
 
 	data, _ := json.Marshal(respRPC.Data)
 	return jsonpb.Unmarshal(bytes.NewReader(data), out)
+
