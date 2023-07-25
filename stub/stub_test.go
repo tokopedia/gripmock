@@ -12,10 +12,11 @@ import (
 
 func TestStub(t *testing.T) {
 	type test struct {
-		name    string
-		mock    func() *http.Request
-		handler http.HandlerFunc
-		expect  string
+		name         string
+		mock         func() *http.Request
+		handler      http.HandlerFunc
+		expect       string
+		secondExpect string
 	}
 
 	cases := []test{
@@ -289,8 +290,9 @@ func TestStub(t *testing.T) {
 					}`
 				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
 			},
-			handler: handleFindStub,
-			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\nData:\n{\n\tfield1: hello field1\n}\n\nClosest Match \n\ncontains:{\n\tfield1: hello field1\n\tfield3: hello field3\n}",
+			handler:      handleFindStub,
+			expect:       "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\nData:\n{\n\tfield1: hello field1\n}\n\nClosest Match \n\ncontains:{\n\tfield1: hello field1\n\tfield3: hello field3\n}",
+			secondExpect: "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\nData:\n{\n\tfield1: hello field1\n}\n\nClosest Match \n\ncontains:{\n\tfield3: hello field3\n\tfield1: hello field1\n}",
 		},
 		{
 			name: "error find stub equals",
@@ -311,7 +313,7 @@ func TestStub(t *testing.T) {
 			res, err := ioutil.ReadAll(wrt.Result().Body)
 
 			assert.NoError(t, err)
-			assert.Equal(t, v.expect, string(res))
+			assert.True(t, v.expect == string(res) || v.secondExpect == string(res))
 		})
 	}
 }

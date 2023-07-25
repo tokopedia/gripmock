@@ -271,15 +271,41 @@ func matches(expect, actual map[string]interface{}) bool {
 }
 
 func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
-
 	// circuit brake
 	if acc == false {
 		return false
 	}
 
+	expectStringArray, expectStringArrayOk := expect.([]string)
+	if expectStringArrayOk {
+		actualArrayValue, actualArrayOk := actual.([]string)
+		if !actualArrayOk {
+			acc = false
+			return acc
+		}
+
+		if exactMatch {
+			if len(expectStringArray) != len(actualArrayValue) {
+				acc = false
+				return acc
+			}
+		} else {
+			if len(expectStringArray) > len(actualArrayValue) {
+				acc = false
+				return acc
+			}
+		}
+
+		for expectItemIndex, expectItemValue := range expectStringArray {
+			actualItemValue := actualArrayValue[expectItemIndex]
+			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f)
+		}
+
+		return acc
+	}
+
 	expectArrayValue, expectArrayOk := expect.([]interface{})
 	if expectArrayOk {
-
 		actualArrayValue, actualArrayOk := actual.([]interface{})
 		if !actualArrayOk {
 			acc = false

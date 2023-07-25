@@ -93,14 +93,13 @@ func Test_findStub(t *testing.T) {
 			},
 		},
 		{
-			name:    "input equals and input headers conatin",
+			name:    "input equals and input headers contains",
 			service: "user",
 			method:  "getName",
 			stubInput: Input{
 				Equals:       map[string]interface{}{"id": 1},
 				CheckHeaders: true,
 				ContainsHeaders: map[string][]string{
-					"header-1": []string{"value-1"},
 					"header-2": []string{"value-4"},
 				},
 			},
@@ -116,6 +115,7 @@ func Test_findStub(t *testing.T) {
 			inputHeaders: map[string][]string{
 				"header-1": []string{"value-1"},
 				"header-2": []string{"value-4"},
+				"header-3": []string{"value-7"},
 			},
 			checkHeaders: true,
 			expectedOutput: map[string]interface{}{
@@ -133,9 +133,7 @@ func Test_findStub(t *testing.T) {
 				Equals:       map[string]interface{}{"id": 1},
 				CheckHeaders: true,
 				MatchesHeaders: map[string][]string{
-					"header-1": []string{"value-1", "value-2"},
-					"header-2": []string{"value-3", "value-4"},
-					"header-3": []string{"value-5", "value-6"},
+					"header-1": []string{"value.*"},
 				},
 			},
 			stubOutput: Output{
@@ -148,9 +146,8 @@ func Test_findStub(t *testing.T) {
 				"id": 1,
 			},
 			inputHeaders: map[string][]string{
-				"header-1": []string{"value-1", "value-2"},
-				"header-2": []string{"value-3", "value-4"},
-				"header-3": []string{"value-5", "value-6"},
+				"header-1": []string{"value-1"},
+				"header-2": []string{"value-4"},
 			},
 			checkHeaders: true,
 			expectedOutput: map[string]interface{}{
