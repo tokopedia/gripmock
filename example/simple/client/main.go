@@ -36,7 +36,7 @@ func main() {
 	log.Printf("Greeting: %s (return code %d)", r.Message, r.ReturnCode)
 
 	md := metadata.New(map[string]string{"header-1": "value-1"})
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	ctx = metadata.NewOutgoingContext(context.Background(), md)
 
 	var headers metadata.MD
 

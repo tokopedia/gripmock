@@ -84,14 +84,13 @@ func (s *{{.ServiceName}}) {{.Name}}(ctx context.Context, in *{{.Input}}) (*{{.O
 {{ end }}
 
 {{ define "server_stream_method" }}
-func (s *{{.ServiceName}}) {{.Name}}(in *{{.Input}},srv {{.SvcPackage}}{{.ServiceName}}_{{.Name}}Server) error {
+func (s *{{.ServiceName}}) {{.Name}}(in *{{.Input}}, srv {{.SvcPackage}}{{.ServiceName}}_{{.Name}}Server) error {
 	out := &{{.Output}}{}
 	headers, _ := metadata.FromIncomingContext(srv.Context())
 	err := findStub(srv.Context(), "{{.ServiceName}}", "{{.Name}}", headers, in, out)
-	if err!=nil {
+	if err != nil {
 		return err
 	}
-
 	return srv.Send(out)
 }
 {{ end }}
@@ -148,7 +147,7 @@ type payload struct {
 	Service string            `json:"service"`
 	Method  string            `json:"method"`
 	Data    interface{}       `json:"data"`
-	Headers metadata.MD `json:"headers"`
+	Headers metadata.MD       `json:"headers"`
 }
 
 type response struct {
@@ -163,7 +162,7 @@ func findStub(ctx context.Context, service, method string, headers metadata.MD, 
 		Service: service,
 		Method:  method,
 		Data:    in,
-		Headers: headers
+		Headers: headers,
 	}
 	byt, err := json.Marshal(pyl)
 	if err != nil {
@@ -195,4 +194,5 @@ func findStub(ctx context.Context, service, method string, headers metadata.MD, 
 
 	data, _ := json.Marshal(respRPC.Data)
 	return jsonpb.Unmarshal(bytes.NewReader(data), out)
-
+}
+{{ end }}
