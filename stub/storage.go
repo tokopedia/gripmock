@@ -394,10 +394,11 @@ func (sm *stubMapping) readStubFromFile(path string) {
 			continue
 		}
 
-		if byt[0] == '[' && byt[len(byt)-1] == ']' {
+		if byt[0] == '[' {
 			var stubs []*Stub
 			err = json.Unmarshal(byt, &stubs)
 			if err != nil {
+				fmt.Println("PRLBEM HERE")
 				log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
 				continue
 			}
@@ -410,6 +411,7 @@ func (sm *stubMapping) readStubFromFile(path string) {
 		stub := new(Stub)
 		err = json.Unmarshal(byt, stub)
 		if err != nil {
+			fmt.Println("==============FJDSLKFJSDKLFJSDLKF")
 			log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
 			continue
 		}

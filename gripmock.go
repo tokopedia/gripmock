@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"github.com/tokopedia/gripmock/stub"
+	_ "github.com/tokopedia/gripmock/protogen"
 )
 
 func main() {
