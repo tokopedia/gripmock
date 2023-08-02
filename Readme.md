@@ -76,6 +76,9 @@ Stub Format is JSON text format. It has a skeleton as follows:
     "data":{
       // put result fields here
     },
+    "headers": {
+      // put result headers here
+    },
     "error":"<error message>" // Optional. if you want to return error instead.
   }
 }
@@ -185,3 +188,23 @@ Nested fields are allowed for input matching too for all JSON data types. (`stri
 }
 ```
 
+### Input Headers Matching Rule
+
+Input headers matching has 3 rules to match input headers: **equals_headers**, **contains_headers**, **regex_headers**.
+<br>
+Headers are map of strings and the same matching rules apply for headers as for payload data.
+<br>
+**WARNING** If you want to verify input headers against the rules you have applied you have to set `check_headers` field to true (default: `false`).
+<br>
+```
+{
+  .
+  .
+  "check_headers": true,
+  "input":{
+    ...
+  }
+  .
+  .
+}
+```
