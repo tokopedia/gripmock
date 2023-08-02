@@ -55,7 +55,7 @@ type closeMatch struct {
 	rule        string
 	expect      map[string]interface{}
 	headersRule string
-	headers     map[string][]string
+	headers     map[string]string
 }
 
 func findStub(stub *findStubPayload) (*Output, error) {
@@ -119,7 +119,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	return nil, stubNotFoundError(stub, closestMatch)
 }
 
-func copyHeaders(headers map[string][]string) map[string]interface{} {
+func copyHeaders(headers map[string]string) map[string]interface{} {
 	cpy := make(map[string]interface{})
 	for k, v := range headers {
 		cpy[k] = v

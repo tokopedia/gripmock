@@ -147,22 +147,27 @@ type payload struct {
 	Service string            `json:"service"`
 	Method  string            `json:"method"`
 	Data    interface{}       `json:"data"`
-	Headers metadata.MD       `json:"headers"`
+	Headers map[string]string `json:"headers"`
 }
 
 type response struct {
 	Data    interface{}       `json:"data"`
-	Headers map[string]string `json:"headers"`
+	Headers map[string]string `json:"headers,omitempty"`
 	Error   string            `json:"error"`
 }
 
 func findStub(ctx context.Context, service, method string, headers metadata.MD, in, out protoiface.MessageV1) error {
 	url := fmt.Sprintf("http://localhost%s/find", HTTP_PORT)
+	headersMap := make(map[string]string)
+	for header, values := range headers {
+		headersMap[header] = values[0]
+	}
+
 	pyl := payload{
 		Service: service,
 		Method:  method,
 		Data:    in,
-		Headers: headers,
+		Headers: headersMap,
 	}
 	byt, err := json.Marshal(pyl)
 	if err != nil {

@@ -17,10 +17,10 @@ func Test_findStub(t *testing.T) {
 		stubInput             Input
 		stubOutput            Output
 		input                 map[string]interface{}
-		inputHeaders          map[string][]string
+		inputHeaders          map[string]string
 		checkHeaders          bool
 		expectedOutput        map[string]interface{}
-		expectedOutputHeaders map[string][]string
+		expectedOutputHeaders map[string]string
 	}{
 		{
 			name:           "input equals",
@@ -66,30 +66,30 @@ func Test_findStub(t *testing.T) {
 			method:  "getName",
 			stubInput: Input{
 				Equals: map[string]interface{}{"id": 1},
-				EqualsHeaders: map[string][]string{
-					"header-1": {"value-1", "value-2"},
-					"header-2": {"value-3", "value-4"},
+				EqualsHeaders: map[string]string{
+					"header-1": "value-1",
+					"header-2": "value-3",
 				},
 			},
 			stubOutput: Output{
 				Data: map[string]interface{}{"name": "user1"},
-				Headers: map[string][]string{
-					"return-header": {"value-1", "value-2"},
+				Headers: map[string]string{
+					"return-header": "value-1",
 				},
 			},
 			input: map[string]interface{}{
 				"id": 1,
 			},
-			inputHeaders: map[string][]string{
-				"header-1": {"value-1", "value-2"},
-				"header-2": []string{"value-3", "value-4"},
+			inputHeaders: map[string]string{
+				"header-1": "value-1",
+				"header-2": "value-3",
 			},
 			checkHeaders: true,
 			expectedOutput: map[string]interface{}{
 				"name": "user1",
 			},
-			expectedOutputHeaders: map[string][]string{
-				"return-header": []string{"value-1", "value-2"},
+			expectedOutputHeaders: map[string]string{
+				"return-header": "value-1",
 			},
 		},
 		{
@@ -99,30 +99,30 @@ func Test_findStub(t *testing.T) {
 			stubInput: Input{
 				Equals:       map[string]interface{}{"id": 1},
 				CheckHeaders: true,
-				ContainsHeaders: map[string][]string{
-					"header-2": []string{"value-4"},
+				ContainsHeaders: map[string]string{
+					"header-2": "value-4",
 				},
 			},
 			stubOutput: Output{
 				Data: map[string]interface{}{"name": "user1"},
-				Headers: map[string][]string{
-					"return-header": []string{"value-1", "value-2"},
+				Headers: map[string]string{
+					"return-header": "value-1",
 				},
 			},
 			input: map[string]interface{}{
 				"id": 1,
 			},
-			inputHeaders: map[string][]string{
-				"header-1": []string{"value-1"},
-				"header-2": []string{"value-4"},
-				"header-3": []string{"value-7"},
+			inputHeaders: map[string]string{
+				"header-1": "value-1",
+				"header-2": "value-4",
+				"header-3": "value-7",
 			},
 			checkHeaders: true,
 			expectedOutput: map[string]interface{}{
 				"name": "user1",
 			},
-			expectedOutputHeaders: map[string][]string{
-				"return-header": []string{"value-1", "value-2"},
+			expectedOutputHeaders: map[string]string{
+				"return-header": "value-1",
 			},
 		},
 		{
@@ -132,30 +132,30 @@ func Test_findStub(t *testing.T) {
 			stubInput: Input{
 				Equals:       map[string]interface{}{"id": 1},
 				CheckHeaders: true,
-				MatchesHeaders: map[string][]string{
-					"header-1": []string{"value.*", "value-2"},
-					"header-2": []string{"value.*"},
+				MatchesHeaders: map[string]string{
+					"header-1": "value.*",
+					"header-2": "value.*",
 				},
 			},
 			stubOutput: Output{
 				Data: map[string]interface{}{"name": "user1"},
-				Headers: map[string][]string{
-					"return-header": []string{"value-1", "value-2"},
+				Headers: map[string]string{
+					"return-header": "value-1",
 				},
 			},
 			input: map[string]interface{}{
 				"id": 1,
 			},
-			inputHeaders: map[string][]string{
-				"header-1": []string{"value-1", "value-2"},
-				"header-2": []string{"value-4"},
+			inputHeaders: map[string]string{
+				"header-1": "value-1",
+				"header-2": "value-4",
 			},
 			checkHeaders: true,
 			expectedOutput: map[string]interface{}{
 				"name": "user1",
 			},
-			expectedOutputHeaders: map[string][]string{
-				"return-header": []string{"value-1", "value-2"},
+			expectedOutputHeaders: map[string]string{
+				"return-header": "value-1",
 			},
 		},
 	}

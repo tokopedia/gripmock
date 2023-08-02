@@ -43,7 +43,7 @@ func main() {
 	name = "world"
 	r, err = c.SayHello(ctx, &pb.Request{Name: name}, grpc.Header(&headers))
 	if err != nil {
-		log.Fatalf("error from grpc: %v", err)
+		log.Fatalf("error from grpc: %s", err)
 	}
 
 	header := headers["response-header"]
