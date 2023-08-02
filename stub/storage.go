@@ -394,11 +394,17 @@ func (sm *stubMapping) readStubFromFile(path string) {
 			continue
 		}
 
-		if byt[0] == '[' {
+		var jsonData interface{}
+		err = json.Unmarshal(byt, &jsonData)
+		if err != nil {
+			log.Printf("Error when checking if %s json file is an array. %v.", file.Name(), err)
+			return
+		}
+
+		if _, ok := jsonData.([]interface{}); ok {
 			var stubs []*Stub
 			err = json.Unmarshal(byt, &stubs)
 			if err != nil {
-				fmt.Println("PRLBEM HERE")
 				log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
 				continue
 			}
@@ -411,7 +417,6 @@ func (sm *stubMapping) readStubFromFile(path string) {
 		stub := new(Stub)
 		err = json.Unmarshal(byt, stub)
 		if err != nil {
-			fmt.Println("==============FJDSLKFJSDKLFJSDLKF")
 			log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
 			continue
 		}
