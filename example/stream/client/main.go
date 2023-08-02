@@ -46,7 +46,7 @@ func serverStream(c pb.GripmockClient, wg *sync.WaitGroup) {
 	}
 	stream, err := c.ServerStream(context.Background(), req)
 	if err != nil {
-		log.Fatal("server stream error: %v", err)
+		log.Fatalf("server stream error: %v", err)
 	}
 
 	for {
@@ -56,7 +56,7 @@ func serverStream(c pb.GripmockClient, wg *sync.WaitGroup) {
 		}
 
 		if err != nil {
-			log.Fatal("s2c error: %v", err)
+			log.Fatalf("s2c error: %v", err)
 		}
 
 		log.Printf("s2c message: %s\n", reply.Message)

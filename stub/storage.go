@@ -52,8 +52,10 @@ func allStub() stubMapping {
 }
 
 type closeMatch struct {
-	rule   string
-	expect map[string]interface{}
+	rule        string
+	expect      map[string]interface{}
+	headersRule string
+	headers     map[string]string
 }
 
 func findStub(stub *findStubPayload) (*Output, error) {
@@ -75,22 +77,40 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	closestMatch := []closeMatch{}
 	for _, stubrange := range stubs {
 		if expect := stubrange.Input.Equals; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"equals", expect})
-			if equals(stub.Data, expect) {
+			if !equals(stub.Data, expect) {
+				closestMatch = append(closestMatch, closeMatch{"equals", expect, "", nil})
+				continue
+			}
+
+			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
+			closestMatch = append(closestMatch, closeMatch{"equals", expect, closeMtch.headersRule, closeMtch.headers})
+			if applies {
 				return &stubrange.Output, nil
 			}
 		}
 
 		if expect := stubrange.Input.Contains; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"contains", expect})
-			if contains(stubrange.Input.Contains, stub.Data) {
+			if !contains(expect, stub.Data) {
+				closestMatch = append(closestMatch, closeMatch{"contains", expect, "", nil})
+				continue
+			}
+
+			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
+			closestMatch = append(closestMatch, closeMatch{"contains", expect, closeMtch.headersRule, closeMtch.headers})
+			if applies {
 				return &stubrange.Output, nil
 			}
 		}
 
 		if expect := stubrange.Input.Matches; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"matches", expect})
-			if matches(stubrange.Input.Matches, stub.Data) {
+			if !matches(expect, stub.Data) {
+				closestMatch = append(closestMatch, closeMatch{"matches", expect, "", nil})
+				continue
+			}
+
+			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
+			closestMatch = append(closestMatch, closeMatch{"matches", expect, closeMtch.headersRule, closeMtch.headers})
+			if applies {
 				return &stubrange.Output, nil
 			}
 		}
@@ -99,10 +119,59 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	return nil, stubNotFoundError(stub, closestMatch)
 }
 
+func copyHeaders(headers map[string]string) map[string]interface{} {
+	cpy := make(map[string]interface{})
+	for k, v := range headers {
+		cpy[k] = v
+	}
+
+	return cpy
+}
+
+func headersConstraintsApply(expectedInput Input, stub *findStubPayload) (closeMatch, bool) {
+	if !expectedInput.CheckHeaders {
+		return closeMatch{}, true
+	}
+
+	headersCopy := copyHeaders(stub.Headers)
+	var closestMatch closeMatch
+
+	if expected := expectedInput.EqualsHeaders; expected != nil {
+		expectedCopy := copyHeaders(expected)
+		closestMatch = closeMatch{headersRule: "headers equal", headers: expectedInput.EqualsHeaders}
+		if equals(expectedCopy, headersCopy) {
+			return closestMatch, true
+		}
+	}
+
+	if expected := expectedInput.ContainsHeaders; expected != nil {
+		expectedCopy := copyHeaders(expected)
+		closestMatch = closeMatch{headersRule: "headers contain", headers: expectedInput.ContainsHeaders}
+		if contains(expectedCopy, headersCopy) {
+			return closestMatch, true
+		}
+	}
+
+	if expected := expectedInput.MatchesHeaders; expected != nil {
+		expectedCopy := copyHeaders(expected)
+		closestMatch = closeMatch{headersRule: "headers match", headers: expectedInput.MatchesHeaders}
+		if matches(expectedCopy, headersCopy) {
+			return closestMatch, true
+		}
+	}
+
+	return closestMatch, false
+}
+
 func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error {
 	template := fmt.Sprintf("Can't find stub \n\nService: %s \n\nMethod: %s \n\nInput\n\n", stub.Service, stub.Method)
-	expectString := renderFieldAsString(stub.Data)
+	expectString := "Data:\n" + renderFieldAsString(stub.Data)
 	template += expectString
+	if stub.Headers != nil {
+		headers := copyHeaders(stub.Headers)
+		expectString = "\nHeaders:\n" + renderFieldAsString(headers)
+		template += expectString
+	}
 
 	if len(closestMatches) == 0 {
 		return fmt.Errorf(template)
@@ -131,6 +200,10 @@ func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error
 
 	closestMatchString := renderFieldAsString(closestMatch.expect)
 	template += fmt.Sprintf("\n\nClosest Match \n\n%s:%s", closestMatch.rule, closestMatchString)
+	if closestMatch.headers != nil {
+		headers := copyHeaders(closestMatch.headers)
+		template += "\nHeaders " + closestMatch.headersRule + ":\n" + renderFieldAsString(headers)
+	}
 
 	return fmt.Errorf(template)
 }
@@ -198,15 +271,41 @@ func matches(expect, actual map[string]interface{}) bool {
 }
 
 func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
-
 	// circuit brake
 	if acc == false {
 		return false
 	}
 
+	expectStringArray, expectStringArrayOk := expect.([]string)
+	if expectStringArrayOk {
+		actualArrayValue, actualArrayOk := actual.([]string)
+		if !actualArrayOk {
+			acc = false
+			return acc
+		}
+
+		if exactMatch {
+			if len(expectStringArray) != len(actualArrayValue) {
+				acc = false
+				return acc
+			}
+		} else {
+			if len(expectStringArray) > len(actualArrayValue) {
+				acc = false
+				return acc
+			}
+		}
+
+		for expectItemIndex, expectItemValue := range expectStringArray {
+			actualItemValue := actualArrayValue[expectItemIndex]
+			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f)
+		}
+
+		return acc
+	}
+
 	expectArrayValue, expectArrayOk := expect.([]interface{})
 	if expectArrayOk {
-
 		actualArrayValue, actualArrayOk := actual.([]interface{})
 		if !actualArrayOk {
 			acc = false
@@ -295,7 +394,14 @@ func (sm *stubMapping) readStubFromFile(path string) {
 			continue
 		}
 
-		if byt[0] == '[' && byt[len(byt)-1] == ']' {
+		var jsonData interface{}
+		err = json.Unmarshal(byt, &jsonData)
+		if err != nil {
+			log.Printf("Error when checking if %s json file is an array. %v.", file.Name(), err)
+			return
+		}
+
+		if _, ok := jsonData.([]interface{}); ok {
 			var stubs []*Stub
 			err = json.Unmarshal(byt, &stubs)
 			if err != nil {

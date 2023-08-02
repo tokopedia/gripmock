@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	
+
 	"github.com/go-chi/chi"
 )
 
@@ -54,14 +54,19 @@ type Stub struct {
 }
 
 type Input struct {
-	Equals   map[string]interface{} `json:"equals"`
-	Contains map[string]interface{} `json:"contains"`
-	Matches  map[string]interface{} `json:"matches"`
+	Equals          map[string]interface{} `json:"equals"`
+	Contains        map[string]interface{} `json:"contains"`
+	Matches         map[string]interface{} `json:"matches"`
+	CheckHeaders    bool                   `json:"check_headers,omitempty"`
+	EqualsHeaders   map[string]string    `json:"equals_headers,omitempty"`
+	ContainsHeaders map[string]string    `json:"contains_headers,omitempty"`
+	MatchesHeaders  map[string]string    `json:"matches_headers,omitempty"`
 }
 
 type Output struct {
-	Data  map[string]interface{} `json:"data"`
-	Error string                 `json:"error"`
+	Data    map[string]interface{} `json:"data"`
+	Headers map[string]string      `json:"headers,omitempty"`
+	Error   string                 `json:"error"`
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +111,7 @@ func validateStub(stub *Stub) error {
 	if stub.Method == "" {
 		return fmt.Errorf("Method name can't be emtpy")
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
@@ -134,6 +139,7 @@ type findStubPayload struct {
 	Service string                 `json:"service"`
 	Method  string                 `json:"method"`
 	Data    map[string]interface{} `json:"data"`
+	Headers map[string]string      `json:"headers"`
 }
 
 func handleFindStub(w http.ResponseWriter, r *http.Request) {
@@ -143,11 +149,11 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		responseError(err, w)
 		return
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
-	
+
 	output, err := findStub(stub)
 	if err != nil {
 		log.Println(err)

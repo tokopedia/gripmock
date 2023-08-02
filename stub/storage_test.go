@@ -3,10 +3,189 @@ package stub
 import (
 	"encoding/json"
 	"io/ioutil"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func Test_findStub(t *testing.T) {
+	tests := []struct {
+		name                  string
+		service               string
+		method                string
+		stubInput             Input
+		stubOutput            Output
+		input                 map[string]interface{}
+		inputHeaders          map[string]string
+		checkHeaders          bool
+		expectedOutput        map[string]interface{}
+		expectedOutputHeaders map[string]string
+	}{
+		{
+			name:           "input equals",
+			service:        "user",
+			method:         "getName",
+			stubInput:      Input{Equals: map[string]interface{}{"id": 1}},
+			stubOutput:     Output{Data: map[string]interface{}{"name": "user1"}},
+			input:          map[string]interface{}{"id": 1},
+			checkHeaders:   false,
+			expectedOutput: map[string]interface{}{"name": "user1"},
+		},
+		{
+			name:       "input contains",
+			service:    "user",
+			method:     "getName",
+			stubInput:  Input{Equals: map[string]interface{}{"id": 1}},
+			stubOutput: Output{Data: map[string]interface{}{"name": "user1"}},
+			input: map[string]interface{}{
+				"id": 1,
+			},
+			checkHeaders: false,
+			expectedOutput: map[string]interface{}{
+				"name": "user1",
+			},
+		},
+		{
+			name:       "input matches",
+			service:    "user",
+			method:     "getName",
+			stubInput:  Input{Equals: map[string]interface{}{"id": 1}},
+			stubOutput: Output{Data: map[string]interface{}{"name": "user1"}},
+			input: map[string]interface{}{
+				"id": 1,
+			},
+			checkHeaders: false,
+			expectedOutput: map[string]interface{}{
+				"name": "user1",
+			},
+		},
+		{
+			name:    "input equals and input headers equals",
+			service: "user",
+			method:  "getName",
+			stubInput: Input{
+				Equals: map[string]interface{}{"id": 1},
+				EqualsHeaders: map[string]string{
+					"header-1": "value-1",
+					"header-2": "value-3",
+				},
+			},
+			stubOutput: Output{
+				Data: map[string]interface{}{"name": "user1"},
+				Headers: map[string]string{
+					"return-header": "value-1",
+				},
+			},
+			input: map[string]interface{}{
+				"id": 1,
+			},
+			inputHeaders: map[string]string{
+				"header-1": "value-1",
+				"header-2": "value-3",
+			},
+			checkHeaders: true,
+			expectedOutput: map[string]interface{}{
+				"name": "user1",
+			},
+			expectedOutputHeaders: map[string]string{
+				"return-header": "value-1",
+			},
+		},
+		{
+			name:    "input equals and input headers contains",
+			service: "user",
+			method:  "getName",
+			stubInput: Input{
+				Equals:       map[string]interface{}{"id": 1},
+				CheckHeaders: true,
+				ContainsHeaders: map[string]string{
+					"header-2": "value-4",
+				},
+			},
+			stubOutput: Output{
+				Data: map[string]interface{}{"name": "user1"},
+				Headers: map[string]string{
+					"return-header": "value-1",
+				},
+			},
+			input: map[string]interface{}{
+				"id": 1,
+			},
+			inputHeaders: map[string]string{
+				"header-1": "value-1",
+				"header-2": "value-4",
+				"header-3": "value-7",
+			},
+			checkHeaders: true,
+			expectedOutput: map[string]interface{}{
+				"name": "user1",
+			},
+			expectedOutputHeaders: map[string]string{
+				"return-header": "value-1",
+			},
+		},
+		{
+			name:    "input equals and input headers match",
+			service: "user",
+			method:  "getName",
+			stubInput: Input{
+				Equals:       map[string]interface{}{"id": 1},
+				CheckHeaders: true,
+				MatchesHeaders: map[string]string{
+					"header-1": "value.*",
+					"header-2": "value.*",
+				},
+			},
+			stubOutput: Output{
+				Data: map[string]interface{}{"name": "user1"},
+				Headers: map[string]string{
+					"return-header": "value-1",
+				},
+			},
+			input: map[string]interface{}{
+				"id": 1,
+			},
+			inputHeaders: map[string]string{
+				"header-1": "value-1",
+				"header-2": "value-4",
+			},
+			checkHeaders: true,
+			expectedOutput: map[string]interface{}{
+				"name": "user1",
+			},
+			expectedOutputHeaders: map[string]string{
+				"return-header": "value-1",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := storeStub(&Stub{
+				Service: tt.service,
+				Method:  tt.method,
+				Input:   tt.stubInput,
+				Output:  tt.stubOutput,
+			})
+			require.NoError(t, err)
+			defer delete(stubStorage, tt.service)
+
+			output, err := findStub(&findStubPayload{
+				Service: tt.service,
+				Method:  tt.method,
+				Data:    tt.input,
+				Headers: tt.inputHeaders,
+			})
+			require.NoError(t, err)
+
+			require.True(t, reflect.DeepEqual(tt.expectedOutput, output.Data), "Expected output should equal the actual output")
+			if tt.checkHeaders {
+				require.True(t, reflect.DeepEqual(tt.expectedOutputHeaders, output.Headers), "Expected output headers should equal the actual headers")
+			}
+		})
+	}
+}
 
 func Test_readStubFromFile(t *testing.T) {
 	tests := []struct {
