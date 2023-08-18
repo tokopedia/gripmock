@@ -8,7 +8,7 @@ on:
       - "v*.*.*"
   pull_request:
     branches:
-      - "master"
+      - "develop"
 
 jobs:
   docker:
@@ -36,6 +36,8 @@ jobs:
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+        with:
+          platforms: linux/amd64,linux/arm64
       -
         name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
