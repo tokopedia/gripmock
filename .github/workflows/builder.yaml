@@ -3,7 +3,7 @@ name: builder
 on:
   push:
     branches:
-      - "**"
+      - "latest"
     tags:
       - "v*.*.*"
   pull_request:
