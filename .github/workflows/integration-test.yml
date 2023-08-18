@@ -2,7 +2,8 @@ name: Integration test
 on:
   pull_request:
     branches:
-      master
+      - develop
+      - latest
 
 jobs:
   build:
