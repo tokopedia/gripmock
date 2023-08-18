@@ -1,6 +1,7 @@
 package stub
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -297,8 +298,10 @@ func (sm *stubMapping) readStubFromFile(path string) {
 
 		if byt[0] == '[' && byt[len(byt)-1] == ']' {
 			var stubs []*Stub
-			err = json.Unmarshal(byt, &stubs)
-			if err != nil {
+			decoder := json.NewDecoder(bytes.NewReader(byt))
+			decoder.UseNumber()
+
+			if err = decoder.Decode(&stubs); err != nil {
 				log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
 				continue
 			}
@@ -309,8 +312,10 @@ func (sm *stubMapping) readStubFromFile(path string) {
 		}
 
 		stub := new(Stub)
-		err = json.Unmarshal(byt, stub)
-		if err != nil {
+		decoder := json.NewDecoder(bytes.NewReader(byt))
+		decoder.UseNumber()
+
+		if err = decoder.Decode(stub); err != nil {
 			log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
 			continue
 		}
