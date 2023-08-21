@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"io"
 	"log"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/markbates/pkger"
 	"golang.org/x/tools/imports"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -113,20 +113,18 @@ type Options struct {
 	format    bool
 }
 
-var SERVER_TEMPLATE string
+var ServerTemplate string
+
+//go:embed server.tmpl
+var serverTmpl embed.FS
 
 func init() {
-	f, err := pkger.Open("/server.tmpl")
-	if err != nil {
-		log.Fatalf("error opening server.tmpl: %s", err)
-	}
-
-	bytes, err := io.ReadAll(f)
+	data, err := serverTmpl.ReadFile("server.tmpl")
 	if err != nil {
 		log.Fatalf("error reading server.tmpl: %s", err)
 	}
 
-	SERVER_TEMPLATE = string(bytes)
+	ServerTemplate = string(data)
 }
 
 func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) error {
@@ -150,7 +148,7 @@ func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) erro
 	}
 
 	tmpl := template.New("server.tmpl")
-	tmpl, err := tmpl.Parse(SERVER_TEMPLATE)
+	tmpl, err := tmpl.Parse(ServerTemplate)
 	if err != nil {
 		return fmt.Errorf("template parse %v", err)
 	}
