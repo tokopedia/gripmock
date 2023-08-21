@@ -35,14 +35,13 @@ func (sm *stubMapping) storeStub(stub *Stub) error {
 	mx.Lock()
 	defer mx.Unlock()
 
-	strg := storage{
-		Input:  stub.Input,
-		Output: stub.Output,
-	}
 	if (*sm)[stub.Service] == nil {
 		(*sm)[stub.Service] = make(map[string][]storage)
 	}
-	(*sm)[stub.Service][stub.Method] = append((*sm)[stub.Service][stub.Method], strg)
+	(*sm)[stub.Service][stub.Method] = append((*sm)[stub.Service][stub.Method], storage{
+		Input:  stub.Input,
+		Output: stub.Output,
+	})
 	return nil
 }
 
