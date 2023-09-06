@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"google.golang.org/grpc/codes"
 )
 
 var mx = sync.Mutex{}
@@ -37,6 +38,9 @@ func (sm *stubMapping) storeStub(stub *Stub) error {
 	strg := storage{
 		Input:  stub.Input,
 		Output: stub.Output,
+	}
+	if strg.Output.Code == codes.OK && len(strg.Output.Error) != 0 {
+		strg.Output.Code = codes.Unknown
 	}
 	if (*sm)[stub.Service] == nil {
 		(*sm)[stub.Service] = make(map[string][]storage)
