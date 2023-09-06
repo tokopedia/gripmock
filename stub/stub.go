@@ -7,8 +7,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	
+
 	"github.com/go-chi/chi"
+	"google.golang.org/grpc/codes"
 )
 
 type Options struct {
@@ -29,6 +30,8 @@ func RunStubServer(opt Options) {
 	r.Get("/", listStub)
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
+	r.Get("/stats", listStats)
+	r.Delete("/stats", handleClearStats)
 
 	if opt.StubPath != "" {
 		readStubFromFile(opt.StubPath)
@@ -61,7 +64,8 @@ type Input struct {
 
 type Output struct {
 	Data  map[string]interface{} `json:"data"`
-	Error string                 `json:"error"`
+	Error string                 `json:"error,omitempty"`
+	Code  codes.Code             `json:"code,omitempty"`
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
@@ -98,6 +102,11 @@ func listStub(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(allStub())
 }
 
+func listStats(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allStats())
+}
+
 func validateStub(stub *Stub) error {
 	if stub.Service == "" {
 		return fmt.Errorf("Service name can't be empty")
@@ -106,7 +115,7 @@ func validateStub(stub *Stub) error {
 	if stub.Method == "" {
 		return fmt.Errorf("Method name can't be emtpy")
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
@@ -143,23 +152,30 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 		responseError(err, w)
 		return
 	}
-	
+
 	// due to golang implementation
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
-	
+
 	output, err := findStub(stub)
 	if err != nil {
 		log.Println(err)
+		updateStats(stub, codes.Unknown.String())
 		responseError(err, w)
 		return
 	}
 
+	updateStats(stub, codes.Code(output.Code).String())
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(output)
 }
 
 func handleClearStub(w http.ResponseWriter, r *http.Request) {
 	clearStorage()
+	w.Write([]byte("OK"))
+}
+
+func handleClearStats(w http.ResponseWriter, r *http.Request) {
+	clearStats()
 	w.Write([]byte("OK"))
 }
