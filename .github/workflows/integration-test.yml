@@ -2,7 +2,7 @@ name: Integration test
 on:
   pull_request:
     branches:
-      master
+      - master
 
 
 jobs:

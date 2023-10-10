@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 
-    "github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -40,6 +39,7 @@ func main() {
 	{{ template "register_services" . }}
 	{{ end }}
 
+	log.Println("Registering reflection service")
 	reflection.Register(s)
 	fmt.Println("Serving gRPC on tcp://" + TCP_ADDRESS)
 	if err := s.Serve(lis); err != nil {
@@ -164,7 +164,7 @@ func findStub(service, method string, in, out protoiface.MessageV1) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf(string(body))
 	}
 

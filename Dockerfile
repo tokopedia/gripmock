@@ -1,4 +1,4 @@
-FROM golang:alpine3.17
+FROM golang:1.21.1-alpine3.17
 
 # install tools (bash, git, protobuf, protoc-gen-go, protoc-grn-go-grpc, pkger)
 RUN apk -U --no-cache add bash git protobuf &&\
@@ -21,7 +21,7 @@ RUN mkdir /proto /stubs &&\
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
 # install generator plugin
-RUN pkger && go install -v
+RUN go install -v
 
 WORKDIR /go/src/github.com/tokopedia/gripmock
 

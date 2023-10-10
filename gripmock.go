@@ -1,74 +1,41 @@
 package main
 
 import (
-	"bytes"
-	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
-	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 
+	"github.com/tokopedia/gripmock/config"
 	"github.com/tokopedia/gripmock/stub"
 )
 
+const output = "grpc-mock-server/"
+const protogen = output + "protogen/"
+
 func main() {
-	outputPointer := flag.String("o", "", "directory to output server.go. Default is $GOPATH/src/grpc/")
-	grpcPort := flag.String("grpc-port", "4770", "Port of gRPC tcp server")
-	grpcBindAddr := flag.String("grpc-listen", "", "Adress the gRPC server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
-	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
-	adminBindAddr := flag.String("admin-listen", "", "Adress the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
-	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
-	imports := flag.String("imports", "/protobuf", "comma separated imports path. default path /protobuf is where gripmock Dockerfile install WKT protos")
-	// for backwards compatibility
-	if os.Args[1] == "gripmock" {
-		os.Args = append(os.Args[:1], os.Args[2:]...)
+	config := config.LoadEnv()
+
+	if config == nil {
+		log.Fatal("Config is nil")
 	}
 
-	flag.Parse()
 	fmt.Println("Starting GripMock")
-	if os.Getenv("GOPATH") == "" {
-		log.Fatal("$GOPATH is empty")
-	}
-	output := *outputPointer
-	if output == "" {
-		output = os.Getenv("GOPATH") + "/src/grpc"
-	}
-
-	// for safety
-	output += "/"
-	if _, err := os.Stat(output); os.IsNotExist(err) {
-		os.Mkdir(output, os.ModePerm)
-	}
 
 	// run admin stub server
 	stub.RunStubServer(stub.Options{
-		StubPath: *stubPath,
-		Port:     *adminport,
-		BindAddr: *adminBindAddr,
+		StubPath: config.StubsDir,
+		Port:     config.AdminPort,
+		BindAddr: config.AdminListen,
 	})
-
-	// parse proto files
-	protoPaths := flag.Args()
-
-	if len(protoPaths) == 0 {
-		log.Fatal("Need at least one proto file")
-	}
-
-	importDirs := strings.Split(*imports, ",")
 
 	// generate pb.go and grpc server based on proto
-	generateProtoc(protocParam{
-		protoPath:   protoPaths,
-		adminPort:   *adminport,
-		grpcAddress: *grpcBindAddr,
-		grpcPort:    *grpcPort,
-		output:      output,
-		imports:     importDirs,
-	})
+	generateProtoc(*config)
 
 	// build the server
 	//buildServer(output)
@@ -76,8 +43,8 @@ func main() {
 	// and run
 	run, runerr := runGrpcServer(output)
 
-	var term = make(chan os.Signal)
-	signal.Notify(term, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
+	var term = make(chan os.Signal, 1)
+	signal.Notify(term, syscall.SIGTERM, syscall.SIGINT)
 	select {
 	case err := <-runerr:
 		log.Fatal(err)
@@ -87,67 +54,28 @@ func main() {
 	}
 }
 
-type protocParam struct {
-	protoPath   []string
-	adminPort   string
-	grpcAddress string
-	grpcPort    string
-	output      string
-	imports     []string
-}
-
-func getProtodirs(protoPath string, imports []string) []string {
-	// deduced protodir from protoPath
-	splitpath := strings.Split(protoPath, "/")
-	protodir := ""
-	if len(splitpath) > 0 {
-		protodir = path.Join(splitpath[:len(splitpath)-1]...)
-	}
-
-	// search protodir prefix
-	protodirIdx := -1
-	for i := range imports {
-		dir := path.Join("protogen", imports[i])
-		if strings.HasPrefix(protodir, dir) {
-			protodir = dir
-			protodirIdx = i
-			break
-		}
-	}
-
-	protodirs := make([]string, 0, len(imports)+1)
-	protodirs = append(protodirs, protodir)
-	// include all dir in imports, skip if it has been added before
-	for i, dir := range imports {
-		if i == protodirIdx {
-			continue
-		}
-		protodirs = append(protodirs, dir)
-	}
-	return protodirs
-}
-
-func generateProtoc(param protocParam) {
-	param.protoPath = fixGoPackage(param.protoPath)
-	protodirs := getProtodirs(param.protoPath[0], param.imports)
+func generateProtoc(config config.Config) {
+	protoFiles := prepareProtos(config.ProtoDirs)
 
 	// estimate args length to prevent expand
-	args := make([]string, 0, len(protodirs)+len(param.protoPath)+2)
-	for _, dir := range protodirs {
-		args = append(args, "-I", dir)
+	args := make([]string, 0, len(config.ProtoDirs)+len(protoFiles)+2)
+	protogenDir, err := filepath.Abs(protogen)
+	if err != nil {
+		log.Fatal("Fail on get abs path ", err)
 	}
-
-	// the latest go-grpc plugin will generate subfolders under $GOPATH/src based on go_package option
-	pbOutput := os.Getenv("GOPATH") + "/src"
-
-	args = append(args, param.protoPath...)
-	args = append(args, "--go_out=plugins=grpc:"+pbOutput)
-	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
-		param.adminPort, param.grpcAddress, param.grpcPort, param.output))
+	args = append(args, "-I", protogenDir)
+	if _, err := os.Stat(config.WktProto); err == nil {
+		args = append(args, "-I", config.WktProto)
+	}
+	args = append(args, protoFiles...)
+	args = append(args, "--go_out=plugins=grpc:"+output)
+	args = append(args, fmt.Sprintf("--gripmock_out=module-name=%s,admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
+		"grpcmock",
+		config.AdminPort, config.GrpcListen, config.GrpcPort, output))
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
-	err := protoc.Run()
+	err = protoc.Run()
 	if err != nil {
 		log.Fatal("Fail on protoc ", err)
 	}
@@ -155,25 +83,163 @@ func generateProtoc(param protocParam) {
 }
 
 // append gopackage in proto files if doesn't have any
-func fixGoPackage(protoPaths []string) []string {
-	fixgopackage := exec.Command("fix_gopackage.sh", protoPaths...)
-	buf := &bytes.Buffer{}
-	fixgopackage.Stdout = buf
-	fixgopackage.Stderr = os.Stderr
-	err := fixgopackage.Run()
+func prepareProtos(protoDirs []string) (result []string) {
+	for _, proto := range protoDirs {
+		filepath.WalkDir(proto, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if strings.HasSuffix(path, ".proto") {
+				relativePath, err := filepath.Rel(proto, path)
+				if err != nil {
+					log.Fatalf("Could not get relative path of %s, error: %v", path, err)
+					return err
+				}
+				dir := filepath.Dir(relativePath)
+				dir = strings.TrimLeft(dir, "/")
+				fmt.Println(dir)
+
+				// get string from right until the first /
+				// example value: hello.proto
+				file := filepath.Base(path)
+				fmt.Println("Proto file:", file)
+
+				newdir := filepath.Join(protogen, dir)
+				if err := os.MkdirAll(newdir, 0750); err != nil {
+					log.Fatalf("Could not create dir %s, error: %v", newdir, err)
+					return err
+				}
+				newfile := filepath.Join(newdir, file)
+
+				// copy to protogen directory
+				if err := copyFile(path, newfile); err != nil {
+					fmt.Println(err)
+					return err
+				}
+
+				// Force remove any declaration of go_package
+				// then replace it with our own declaration below
+				removeGoPackageDeclaration(newfile)
+
+				// get the line number of "syntax" declaration
+				syntaxLineNum := getSyntaxLineNum(newfile)
+
+				if syntaxLineNum != -1 {
+
+					goPackageString := fmt.Sprintf("option go_package = \"protogen/%s\";", dir)
+
+					// append our own go_package declaration just below "syntax" declaration
+					appendGoPackageDeclaration(newfile, syntaxLineNum, goPackageString)
+					absolutePath, err := filepath.Abs(newfile)
+					if err != nil {
+						log.Fatalf("Could not get absolute path of %s, error: %v", newfile, err)
+					}
+					result = append(result, absolutePath)
+				}
+
+			}
+
+			return nil
+		})
+	}
+	return
+}
+
+func copyFile(src, dst string) error {
+	source, err := os.Open(src)
 	if err != nil {
-		log.Println("error on fixGoPackage", err)
-		return protoPaths
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+
+	_, err = io.Copy(destination, source)
+	return err
+}
+
+func removeGoPackageDeclaration(filename string) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
-	return strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
+	newData := []string{}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		if !strings.HasPrefix(line, "option go_package") {
+			newData = append(newData, line)
+		}
+	}
+
+	err = os.WriteFile(filename, []byte(strings.Join(newData, "\n")), 0644)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func getSyntaxLineNum(filename string) int {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Println(err)
+		return -1
+	}
+
+	lines := strings.Split(string(data), "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "syntax") {
+			return i + 1
+		}
+	}
+
+	return -1
+}
+
+func appendGoPackageDeclaration(filename string, lineNum int, goPackageString string) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	lines := strings.Split(string(data), "\n")
+	lines = append(lines[:lineNum], append([]string{goPackageString}, lines[lineNum:]...)...)
+	output := strings.Join(lines, "\n")
+
+	err = os.WriteFile(filename, []byte(output), 0644)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
-	run := exec.Command("go", "run", output+"server.go")
+	var err error
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = os.Chdir(output)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Chdir(currentDir)
+	goTidy := exec.Command("go", "mod", "tidy")
+	goTidy.Stdout = os.Stdout
+	goTidy.Stderr = os.Stderr
+	err = goTidy.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	run := exec.Command("go", "run", "server.go")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
-	err := run.Start()
+	err = run.Start()
 	if err != nil {
 		log.Fatal(err)
 	}
