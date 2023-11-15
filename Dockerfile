@@ -11,6 +11,10 @@ RUN apk -U --no-cache add bash git protobuf &&\
 RUN git clone --depth=1 https://github.com/google/protobuf.git /protobuf-repo &&\
     mv /protobuf-repo/src/ /protobuf/ &&\
     rm -rf /protobuf-repo
+# buf/validate
+RUN git clone --depth=1 https://github.com/bufbuild/protovalidate.git /protobuf-repo &&\
+    mv /protobuf-repo/proto/protovalidate/buf /protobuf/ &&\
+    rm -rf /protobuf-repo
 
 COPY . /go/src/github.com/tokopedia/gripmock
 
