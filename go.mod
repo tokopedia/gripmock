@@ -3,6 +3,7 @@ module github.com/tokopedia/gripmock
 go 1.15
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231106192134-1baebb0a1518.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/protobuf v1.5.2
@@ -15,7 +16,7 @@ require (
 	golang.org/x/text v0.3.4 // indirect
 	google.golang.org/genproto v0.0.0-20201111145450-ac7456db90a6
 	google.golang.org/grpc v1.47.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.31.0
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
@@ -25,4 +26,3 @@ replace github.com/tokopedia/gripmock/protogen/example v0.0.0 => ./protogen/exam
 
 // this is for example client to be able to run
 replace github.com/tokopedia/gripmock/protogen v0.0.0 => ./protogen
-
