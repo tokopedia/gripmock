@@ -141,7 +141,9 @@ func generateProtoc(param protocParam) {
 	pbOutput := os.Getenv("GOPATH") + "/src"
 
 	args = append(args, param.protoPath...)
-	args = append(args, "--go_out=plugins=grpc:"+pbOutput)
+	args = append(args, "--go_out="+pbOutput)
+	args = append(args, "--go-grpc_out="+pbOutput)
+	args = append(args, "--go-grpc_opt=require_unimplemented_servers=false")
 	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
 		param.adminPort, param.grpcAddress, param.grpcPort, param.output))
 	protoc := exec.Command("protoc", args...)
