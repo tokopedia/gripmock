@@ -167,6 +167,102 @@ func TestStub(t *testing.T) {
 			expect:  `Success add stub`,
 		},
 		{
+			name: "add error stub with result code contains",
+			mock: func() *http.Request {
+				payload := `{
+								"service": "ErrorStabWithCode",
+								"method":"TestMethod",
+								"input":{
+									"contains":{
+												"key": "value",
+												"greetings": {
+													"hola": "mundo",
+													"merhaba": "dunya"
+												},
+												"cities": ["Istanbul", "Jakarta"]
+									}
+								},
+								"output":{
+									"error":"error msg",
+                                    "code": 3
+								}
+							}`
+				return httptest.NewRequest("POST", "/add", bytes.NewReader([]byte(payload)))
+			},
+			handler: addStub,
+			expect:  `Success add stub`,
+		},
+		{
+			name: "find error stub with result code contains",
+			mock: func() *http.Request {
+				payload := `{
+						"service": "ErrorStabWithCode",
+						"method":"TestMethod",
+						"data":{
+								"key": "value",
+								"anotherKey": "anotherValue",
+								"greetings": {
+									"hola": "mundo",
+									"merhaba": "dunya",
+									"hello": "world"
+								},
+								"cities": ["Istanbul", "Jakarta", "Winterfell"]
+						}
+					}`
+				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleFindStub,
+			expect:  "{\"data\":null,\"error\":\"error msg\",\"code\":3}\n",
+		},
+
+		{
+			name: "add error stub without result code contains",
+			mock: func() *http.Request {
+				payload := `{
+								"service": "ErrorStab",
+								"method":"TestMethod",
+								"input":{
+									"contains":{
+												"key": "value",
+												"greetings": {
+													"hola": "mundo",
+													"merhaba": "dunya"
+												},
+												"cities": ["Istanbul", "Jakarta"]
+									}
+								},
+								"output":{
+									"error":"error msg"
+								}
+							}`
+				return httptest.NewRequest("POST", "/add", bytes.NewReader([]byte(payload)))
+			},
+			handler: addStub,
+			expect:  `Success add stub`,
+		},
+		{
+			name: "find error stub without result code contains",
+			mock: func() *http.Request {
+				payload := `{
+						"service": "ErrorStab",
+						"method":"TestMethod",
+						"data":{
+								"key": "value",
+								"anotherKey": "anotherValue",
+								"greetings": {
+									"hola": "mundo",
+									"merhaba": "dunya",
+									"hello": "world"
+								},
+								"cities": ["Istanbul", "Jakarta", "Winterfell"]
+						}
+					}`
+				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleFindStub,
+			expect:  "{\"data\":null,\"error\":\"error msg\"}\n",
+		},
+		{
 			name: "find nested stub contains",
 			mock: func() *http.Request {
 				payload := `{
