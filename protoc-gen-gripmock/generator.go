@@ -64,7 +64,6 @@ func main() {
 
 	file := plugin.NewGeneratedFile("server.go", ".")
 	file.Write(buf.Bytes())
-
 	// Generate a response from our plugin and marshall as protobuf
 	out, err := proto.Marshal(plugin.Response())
 	if err != nil {
@@ -84,18 +83,20 @@ type generatorParam struct {
 }
 
 type Service struct {
-	Name    string
-	Package string
-	Methods []methodTemplate
+	ServiceStructName string
+	Name              string
+	Package           string
+	Methods           []methodTemplate
 }
 
 type methodTemplate struct {
-	SvcPackage  string
-	Name        string
-	ServiceName string
-	MethodType  string
-	Input       string
-	Output      string
+	ServiceStructName string
+	SvcPackage        string
+	Name              string
+	ServiceName       string
+	MethodType        string
+	Input             string
+	Output            string
 }
 
 const (
@@ -244,9 +245,15 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 	svcTmp := []Service{}
 	for _, proto := range protos {
+		fileName := proto.GetName()
+		version := ""
 		for _, svc := range proto.GetService() {
 			var s Service
+			if strings.Contains(fileName, "v2") {
+				version = "V2"
+			}
 			s.Name = svc.GetName()
+			s.ServiceStructName = svc.GetName() + version
 			alias, _ := getGoPackage(proto)
 			if alias != "" {
 				s.Package = alias + "."
@@ -263,12 +270,13 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 				}
 
 				methods[j] = methodTemplate{
-					Name:        strings.Title(*method.Name),
-					SvcPackage:  s.Package,
-					ServiceName: svc.GetName(),
-					Input:       getMessageType(protos, method.GetInputType()),
-					Output:      getMessageType(protos, method.GetOutputType()),
-					MethodType:  tipe,
+					Name:              strings.Title(*method.Name),
+					SvcPackage:        s.Package,
+					ServiceName:       svc.GetName(),
+					ServiceStructName: svc.GetName() + version,
+					Input:             getMessageType(protos, method.GetInputType()),
+					Output:            getMessageType(protos, method.GetOutputType()),
+					MethodType:        tipe,
 				}
 			}
 			s.Methods = methods
