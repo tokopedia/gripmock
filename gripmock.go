@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -114,7 +116,6 @@ func getProtodirs(protoPath string, imports []string) []string {
 			break
 		}
 	}
-
 	protodirs := make([]string, 0, len(imports)+1)
 	protodirs = append(protodirs, protodir)
 	// include all dir in imports, skip if it has been added before
@@ -128,7 +129,29 @@ func getProtodirs(protoPath string, imports []string) []string {
 }
 
 func generateProtoc(param protocParam) {
-	param.protoPath = fixGoPackage(param.protoPath)
+	pathsMap := make(map[string]struct{})
+	for _, protoPath := range param.protoPath {
+		pathsMap[protoPath] = struct{}{}
+	}
+	for _, dir := range param.imports {
+		if dir != "/sos_protos" {
+			continue
+		}
+		err := filepath.WalkDir("/sos_protos", func(path string, d fs.DirEntry, err error) error {
+			if strings.HasSuffix(path, ".proto") {
+				pathsMap[path] = struct{}{}
+			}
+			return nil
+		})
+		if err != nil {
+			log.Fatal(fmt.Errorf("failed to walk /sos_protos: %w", err))
+		}
+	}
+	protopaths := make([]string, 0, len(pathsMap))
+	for path := range pathsMap {
+		protopaths = append(protopaths, path)
+	}
+	param.protoPath = fixGoPackage(protopaths)
 	protodirs := getProtodirs(param.protoPath[0], param.imports)
 
 	// estimate args length to prevent expand
