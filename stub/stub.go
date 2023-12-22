@@ -30,6 +30,7 @@ func RunStubServer(opt Options) {
 	r.Get("/", listStub)
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
+	r.Get("/requests", listRequests)
 
 	if opt.StubPath != "" {
 		readStubFromFile(opt.StubPath)
@@ -164,4 +165,9 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 func handleClearStub(w http.ResponseWriter, r *http.Request) {
 	clearStorage()
 	w.Write([]byte("OK"))
+}
+
+func listRequests(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allRequests())
 }
