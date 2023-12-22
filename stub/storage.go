@@ -22,8 +22,9 @@ type matchFunc func(interface{}, interface{}) bool
 var stubStorage = stubMapping{}
 
 type storage struct {
-	Input  Input
-	Output Output
+	Input       Input
+	Output      Output
+	timesCalled int
 }
 
 func storeStub(stub *Stub) error {
@@ -73,10 +74,11 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	}
 
 	closestMatch := []closeMatch{}
-	for _, stubrange := range stubs {
+	for idx, stubrange := range stubs {
 		if expect := stubrange.Input.Equals; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"equals", expect})
 			if equals(stub.Data, expect) {
+				stubs[idx].timesCalled++
 				return &stubrange.Output, nil
 			}
 		}
@@ -84,6 +86,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Contains; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"contains", expect})
 			if contains(stubrange.Input.Contains, stub.Data) {
+				stubs[idx].timesCalled++
 				return &stubrange.Output, nil
 			}
 		}
@@ -91,6 +94,7 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Matches; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"matches", expect})
 			if matches(stubrange.Input.Matches, stub.Data) {
+				stubs[idx].timesCalled++
 				return &stubrange.Output, nil
 			}
 		}
@@ -317,4 +321,34 @@ func (sm *stubMapping) readStubFromFile(path string) {
 
 		sm.storeStub(stub)
 	}
+}
+
+func getStubTimesCalled(stub *verifyStubCallPayload) (*Output, error) {
+	mx.Lock()
+	defer mx.Unlock()
+
+	if _, ok := stubStorage[stub.Service]; !ok {
+		return nil, fmt.Errorf("Can't find stub for Service: %s", stub.Service)
+	}
+
+	if _, ok := stubStorage[stub.Service][stub.Method]; !ok {
+		return nil, fmt.Errorf("Can't find stub for Service:%s and Method:%s", stub.Service, stub.Method)
+	}
+
+	stubs := stubStorage[stub.Service][stub.Method]
+	if len(stubs) == 0 {
+		return nil, fmt.Errorf("Stub for Service:%s and Method:%s is empty", stub.Service, stub.Method)
+	}
+
+	totalTimesCalled := 0
+
+	for _, stubrange := range stubs {
+		totalTimesCalled += stubrange.timesCalled
+	}
+
+	return &Output{
+		Data: map[string]interface{}{
+			"timesCalled": totalTimesCalled,
+		},
+	}, nil
 }

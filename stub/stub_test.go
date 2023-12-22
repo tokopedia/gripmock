@@ -397,6 +397,15 @@ func TestStub(t *testing.T) {
 			handler: handleFindStub,
 			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\n{\n\tHola: Dunia\n}\n\nClosest Match \n\nequals:{\n\tHola: Mundo\n}",
 		},
+		{
+			name: "verify stub times called",
+			mock: func() *http.Request {
+				payload := `{"service":"Testing2","method":"TestMethod"}`
+				return httptest.NewRequest("GET", "/verify", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleVerifyStubCalled,
+			expect:  "{\"data\":{\"timesCalled\":1},\"error\":\"\"}\n",
+		},
 	}
 
 	for _, v := range cases {

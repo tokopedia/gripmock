@@ -30,6 +30,7 @@ func RunStubServer(opt Options) {
 	r.Get("/", listStub)
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
+	r.Get("/verify", handleVerifyStubCalled)
 
 	if opt.StubPath != "" {
 		readStubFromFile(opt.StubPath)
@@ -164,4 +165,28 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 func handleClearStub(w http.ResponseWriter, r *http.Request) {
 	clearStorage()
 	w.Write([]byte("OK"))
+}
+
+type verifyStubCallPayload struct {
+	Service string `json:"service"`
+	Method  string `json:"method"`
+}
+
+func handleVerifyStubCalled(w http.ResponseWriter, r *http.Request) {
+	verifyPayload := new(verifyStubCallPayload)
+	err := json.NewDecoder(r.Body).Decode(verifyPayload)
+	if err != nil {
+		responseError(err, w)
+		return
+	}
+
+	output, err := getStubTimesCalled(verifyPayload)
+	if err != nil {
+		log.Println(err)
+		responseError(err, w)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(output)
 }
