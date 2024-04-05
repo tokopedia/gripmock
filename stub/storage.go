@@ -1,10 +1,11 @@
 package stub
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"reflect"
 	"regexp"
 	"sync"
@@ -60,11 +61,11 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	mx.Lock()
 	defer mx.Unlock()
 	if _, ok := stubStorage[stub.Service]; !ok {
-		return nil, fmt.Errorf("Can't find stub for Service: %s", stub.Service)
+		return nil, fmt.Errorf("can't find stub for Service: %s", stub.Service)
 	}
 
 	if _, ok := stubStorage[stub.Service][stub.Method]; !ok {
-		return nil, fmt.Errorf("Can't find stub for Service:%s and Method:%s", stub.Service, stub.Method)
+		return nil, fmt.Errorf("can't find stub for Service:%s and Method:%s", stub.Service, stub.Method)
 	}
 
 	stubs := stubStorage[stub.Service][stub.Method]
@@ -171,8 +172,8 @@ func deepEqual(expect, actual interface{}) bool {
 }
 
 func regexMatch(expect, actual interface{}) bool {
-	var expectedStr, expectedStringOk = expect.(string)
-	var actualStr, actualStringOk = actual.(string)
+	expectedStr, expectedStringOk := expect.(string)
+	actualStr, actualStringOk := actual.(string)
 
 	if expectedStringOk && actualStringOk {
 		match, err := regexp.Match(expectedStr, []byte(actualStr))
@@ -198,9 +199,8 @@ func matches(expect, actual map[string]interface{}) bool {
 }
 
 func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
-
 	// circuit brake
-	if acc == false {
+	if !acc {
 		return false
 	}
 
@@ -277,7 +277,7 @@ func readStubFromFile(path string) {
 }
 
 func (sm *stubMapping) readStubFromFile(path string) {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Printf("Can't read stub from %s. %v\n", path, err)
 		return
@@ -289,12 +289,14 @@ func (sm *stubMapping) readStubFromFile(path string) {
 			continue
 		}
 
-		byt, err := ioutil.ReadFile(path + "/" + file.Name())
+		byt, err := os.ReadFile(path + "/" + file.Name())
 		if err != nil {
 			log.Printf("Error when reading file %s. %v. skipping...", file.Name(), err)
 			continue
 		}
 
+		// most files have a trailing newline so trim that before checking
+		byt = bytes.TrimSuffix(byt, []byte("\n"))
 		if byt[0] == '[' && byt[len(byt)-1] == ']' {
 			var stubs []*Stub
 			err = json.Unmarshal(byt, &stubs)
@@ -303,7 +305,9 @@ func (sm *stubMapping) readStubFromFile(path string) {
 				continue
 			}
 			for _, s := range stubs {
-				sm.storeStub(s)
+				if err = sm.storeStub(s); err != nil {
+					log.Printf("Error when storing Stub from %s. %v. skipping...", file.Name(), err)
+				}
 			}
 			continue
 		}
@@ -315,6 +319,8 @@ func (sm *stubMapping) readStubFromFile(path string) {
 			continue
 		}
 
-		sm.storeStub(stub)
+		if err = sm.storeStub(stub); err != nil {
+			log.Printf("Error when storing Stub from %s. %v. skipping...", file.Name(), err)
+		}
 	}
 }

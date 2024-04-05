@@ -3,11 +3,13 @@ package stub
 import (
 	"encoding/json"
 	"fmt"
-	"google.golang.org/grpc/codes"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
-	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	"google.golang.org/grpc/codes"
 
 	"github.com/go-chi/chi"
 )
@@ -44,7 +46,9 @@ func RunStubServer(opt Options) {
 
 func responseError(err error, w http.ResponseWriter) {
 	w.WriteHeader(500)
-	w.Write([]byte(err.Error()))
+	if _, err = w.Write([]byte(err.Error())); err != nil {
+		log.Println("Error writing response: %w", err)
+	}
 }
 
 type Stub struct {
@@ -67,7 +71,7 @@ type Output struct {
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		responseError(err, w)
 		return
@@ -92,26 +96,30 @@ func addStub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("Success add stub"))
+	if _, err = w.Write([]byte("Success add stub")); err != nil {
+		log.Println("Error writing response: %w", err)
+	}
 }
 
 func listStub(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(allStub())
+	if err := json.NewEncoder(w).Encode(allStub()); err != nil {
+		log.Println("Error writing listStub response: %w", err)
+	}
 }
 
 func validateStub(stub *Stub) error {
 	if stub.Service == "" {
-		return fmt.Errorf("Service name can't be empty")
+		return fmt.Errorf("service name can't be empty")
 	}
 
 	if stub.Method == "" {
-		return fmt.Errorf("Method name can't be emtpy")
+		return fmt.Errorf("method name can't be emtpy")
 	}
 
 	// due to golang implementation
 	// method name must capital
-	stub.Method = strings.Title(stub.Method)
+	stub.Method = cases.Title(language.Und, cases.NoLower).String(stub.Method)
 
 	switch {
 	case stub.Input.Contains != nil:
@@ -148,7 +156,7 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 
 	// due to golang implementation
 	// method name must capital
-	stub.Method = strings.Title(stub.Method)
+	stub.Method = cases.Title(language.Und, cases.NoLower).String(stub.Method)
 
 	output, err := findStub(stub)
 	if err != nil {
@@ -158,10 +166,14 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(output)
+	if err := json.NewEncoder(w).Encode(output); err != nil {
+		log.Println("Error writing handleFindStub response: %w", err)
+	}
 }
 
 func handleClearStub(w http.ResponseWriter, r *http.Request) {
 	clearStorage()
-	w.Write([]byte("OK"))
+	if _, err := w.Write([]byte("OK")); err != nil {
+		log.Println("Error writing handleClearStub response: %w", err)
+	}
 }

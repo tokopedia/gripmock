@@ -70,20 +70,17 @@ func main() {
 		imports:     importDirs,
 	})
 
-	// build the server
-	//buildServer(output)
-
 	// and run
 	run, runerr := runGrpcServer(output)
 
-	var term = make(chan os.Signal)
+	term := make(chan os.Signal)
 	signal.Notify(term, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	select {
 	case err := <-runerr:
 		log.Fatal(err)
 	case <-term:
 		fmt.Println("Stopping gRPC Server")
-		run.Process.Kill()
+		_ = run.Process.Kill()
 	}
 }
 
@@ -151,7 +148,6 @@ func generateProtoc(param protocParam) {
 	if err != nil {
 		log.Fatal("Fail on protoc ", err)
 	}
-
 }
 
 // append gopackage in proto files if doesn't have any
