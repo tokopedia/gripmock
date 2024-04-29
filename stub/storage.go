@@ -20,6 +20,7 @@ type stubMapping map[string]map[string][]storage
 type matchFunc func(interface{}, interface{}) bool
 
 var stubStorage = stubMapping{}
+var requestStorage = []*request{}
 
 type storage struct {
 	Input       Input
@@ -27,8 +28,26 @@ type storage struct {
 	timesCalled int
 }
 
+type request struct {
+	Record findStubPayload `json:"record"`
+	Count  int             `json:"count"`
+}
+
 func storeStub(stub *Stub) error {
 	return stubStorage.storeStub(stub)
+}
+
+func storeRequest(stub *findStubPayload) {
+	for _, v := range requestStorage {
+		if reflect.DeepEqual(v.Record, *stub) {
+			v.Count++
+			return
+		}
+	}
+	requestStorage = append(requestStorage, &request{
+		Record: *stub,
+		Count:  1,
+	})
 }
 
 func (sm *stubMapping) storeStub(stub *Stub) error {
@@ -52,6 +71,12 @@ func allStub() stubMapping {
 	return stubStorage
 }
 
+func allRequests() []*request {
+	mx.Lock()
+	defer mx.Unlock()
+	return requestStorage
+}
+
 type closeMatch struct {
 	rule   string
 	expect map[string]interface{}
@@ -60,6 +85,7 @@ type closeMatch struct {
 func findStub(stub *findStubPayload) (*Output, error) {
 	mx.Lock()
 	defer mx.Unlock()
+	storeRequest(stub)
 	if _, ok := stubStorage[stub.Service]; !ok {
 		return nil, fmt.Errorf("Can't find stub for Service: %s", stub.Service)
 	}
@@ -274,6 +300,7 @@ func clearStorage() {
 	defer mx.Unlock()
 
 	stubStorage = stubMapping{}
+	requestStorage = []*request{}
 }
 
 func readStubFromFile(path string) {

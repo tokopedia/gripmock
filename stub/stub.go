@@ -3,11 +3,12 @@ package stub
 import (
 	"encoding/json"
 	"fmt"
-	"google.golang.org/grpc/codes"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
+
+	"google.golang.org/grpc/codes"
 
 	"github.com/go-chi/chi"
 )
@@ -31,6 +32,7 @@ func RunStubServer(opt Options) {
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
 	r.Get("/verify", handleVerifyStubCalled)
+	r.Get("/requests", listRequests)
 
 	if opt.StubPath != "" {
 		readStubFromFile(opt.StubPath)
@@ -189,4 +191,9 @@ func handleVerifyStubCalled(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(output)
+}
+
+func listRequests(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allRequests())
 }
