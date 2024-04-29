@@ -2,7 +2,7 @@ FROM golang:alpine3.17
 
 # install tools (bash, git, protobuf, protoc-gen-go, protoc-grn-go-grpc, pkger)
 RUN apk -U --no-cache add bash git protobuf &&\
-    go install -v github.com/golang/protobuf/protoc-gen-go@latest &&\
+    go install -v google.golang.org/protobuf/cmd/protoc-gen-go@latest &&\
     go install -v google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest &&\
     go install github.com/markbates/pkger/cmd/pkger@latest
 
@@ -10,6 +10,10 @@ RUN apk -U --no-cache add bash git protobuf &&\
 # only use needed files
 RUN git clone --depth=1 https://github.com/google/protobuf.git /protobuf-repo &&\
     mv /protobuf-repo/src/ /protobuf/ &&\
+    rm -rf /protobuf-repo
+# buf/validate
+RUN git clone --depth=1 https://github.com/bufbuild/protovalidate.git /protobuf-repo &&\
+    mv /protobuf-repo/proto/protovalidate/buf /protobuf/ &&\
     rm -rf /protobuf-repo
 
 COPY . /go/src/github.com/tokopedia/gripmock
