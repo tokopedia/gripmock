@@ -3,11 +3,16 @@ package stub
 import (
 	"encoding/json"
 	"fmt"
-	"google.golang.org/grpc/codes"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
+
+	"github.com/icrowley/fake"
+	"google.golang.org/grpc/codes"
 
 	"github.com/go-chi/chi"
 )
@@ -52,6 +57,7 @@ type Stub struct {
 	Method  string `json:"method"`
 	Input   Input  `json:"input"`
 	Output  Output `json:"output"`
+	Order   int    `json:"order"`
 }
 
 type Input struct {
@@ -150,18 +156,99 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 	// method name must capital
 	stub.Method = strings.Title(stub.Method)
 
-	output, err := findStub(stub)
+	outputP, err := findStub(stub)
+
 	if err != nil {
 		log.Println(err)
 		responseError(err, w)
 		return
 	}
 
+	output := echoInputData(outputP, stub.Data)
+	fillFakeData(&output)
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(output)
+	json.NewEncoder(w).Encode(&output)
 }
 
 func handleClearStub(w http.ResponseWriter, r *http.Request) {
 	clearStorage()
 	w.Write([]byte("OK"))
+}
+
+func echoInputData(outputP *Output, data map[string]interface{}) Output {
+	output := *outputP
+	outputData := make(map[string]interface{})
+	for key, value := range outputP.Data {
+		outputData[key] = value
+	}
+
+	for outputKey, outputVal := range outputData {
+		if reflect.TypeOf(outputVal).String() == "string" {
+			outputValString := outputVal.(string)
+			if strings.Contains(outputValString, "input.") {
+				for dataK, dataV := range data {
+					if strings.Contains(outputValString, "{{input."+dataK+"}}") {
+						newResponse := strings.Replace(outputValString, "{{input."+dataK+"}}", toString(dataV), -1)
+						outputData[outputKey] = newResponse
+					}
+				}
+			}
+		}
+	}
+	output.Data = outputData
+
+	return output
+}
+
+func fillFakeData(output *Output) {
+	for outputDataK, outputDataV := range output.Data {
+		if reflect.TypeOf(outputDataV).String() == "string" {
+			data := outputDataV.(string)
+			output.Data[outputDataK] = data
+			if strings.Contains(data, "fake.") {
+				re := regexp.MustCompile(`{{fake.([0-9A-Za-z()]+)}}`)
+				matches := re.FindAllStringSubmatch(data, -1)
+
+				for _, match := range matches {
+					if len(match) > 1 && strings.Contains(match[1], "DigitsN") {
+						output.Data[outputDataK] = strings.Replace(output.Data[outputDataK].(string), match[0], fakeDigitsN(match[1]), 1)
+					} else if len(match) > 1 && strings.Contains(match[1], "Digits") {
+						output.Data[outputDataK] = strings.Replace(output.Data[outputDataK].(string), match[0], fakeDigits(), 1)
+					} else {
+						output.Data[outputDataK] = "Unsupported fake method"
+					}
+				}
+			}
+		}
+	}
+}
+
+func fakeDigits() string {
+	return fake.Digits()
+}
+
+func fakeDigitsN(sig string) string {
+	re := regexp.MustCompile(`DigitsN\((\d+)\)`)
+	match := re.FindStringSubmatch(sig)
+	if len(match) > 1 {
+		n, err := strconv.Atoi(match[1])
+		if err != nil {
+			return "error"
+		}
+		return fake.DigitsN(n)
+	}
+	return "error"
+}
+
+func toString[T any](value T) string {
+	// Get the reflect type of the value
+	valType := reflect.TypeOf(value)
+
+	// Check if the value is already a string
+	if valType.Kind() == reflect.String {
+		return fmt.Sprint(value) // Return the string value as is
+	}
+
+	return "\"" + fmt.Sprint(value) + "\"" // Add quotes for non-string values
 }

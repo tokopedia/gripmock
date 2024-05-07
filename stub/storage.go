@@ -24,6 +24,7 @@ var stubStorage = stubMapping{}
 type storage struct {
 	Input  Input
 	Output Output
+	Order  int
 }
 
 func storeStub(stub *Stub) error {
@@ -37,6 +38,7 @@ func (sm *stubMapping) storeStub(stub *Stub) error {
 	strg := storage{
 		Input:  stub.Input,
 		Output: stub.Output,
+		Order:  stub.Order,
 	}
 	if (*sm)[stub.Service] == nil {
 		(*sm)[stub.Service] = make(map[string][]storage)
@@ -68,12 +70,22 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	}
 
 	stubs := stubStorage[stub.Service][stub.Method]
+
 	if len(stubs) == 0 {
 		return nil, fmt.Errorf("Stub for Service:%s and Method:%s is empty", stub.Service, stub.Method)
 	}
 
 	closestMatch := []closeMatch{}
-	for _, stubrange := range stubs {
+
+	var stubSlice []storage
+	for _, stub := range stubs {
+		stubSlice = append(stubSlice, stub)
+	}
+	//sort.Slice(stubSlice, func(i, j int) bool {
+	//	return stubSlice[i].Order < stubSlice[j].Order
+	//})
+
+	for _, stubrange := range stubSlice {
 		if expect := stubrange.Input.Equals; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"equals", expect})
 			if equals(stub.Data, expect) {
