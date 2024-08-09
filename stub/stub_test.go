@@ -48,7 +48,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("GET", "/", nil)
 			},
 			handler: listStub,
-			expect:  "{\"Testing\":{\"TestMethod\":[{\"Input\":{\"equals\":{\"Hola\":\"Mundo\"},\"contains\":null,\"matches\":null},\"Output\":{\"data\":{\"Hello\":\"World\"},\"error\":\"\"}}]}}\n",
+			expect:  "{\"Testing\":{\"TestMethod\":[{\"Input\":{\"equals\":{\"Hola\":\"Mundo\"},\"equals_unordered\":null,\"contains\":null,\"matches\":null},\"Output\":{\"data\":{\"Hello\":\"World\"},\"error\":\"\"}}]}}\n",
 		},
 		{
 			name: "find stub equals",
@@ -98,6 +98,58 @@ func TestStub(t *testing.T) {
 			},
 			handler: handleFindStub,
 			expect:  "{\"data\":{\"Hello\":\"World\"},\"error\":\"\"}\n",
+		},
+		{
+			name: "add stub equals_unordered",
+			mock: func() *http.Request {
+				payload := `{
+								"service": "TestingUnordered",
+								"method":"TestMethod",
+								"input": {
+									"equals_unordered": {
+										"ids": [1,2]
+									}
+								},
+								"output":{
+									"data":{
+										"hello":"world"
+									}
+								}
+							}`
+				return httptest.NewRequest("POST", "/add", bytes.NewReader([]byte(payload)))
+			},
+			handler: addStub,
+			expect:  `Success add stub`,
+		},
+		{
+			name: "find stub equals_unordered",
+			mock: func() *http.Request {
+				payload := `{
+						"service":"TestingUnordered",
+						"method":"TestMethod",
+						"data":{
+							"ids":[1,2]
+						}
+					}`
+				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleFindStub,
+			expect:  "{\"data\":{\"hello\":\"world\"},\"error\":\"\"}\n",
+		},
+		{
+			name: "find stub equals_unordered reversed",
+			mock: func() *http.Request {
+				payload := `{
+						"service":"TestingUnordered",
+						"method":"TestMethod",
+						"data":{
+							"ids":[2,1]
+						}
+					}`
+				return httptest.NewRequest("GET", "/find", bytes.NewReader([]byte(payload)))
+			},
+			handler: handleFindStub,
+			expect:  "{\"data\":{\"hello\":\"world\"},\"error\":\"\"}\n",
 		},
 		{
 			name: "add stub contains",

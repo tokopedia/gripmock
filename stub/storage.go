@@ -7,8 +7,8 @@ import (
 	"log"
 	"reflect"
 	"regexp"
+	"sort"
 	"sync"
-    "sort"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
@@ -82,9 +82,9 @@ func findStub(stub *findStubPayload) (*Output, error) {
 			}
 		}
 
-		if expect := stubrange.Input.EqualsSets; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"equals_sets", expect})
-			if equals_sets(stub.Data, expect) {
+		if expect := stubrange.Input.EqualsUnordered; expect != nil {
+			closestMatch = append(closestMatch, closeMatch{"equals_unordered", expect})
+			if equalsUnordered(stub.Data, expect) {
 				return &stubrange.Output, nil
 			}
 		}
@@ -197,7 +197,7 @@ func equals(expect, actual map[string]interface{}) bool {
 	return find(expect, actual, true, true, deepEqual, false)
 }
 
-func equals_sets(expect, actual map[string]interface{}) bool {
+func equalsUnordered(expect, actual map[string]interface{}) bool {
 	return find(expect, actual, true, true, deepEqual, true)
 }
 
@@ -209,32 +209,22 @@ func matches(expect, actual map[string]interface{}) bool {
 	return find(expect, actual, true, false, regexMatch, false)
 }
 
-type sortableSlice []interface{}
-
-func (s sortableSlice) Len() int {
-    return len(s)
-}
-
-func (s sortableSlice) Less(i, j int) bool {
-    return fmt.Sprint(s[i]) < fmt.Sprint(s[j])
-}
-
-func (s sortableSlice) Swap(i, j int) {
-    s[i], s[j] = s[j], s[i]
-}
-
 func equalsIgnoreOrder(expect, actual interface{}) bool {
-    expectSlice, expectOk := expect.([]interface{})
-    actualSlice, actualOk := actual.([]interface{})
-    if !expectOk || !actualOk {
-        return false
-    }
-    if len(expectSlice) != len(actualSlice) {
-        return false
-    }
-    sort.Sort(sortableSlice(expectSlice))
-    sort.Sort(sortableSlice(actualSlice))
-    return reflect.DeepEqual(expectSlice, actualSlice)
+	expectSlice, expectOk := expect.([]interface{})
+	actualSlice, actualOk := actual.([]interface{})
+	if !expectOk || !actualOk {
+		return false
+	}
+	if len(expectSlice) != len(actualSlice) {
+		return false
+	}
+	sort.Slice(expectSlice, func(i, j int) bool {
+		return fmt.Sprint(expectSlice[i]) < fmt.Sprint(expectSlice[j])
+	})
+	sort.Slice(actualSlice, func(i, j int) bool {
+		return fmt.Sprint(actualSlice[i]) < fmt.Sprint(actualSlice[j])
+	})
+	return reflect.DeepEqual(expectSlice, actualSlice)
 }
 
 func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc, ignoreOrder bool) bool {
@@ -266,8 +256,8 @@ func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc, ignoreO
 		}
 
 		if expectArrayOk && actualArrayOk && ignoreOrder {
-            return equalsIgnoreOrder(expectArrayValue, actualArrayValue)
-        }
+			return equalsIgnoreOrder(expectArrayValue, actualArrayValue)
+		}
 
 		for expectItemIndex, expectItemValue := range expectArrayValue {
 			actualItemValue := actualArrayValue[expectItemIndex]

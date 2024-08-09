@@ -151,6 +151,31 @@ Nested fields are allowed for input matching too for all JSON data types. (`stri
 }
 ```
 
+**equals_unordered** will match the exact field name and value of input into expected stub, except lists (wich are compared as sets). example stub JSON:
+
+
+```
+{
+  .
+  .
+  "input":{
+    "equals_unordered":{
+      "name":"gripmock",
+      "greetings": {
+            "english": "Hello World!",
+            "indonesian": "Halo Dunia!",
+            "turkish": "Merhaba Dünya!"
+      },
+      "ok": true,
+      "numbers": [4, 8, 15, 16, 23, 42]
+      "null": null
+    }
+  }
+  .
+  .
+}
+```
+
 **contains** will match input that has the value declared expected fields. example stub JSON:
 ```
 {
