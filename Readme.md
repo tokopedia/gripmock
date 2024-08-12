@@ -122,7 +122,7 @@ Stub will respond with the expected response only if the request matches any rul
 So if you do a `curl -X POST -d '{"service":"Greeter","method":"SayHello","data":{"name":"gripmock"}}' localhost:4771/find` stub service will find a match from listed stubs stored there.
 
 ### Input Matching Rule
-Input matching has 3 rules to match an input: **equals**,**contains** and **regex**
+Input matching has 4 rules to match an input: **equals**, **equals_unordered**, **contains** and **regex**
 <br>
 Nested fields are allowed for input matching too for all JSON data types. (`string`, `bool`, `array`, etc.)
 <br>
@@ -151,7 +151,7 @@ Nested fields are allowed for input matching too for all JSON data types. (`stri
 }
 ```
 
-**equals_unordered** will match the exact field name and value of input into expected stub, except lists (wich are compared as sets). example stub JSON:
+**equals_unordered** will match the exact field name and value of input into expected stub, except lists (which are compared as sets). example stub JSON:
 
 
 ```
