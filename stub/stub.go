@@ -59,9 +59,10 @@ type Stub struct {
 }
 
 type Input struct {
-	Equals   map[string]interface{} `json:"equals"`
-	Contains map[string]interface{} `json:"contains"`
-	Matches  map[string]interface{} `json:"matches"`
+	Equals          map[string]interface{} `json:"equals"`
+	EqualsUnordered map[string]interface{} `json:"equals_unordered"`
+	Contains        map[string]interface{} `json:"contains"`
+	Matches         map[string]interface{} `json:"matches"`
 }
 
 type Output struct {
@@ -125,6 +126,8 @@ func validateStub(stub *Stub) error {
 	case stub.Input.Contains != nil:
 		break
 	case stub.Input.Equals != nil:
+		break
+	case stub.Input.EqualsUnordered != nil:
 		break
 	case stub.Input.Matches != nil:
 		break
