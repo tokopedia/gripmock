@@ -7,6 +7,7 @@ import (
 	"log"
 	"reflect"
 	"regexp"
+	"sort"
 	"sync"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -77,6 +78,13 @@ func findStub(stub *findStubPayload) (*Output, error) {
 		if expect := stubrange.Input.Equals; expect != nil {
 			closestMatch = append(closestMatch, closeMatch{"equals", expect})
 			if equals(stub.Data, expect) {
+				return &stubrange.Output, nil
+			}
+		}
+
+		if expect := stubrange.Input.EqualsUnordered; expect != nil {
+			closestMatch = append(closestMatch, closeMatch{"equals_unordered", expect})
+			if equalsUnordered(stub.Data, expect) {
 				return &stubrange.Output, nil
 			}
 		}
@@ -186,18 +194,40 @@ func regexMatch(expect, actual interface{}) bool {
 }
 
 func equals(expect, actual map[string]interface{}) bool {
-	return find(expect, actual, true, true, deepEqual)
+	return find(expect, actual, true, true, deepEqual, false)
+}
+
+func equalsUnordered(expect, actual map[string]interface{}) bool {
+	return find(expect, actual, true, true, deepEqual, true)
 }
 
 func contains(expect, actual map[string]interface{}) bool {
-	return find(expect, actual, true, false, deepEqual)
+	return find(expect, actual, true, false, deepEqual, false)
 }
 
 func matches(expect, actual map[string]interface{}) bool {
-	return find(expect, actual, true, false, regexMatch)
+	return find(expect, actual, true, false, regexMatch, false)
 }
 
-func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
+func equalsIgnoreOrder(expect, actual interface{}) bool {
+	expectSlice, expectOk := expect.([]interface{})
+	actualSlice, actualOk := actual.([]interface{})
+	if !expectOk || !actualOk {
+		return false
+	}
+	if len(expectSlice) != len(actualSlice) {
+		return false
+	}
+	sort.Slice(expectSlice, func(i, j int) bool {
+		return fmt.Sprint(expectSlice[i]) < fmt.Sprint(expectSlice[j])
+	})
+	sort.Slice(actualSlice, func(i, j int) bool {
+		return fmt.Sprint(actualSlice[i]) < fmt.Sprint(actualSlice[j])
+	})
+	return reflect.DeepEqual(expectSlice, actualSlice)
+}
+
+func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc, ignoreOrder bool) bool {
 
 	// circuit brake
 	if acc == false {
@@ -225,9 +255,13 @@ func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
 			}
 		}
 
+		if expectArrayOk && actualArrayOk && ignoreOrder {
+			return equalsIgnoreOrder(expectArrayValue, actualArrayValue)
+		}
+
 		for expectItemIndex, expectItemValue := range expectArrayValue {
 			actualItemValue := actualArrayValue[expectItemIndex]
-			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f)
+			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f, ignoreOrder)
 		}
 
 		return acc
@@ -256,7 +290,7 @@ func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
 
 		for expectItemKey, expectItemValue := range expectMapValue {
 			actualItemValue := actualMapValue[expectItemKey]
-			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f)
+			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f, ignoreOrder)
 		}
 
 		return acc
