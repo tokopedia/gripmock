@@ -1,0 +1,8 @@
+go 1.22.0
+
+use (
+	.
+	./protoc-gen-gripmock
+	./protogen
+	./protogen/example
+)
