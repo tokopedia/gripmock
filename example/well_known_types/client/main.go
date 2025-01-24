@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	pb "github.com/tokopedia/gripmock/protogen/example/well_known_types"
 	"google.golang.org/grpc"
+	empty "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // in order to generate this .pb.go you need to have https://github.com/google/protobuf.git cloned

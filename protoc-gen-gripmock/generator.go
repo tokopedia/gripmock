@@ -12,11 +12,11 @@ import (
 
 	"google.golang.org/protobuf/types/pluginpb"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/markbates/pkger"
 	"golang.org/x/tools/imports"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/protoc-gen-go/descriptor"
 )
 
 func main() {
@@ -205,7 +205,7 @@ func getGoPackage(proto *descriptor.FileDescriptorProto) (alias string, goPackag
 	}
 
 	// support go_package alias declaration
-	// https://github.com/golang/protobuf/issues/139
+	// https://google.golang.org/protobuf/issues/139
 	if splits := strings.Split(goPackage, ";"); len(splits) > 1 {
 		goPackage = splits[0]
 		alias = splits[1]
