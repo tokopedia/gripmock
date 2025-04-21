@@ -22,19 +22,24 @@ type Options struct {
 
 const DEFAULT_PORT = "4771"
 
+var stubPath string
+
 func RunStubServer(opt Options) {
 	if opt.Port == "" {
 		opt.Port = DEFAULT_PORT
 	}
+	stubPath = opt.StubPath
 	addr := opt.BindAddr + ":" + opt.Port
 	r := chi.NewRouter()
 	r.Post("/add", addStub)
 	r.Get("/", listStub)
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
+	r.Post("/reset", handleResetStub)
 
 	if opt.StubPath != "" {
-		readStubFromFile(opt.StubPath)
+		count := readStubFromFile(opt.StubPath)
+		fmt.Printf("Loaded %d stubs from %s\n", count, opt.StubPath)
 	}
 
 	fmt.Println("Serving stub admin on http://" + addr)
@@ -178,5 +183,20 @@ func handleClearStub(w http.ResponseWriter, r *http.Request) {
 	clearStorage()
 	if _, err := w.Write([]byte("OK")); err != nil {
 		log.Println("Error writing handleClearStub response: %w", err)
+	}
+}
+
+func handleResetStub(w http.ResponseWriter, r *http.Request) {
+	clearStorage()
+	if stubPath != "" {
+		count := readStubFromFile(stubPath)
+		response := fmt.Sprintf("Stubs reset from files. Loaded %d stubs.", count)
+		if _, err := w.Write([]byte(response)); err != nil {
+			log.Println("Error writing handleResetStub response: %w", err)
+		}
+	} else {
+		if _, err := w.Write([]byte("No stub path configured")); err != nil {
+			log.Println("Error writing handleResetStub response: %w", err)
+		}
 	}
 }
