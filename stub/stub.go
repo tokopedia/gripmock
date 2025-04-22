@@ -7,11 +7,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
-
-	"github.com/go-chi/chi"
 )
 
 type Options struct {
@@ -36,6 +35,7 @@ func RunStubServer(opt Options) {
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
 	r.Post("/reset", handleResetStub)
+	r.Get("/requests", listRequests)
 
 	if opt.StubPath != "" {
 		count := readStubFromFile(opt.StubPath)
@@ -199,4 +199,9 @@ func handleResetStub(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error writing handleResetStub response: %w", err)
 		}
 	}
+}
+
+func listRequests(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allRequests())
 }
