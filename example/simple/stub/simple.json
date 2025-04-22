@@ -35,5 +35,30 @@
 	"response-header": "response-value"
       }
     }
+  },
+  {
+    "service": "Gripmock",
+    "method": "SayHello",
+    "input": {
+      "equals": {
+        "name": "error"
+      }
+    },
+    "output": {
+      "error": "test_error"
+    }
+  },
+  {
+    "service": "Gripmock",
+    "method": "SayHello",
+    "input": {
+      "equals": {
+        "name": "error_code"
+      }
+    },
+    "output": {
+      "error": "test_error_code",
+      "code": 3
+    }
   }
 ]

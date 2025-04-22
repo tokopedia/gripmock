@@ -3,10 +3,13 @@ package stub
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
-	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	"google.golang.org/grpc/codes"
 
 	"github.com/go-chi/chi"
 )
@@ -19,19 +22,24 @@ type Options struct {
 
 const DEFAULT_PORT = "4771"
 
+var stubPath string
+
 func RunStubServer(opt Options) {
 	if opt.Port == "" {
 		opt.Port = DEFAULT_PORT
 	}
+	stubPath = opt.StubPath
 	addr := opt.BindAddr + ":" + opt.Port
 	r := chi.NewRouter()
 	r.Post("/add", addStub)
 	r.Get("/", listStub)
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
+	r.Post("/reset", handleResetStub)
 
 	if opt.StubPath != "" {
-		readStubFromFile(opt.StubPath)
+		count := readStubFromFile(opt.StubPath)
+		fmt.Printf("Loaded %d stubs from %s\n", count, opt.StubPath)
 	}
 
 	fmt.Println("Serving stub admin on http://" + addr)
@@ -43,7 +51,9 @@ func RunStubServer(opt Options) {
 
 func responseError(err error, w http.ResponseWriter) {
 	w.WriteHeader(500)
-	w.Write([]byte(err.Error()))
+	if _, err = w.Write([]byte(err.Error())); err != nil {
+		log.Println("Error writing response: %w", err)
+	}
 }
 
 type Stub struct {
@@ -55,8 +65,10 @@ type Stub struct {
 
 type Input struct {
 	Equals          map[string]interface{} `json:"equals"`
+	EqualsUnordered map[string]interface{} `json:"equals_unordered"`
 	Contains        map[string]interface{} `json:"contains"`
 	Matches         map[string]interface{} `json:"matches"`
+
 	CheckHeaders    bool                   `json:"check_headers,omitempty"`
 	EqualsHeaders   map[string]string    `json:"equals_headers,omitempty"`
 	ContainsHeaders map[string]string    `json:"contains_headers,omitempty"`
@@ -64,13 +76,14 @@ type Input struct {
 }
 
 type Output struct {
-	Data    map[string]interface{} `json:"data"`
+	Data  map[string]interface{} `json:"data"`
+	Error string                 `json:"error"`
+	Code  *codes.Code            `json:"code,omitempty"`
 	Headers map[string]string      `json:"headers,omitempty"`
-	Error   string                 `json:"error"`
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		responseError(err, w)
 		return
@@ -95,31 +108,37 @@ func addStub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("Success add stub"))
+	if _, err = w.Write([]byte("Success add stub")); err != nil {
+		log.Println("Error writing response: %w", err)
+	}
 }
 
 func listStub(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(allStub())
+	if err := json.NewEncoder(w).Encode(allStub()); err != nil {
+		log.Println("Error writing listStub response: %w", err)
+	}
 }
 
 func validateStub(stub *Stub) error {
 	if stub.Service == "" {
-		return fmt.Errorf("Service name can't be empty")
+		return fmt.Errorf("service name can't be empty")
 	}
 
 	if stub.Method == "" {
-		return fmt.Errorf("Method name can't be emtpy")
+		return fmt.Errorf("method name can't be emtpy")
 	}
 
 	// due to golang implementation
 	// method name must capital
-	stub.Method = strings.Title(stub.Method)
+	stub.Method = cases.Title(language.Und, cases.NoLower).String(stub.Method)
 
 	switch {
 	case stub.Input.Contains != nil:
 		break
 	case stub.Input.Equals != nil:
+		break
+	case stub.Input.EqualsUnordered != nil:
 		break
 	case stub.Input.Matches != nil:
 		break
@@ -129,7 +148,7 @@ func validateStub(stub *Stub) error {
 
 	// TODO: validate all input case
 
-	if stub.Output.Error == "" && stub.Output.Data == nil {
+	if stub.Output.Error == "" && stub.Output.Data == nil && stub.Output.Code == nil {
 		return fmt.Errorf("Output can't be empty")
 	}
 	return nil
@@ -152,7 +171,7 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 
 	// due to golang implementation
 	// method name must capital
-	stub.Method = strings.Title(stub.Method)
+	stub.Method = cases.Title(language.Und, cases.NoLower).String(stub.Method)
 
 	output, err := findStub(stub)
 	if err != nil {
@@ -162,10 +181,29 @@ func handleFindStub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(output)
+	if err := json.NewEncoder(w).Encode(output); err != nil {
+		log.Println("Error writing handleFindStub response: %w", err)
+	}
 }
 
 func handleClearStub(w http.ResponseWriter, r *http.Request) {
 	clearStorage()
-	w.Write([]byte("OK"))
+	if _, err := w.Write([]byte("OK")); err != nil {
+		log.Println("Error writing handleClearStub response: %w", err)
+	}
+}
+
+func handleResetStub(w http.ResponseWriter, r *http.Request) {
+	clearStorage()
+	if stubPath != "" {
+		count := readStubFromFile(stubPath)
+		response := fmt.Sprintf("Stubs reset from files. Loaded %d stubs.", count)
+		if _, err := w.Write([]byte(response)); err != nil {
+			log.Println("Error writing handleResetStub response: %w", err)
+		}
+	} else {
+		if _, err := w.Write([]byte("No stub path configured")); err != nil {
+			log.Println("Error writing handleResetStub response: %w", err)
+		}
+	}
 }

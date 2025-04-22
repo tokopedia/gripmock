@@ -194,13 +194,14 @@ func Test_readStubFromFile(t *testing.T) {
 		service string
 		method  string
 		data    []storage
+		expectCount int
 	}{
 		{
 			name: "single file, single stub",
 			mock: func(service, method string, data []storage) (path string) {
 				dir, err := ioutil.TempDir("", "")
 				require.NoError(t, err)
-				tempF, err := ioutil.TempFile(dir, "")
+				tempF, err := ioutil.TempFile(dir, "stub*.json")
 				require.NoError(t, err)
 				defer tempF.Close()
 
@@ -228,13 +229,14 @@ func Test_readStubFromFile(t *testing.T) {
 					Output: Output{Data: map[string]interface{}{"name": "user1"}},
 				},
 			},
+			expectCount: 1,
 		},
 		{
 			name: "single file, multiple stub",
 			mock: func(service, method string, data []storage) (path string) {
 				dir, err := ioutil.TempDir("", "")
 				require.NoError(t, err)
-				tempF, err := ioutil.TempFile(dir, "")
+				tempF, err := ioutil.TempFile(dir, "stub*.json")
 				require.NoError(t, err)
 				defer tempF.Close()
 
@@ -266,6 +268,7 @@ func Test_readStubFromFile(t *testing.T) {
 					Output: Output{Data: map[string]interface{}{"name": "user2"}},
 				},
 			},
+			expectCount: 2,
 		},
 		{
 			name: "multiple file, single stub",
@@ -274,7 +277,7 @@ func Test_readStubFromFile(t *testing.T) {
 				require.NoError(t, err)
 
 				for _, d := range data {
-					tempF, err := ioutil.TempFile(dir, "")
+					tempF, err := ioutil.TempFile(dir, "stub*.json")
 					require.NoError(t, err)
 					defer tempF.Close()
 
@@ -304,12 +307,14 @@ func Test_readStubFromFile(t *testing.T) {
 					Output: Output{Data: map[string]interface{}{"name": "user2"}},
 				},
 			},
+			expectCount: 2,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sm := stubMapping{}
-			sm.readStubFromFile(tt.mock(tt.service, tt.method, tt.data))
+			count := sm.readStubFromFile(tt.mock(tt.service, tt.method, tt.data))
+			require.Equal(t, tt.expectCount, count)
 			require.ElementsMatch(t, tt.data, sm[tt.service][tt.method])
 		})
 	}

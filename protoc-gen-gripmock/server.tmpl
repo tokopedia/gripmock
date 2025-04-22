@@ -14,6 +14,8 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/runtime/protoiface"
@@ -151,9 +153,10 @@ type payload struct {
 }
 
 type response struct {
-	Data    interface{}       `json:"data"`
+	Data  interface{} `json:"data"`
+	Error string      `json:"error"`
+	Code  *codes.Code `json:"code,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`
-	Error   string            `json:"error"`
 }
 
 func findStub(ctx context.Context, service, method string, headers metadata.MD, in, out protoiface.MessageV1) error {
@@ -190,8 +193,14 @@ func findStub(ctx context.Context, service, method string, headers metadata.MD, 
 		return fmt.Errorf("decoding json response %v",err)
 	}
 
-	if respRPC.Error != "" {
-		return fmt.Errorf(respRPC.Error)
+	if respRPC.Error != "" || respRPC.Code != nil {
+	    if respRPC.Code == nil {
+	       abortedCode := codes.Aborted
+	       respRPC.Code = &abortedCode
+	    }
+	    if *respRPC.Code != codes.OK {
+		    return status.Error(*respRPC.Code, respRPC.Error)
+		}
 	}
 
 	md := metadata.New(respRPC.Headers)

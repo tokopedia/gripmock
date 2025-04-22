@@ -19,9 +19,9 @@ import (
 func main() {
 	outputPointer := flag.String("o", "", "directory to output server.go. Default is $GOPATH/src/grpc/")
 	grpcPort := flag.String("grpc-port", "4770", "Port of gRPC tcp server")
-	grpcBindAddr := flag.String("grpc-listen", "", "Adress the gRPC server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
+	grpcBindAddr := flag.String("grpc-listen", "", "Address the gRPC server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
-	adminBindAddr := flag.String("admin-listen", "", "Adress the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
+	adminBindAddr := flag.String("admin-listen", "", "Address the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
 	imports := flag.String("imports", "/protobuf", "comma separated imports path. default path /protobuf is where gripmock Dockerfile install WKT protos")
 
@@ -76,20 +76,17 @@ func main() {
 		imports:     importDirs,
 	})
 
-	// build the server
-	//buildServer(output)
-
 	// and run
 	run, runerr := runGrpcServer(output)
 
-	var term = make(chan os.Signal)
+	term := make(chan os.Signal)
 	signal.Notify(term, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	select {
 	case err := <-runerr:
 		log.Fatal(err)
 	case <-term:
 		fmt.Println("Stopping gRPC Server")
-		run.Process.Kill()
+		_ = run.Process.Kill()
 	}
 }
 
@@ -157,7 +154,6 @@ func generateProtoc(param protocParam) {
 	if err != nil {
 		log.Fatal("Fail on protoc ", err)
 	}
-
 }
 
 // append gopackage in proto files if doesn't have any

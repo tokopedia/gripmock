@@ -55,4 +55,16 @@ func main() {
 	}
 
 	log.Printf("Greeting: %s (return code %d)", r.Message, r.ReturnCode)
+	name = "error"
+	r, err = c.SayHello(context.Background(), &pb.Request{Name: name})
+	if err == nil {
+		log.Fatalf("Expected error, but return %d", r.ReturnCode)
+	}
+	log.Printf("Greeting error: %s", err)
+	name = "error_code"
+	r, err = c.SayHello(context.Background(), &pb.Request{Name: name})
+	if err == nil {
+		log.Fatalf("Expected error, but return %d", r.ReturnCode)
+	}
+	log.Printf("Greeting error: %s", err)
 }
