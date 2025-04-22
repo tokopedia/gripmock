@@ -106,6 +106,14 @@ func TestStub(t *testing.T) {
 			expect:  "{\"data\":{\"Hello\":\"World\"},\"error\":\"\"}\n",
 		},
 		{
+			name: "get recorded requests",
+			mock: func() *http.Request {
+				return httptest.NewRequest("GET", "/requests", nil)
+			},
+			handler: listRequests,
+			expect:  "[{\"record\":{\"service\":\"Testing\",\"method\":\"TestMethod\",\"data\":{\"Hola\":\"Mundo\"}},\"count\":1},{\"record\":{\"service\":\"NestedTesting\",\"method\":\"TestMethod\",\"data\":{\"age\":1,\"cities\":[\"Istanbul\",\"Jakarta\"],\"girl\":true,\"greetings\":{\"hola\":\"mundo\",\"merhaba\":\"dunya\"},\"name\":\"Afra Gokce\",\"null\":null}},\"count\":1}]\n",
+		},
+		{
 			name: "add stub equals_unordered",
 			mock: func() *http.Request {
 				payload := `{
@@ -752,14 +760,6 @@ func TestStub(t *testing.T) {
 			cleanup: func(t *testing.T) {
 				os.RemoveAll(stubPath)
 			},
-		},
-		{
-			name: "get recorded requests",
-			mock: func() *http.Request {
-				return httptest.NewRequest("GET", "/requests", nil)
-			},
-			handler: listRequests,
-			expect:  "[{\"record\":{\"service\":\"Testing\",\"method\":\"TestMethod\",\"data\":{\"Hola\":\"Mundo\"}},\"count\":1},{\"record\":{\"service\":\"NestedTesting\",\"method\":\"TestMethod\",\"data\":{\"age\":1,\"cities\":[\"Istanbul\",\"Jakarta\"],\"girl\":true,\"greetings\":{\"hola\":\"mundo\",\"merhaba\":\"dunya\"},\"name\":\"Afra Gokce\",\"null\":null}},\"count\":1}]\n",
 		},
 	}
 

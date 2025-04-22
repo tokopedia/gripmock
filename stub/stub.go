@@ -6,13 +6,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 
+	"github.com/go-chi/chi"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
-
-	"github.com/go-chi/chi"
 )
 
 type Options struct {
