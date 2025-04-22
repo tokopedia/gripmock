@@ -8,6 +8,7 @@ import (
 
 	pb "github.com/tokopedia/gripmock/protogen/example/simple"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 func main() {
@@ -34,11 +35,25 @@ func main() {
 	}
 	log.Printf("Greeting: %s (return code %d)", r.Message, r.ReturnCode)
 
+	md := metadata.New(map[string]string{"header-1": "value-1"})
+	ctx = metadata.NewOutgoingContext(context.Background(), md)
+
+	var headers metadata.MD
+
 	name = "world"
-	r, err = c.SayHello(context.Background(), &pb.Request{Name: name})
+	r, err = c.SayHello(ctx, &pb.Request{Name: name}, grpc.Header(&headers))
 	if err != nil {
-		log.Fatalf("error from grpc: %v", err)
+		log.Fatalf("error from grpc: %s", err)
 	}
+
+	header := headers["response-header"]
+	if len(header) == 0 {
+		log.Fatal("gripmock did not respond with any expected header")
+	}
+	if header[0] != "response-value" {
+		log.Fatal("gripmock did not respond with the expected header")
+	}
+
 	log.Printf("Greeting: %s (return code %d)", r.Message, r.ReturnCode)
 	name = "error"
 	r, err = c.SayHello(context.Background(), &pb.Request{Name: name})

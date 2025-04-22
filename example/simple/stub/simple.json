@@ -20,12 +20,19 @@
     "input": {
       "equals": {
         "name": "world"
+      },
+      "check_headers": true,
+      "matches_headers": {
+	"header-1": "value-1"
       }
     },
     "output": {
       "data": {
         "message": "Hello World",
         "return_code": 1
+      },
+      "headers": {
+	"response-header": "response-value"
       }
     }
   },

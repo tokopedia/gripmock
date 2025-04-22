@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"github.com/tokopedia/gripmock/stub"
+	_ "github.com/tokopedia/gripmock/protogen"
 )
 
 func main() {
@@ -23,6 +24,11 @@ func main() {
 	adminBindAddr := flag.String("admin-listen", "", "Address the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
 	imports := flag.String("imports", "/protobuf", "comma separated imports path. default path /protobuf is where gripmock Dockerfile install WKT protos")
+
+	if len(os.Args) == 0 {
+		log.Fatal("No arguments were passed")
+	}
+
 	// for backwards compatibility
 	if os.Args[1] == "gripmock" {
 		os.Args = append(os.Args[:1], os.Args[2:]...)

@@ -51,6 +51,26 @@ func TestStub(t *testing.T) {
 		{
 			name: "list stub",
 			mock: func() *http.Request {
+				clearStorage()
+				// Add the test stub
+				stub := &Stub{
+					Service: "Testing",
+					Method:  "TestMethod",
+					Input: Input{
+						Equals: map[string]interface{}{
+							"Hola": "Mundo",
+						},
+					},
+					Output: Output{
+						Data: map[string]interface{}{
+							"Hello": "World",
+						},
+					},
+				}
+				err := storeStub(stub)
+				if err != nil {
+					panic(err)
+				}
 				return httptest.NewRequest("GET", "/", nil)
 			},
 			handler: listStub,
@@ -470,7 +490,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("POST", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\n{\n\tHola: Dunia\n}\n\nClosest Match \n\nequals:{\n\tHola: Mundo\n}",
+			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\nData:\n{\n\tHola: Dunia\n}\n\nClosest Match \n\nequals:{\n\tHola: Mundo\n}",
 		},
 		{
 			name: "reset stubs with path configured",
