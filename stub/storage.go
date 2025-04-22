@@ -1,7 +1,6 @@
 package stub
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,6 +8,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -307,55 +307,66 @@ func clearStorage() {
 	stubStorage = stubMapping{}
 }
 
-func readStubFromFile(path string) {
-	stubStorage.readStubFromFile(path)
+func readStubFromFile(path string) int {
+	return stubStorage.readStubFromFile(path)
 }
 
-func (sm *stubMapping) readStubFromFile(path string) {
+func (sm *stubMapping) readStubFromFile(path string) int {
 	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Printf("Can't read stub from %s. %v\n", path, err)
-		return
+		return 0
 	}
 
+	count := 0
 	for _, file := range files {
 		if file.IsDir() {
-			readStubFromFile(path + "/" + file.Name())
+			count += sm.readStubFromFile(path + "/" + file.Name())
 			continue
 		}
 
-		byt, err := os.ReadFile(path + "/" + file.Name())
+		// Only process .json files
+		if !strings.HasSuffix(strings.ToLower(file.Name()), ".json") {
+			continue
+		}
+
+		filePath := path + "/" + file.Name()
+		byt, err := os.ReadFile(filePath)
 		if err != nil {
 			log.Printf("Error when reading file %s. %v. skipping...", file.Name(), err)
 			continue
 		}
 
-		// most files have a trailing newline so trim that before checking
-		byt = bytes.TrimSuffix(byt, []byte("\n"))
-		if byt[0] == '[' && byt[len(byt)-1] == ']' {
-			var stubs []*Stub
-			err = json.Unmarshal(byt, &stubs)
-			if err != nil {
-				log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
-				continue
-			}
+		// Try to unmarshal as array first
+		var stubs []*Stub
+		err = json.Unmarshal(byt, &stubs)
+		if err == nil && len(stubs) > 0 {
+			// Successfully unmarshaled as array
+			log.Printf("Successfully unmarshaled %s as array with %d stubs", file.Name(), len(stubs))
 			for _, s := range stubs {
 				if err = sm.storeStub(s); err != nil {
 					log.Printf("Error when storing Stub from %s. %v. skipping...", file.Name(), err)
+				} else {
+					count++
 				}
 			}
 			continue
 		}
 
-		stub := new(Stub)
-		err = json.Unmarshal(byt, stub)
+		// If array unmarshal failed, try as single stub
+		var stub Stub
+		err = json.Unmarshal(byt, &stub)
 		if err != nil {
 			log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
 			continue
 		}
 
-		if err = sm.storeStub(stub); err != nil {
+		if err = sm.storeStub(&stub); err != nil {
 			log.Printf("Error when storing Stub from %s. %v. skipping...", file.Name(), err)
+		} else {
+			count++
 		}
 	}
+	
+	return count
 }
