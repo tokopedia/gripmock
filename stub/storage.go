@@ -79,49 +79,43 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	closestMatch := []closeMatch{}
 	for _, stubrange := range stubs {
 		if expect := stubrange.Input.Equals; expect != nil {
-			if !equals(stub.Data, expect) {
-				closestMatch = append(closestMatch, closeMatch{"equals", expect, "", nil})
-				continue
+			cm := closeMatch{rule: "equals", expect: expect}
+			if equals(stub.Data, expect) {
+				if headersConstraintsApplied(stubrange.Input, stub, &cm) {
+					return &stubrange.Output, nil
+				}
 			}
-
-			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
-			closestMatch = append(closestMatch, closeMatch{"equals", expect, closeMtch.headersRule, closeMtch.headers})
-			if applies {
-				return &stubrange.Output, nil
-			}
+			closestMatch = append(closestMatch, cm)
 		}
 
 		if expect := stubrange.Input.EqualsUnordered; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"equals_unordered", expect})
+			cm := closeMatch{rule: "equals_unordered", expect: expect}
 			if equalsUnordered(stub.Data, expect) {
-				return &stubrange.Output, nil
+				if headersConstraintsApplied(stubrange.Input, stub, &cm) {
+					return &stubrange.Output, nil
+				}
 			}
+			closestMatch = append(closestMatch, cm)
 		}
 
 		if expect := stubrange.Input.Contains; expect != nil {
-			if !contains(expect, stub.Data) {
-				closestMatch = append(closestMatch, closeMatch{"contains", expect, "", nil})
-				continue
+			cm := closeMatch{rule: "contains", expect: expect}
+			if contains(expect, stub.Data) {
+				if headersConstraintsApplied(stubrange.Input, stub, &cm) {
+					return &stubrange.Output, nil
+				}
 			}
-
-			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
-			closestMatch = append(closestMatch, closeMatch{"contains", expect, closeMtch.headersRule, closeMtch.headers})
-			if applies {
-				return &stubrange.Output, nil
-			}
+			closestMatch = append(closestMatch, cm)
 		}
 
 		if expect := stubrange.Input.Matches; expect != nil {
-			if !matches(expect, stub.Data) {
-				closestMatch = append(closestMatch, closeMatch{"matches", expect, "", nil})
-				continue
+			cm := closeMatch{rule: "matches", expect: expect}
+			if matches(expect, stub.Data) {
+				if headersConstraintsApplied(stubrange.Input, stub, &cm) {
+					return &stubrange.Output, nil
+				}
 			}
-
-			closeMtch, applies := headersConstraintsApply(stubrange.Input, stub)
-			closestMatch = append(closestMatch, closeMatch{"matches", expect, closeMtch.headersRule, closeMtch.headers})
-			if applies {
-				return &stubrange.Output, nil
-			}
+			closestMatch = append(closestMatch, cm)
 		}
 	}
 
@@ -137,39 +131,87 @@ func copyHeaders(headers map[string]string) map[string]interface{} {
 	return cpy
 }
 
-func headersConstraintsApply(expectedInput Input, stub *findStubPayload) (closeMatch, bool) {
-	if !expectedInput.CheckHeaders {
-		return closeMatch{}, true
+// headersConstraintsApplied checks if the provided headers in the stub match the expected header constraints.
+// It supports three types of header matching: exact equality, containment, and regex pattern matching.
+//
+// Parameters:
+//   - expectedInput: Input containing the header constraints to check against
+//   - stub: The findStubPayload containing the actual headers to validate
+//   - closestMatch: Optional pointer to a closeMatch struct that will be populated with header matching info
+//     for error reporting. Can be nil if matching info is not needed.
+//
+// Returns:
+//   - bool: true if any of the following conditions are met:
+//     1. expectedInput.Headers is nil (no header constraints)
+//     2. Headers match exactly (Equals)
+//     3. Headers contain all expected values (Contains)
+//     4. Headers match the regex patterns (Matches)
+//     Returns false if none of the header constraints are satisfied.
+//
+// The function updates the closestMatch (if provided) with:
+//   - headersRule: The type of rule applied ("equal", "contains", or "match")
+//   - headers: The expected headers that were checked against
+//
+// Example:
+//
+//	input := Input{Headers: HeadersConstraint{Equals: map[string]string{"Content-Type": "application/json"}}}
+//	stub := &findStubPayload{Headers: map[string]string{"Content-Type": "application/json"}}
+//	cm := &closeMatch{}
+//	if headersConstraintsApplied(input, stub, cm) {
+//	    // Headers match the constraints
+//	}
+func headersConstraintsApplied(expectedInput Input, stub *findStubPayload, closestMatch *closeMatch) bool {
+	if expectedInput.Headers == nil {
+		return true
 	}
 
 	headersCopy := copyHeaders(stub.Headers)
-	var closestMatch closeMatch
 
-	if expected := expectedInput.EqualsHeaders; expected != nil {
+	if expected := expectedInput.Headers.Equals; expected != nil {
 		expectedCopy := copyHeaders(expected)
-		closestMatch = closeMatch{headersRule: "headers equal", headers: expectedInput.EqualsHeaders}
+		if closestMatch != nil {
+			closestMatch.headersRule = "equal"
+			closestMatch.headers = expected
+		}
 		if equals(expectedCopy, headersCopy) {
-			return closestMatch, true
+			return true
 		}
 	}
 
-	if expected := expectedInput.ContainsHeaders; expected != nil {
+	if expected := expectedInput.Headers.EqualsUnordered; expected != nil {
 		expectedCopy := copyHeaders(expected)
-		closestMatch = closeMatch{headersRule: "headers contain", headers: expectedInput.ContainsHeaders}
-		if contains(expectedCopy, headersCopy) {
-			return closestMatch, true
+		if closestMatch != nil {
+			closestMatch.headersRule = "equal_unordered"
+			closestMatch.headers = expected
+		}
+		if equalsUnordered(expectedCopy, headersCopy) {
+			return true
 		}
 	}
 
-	if expected := expectedInput.MatchesHeaders; expected != nil {
+	if expected := expectedInput.Headers.Contains; expected != nil {
 		expectedCopy := copyHeaders(expected)
-		closestMatch = closeMatch{headersRule: "headers match", headers: expectedInput.MatchesHeaders}
+		if closestMatch != nil {
+			closestMatch.headersRule = "contains"
+			closestMatch.headers = expected
+		}
+		if headerFind(expectedCopy, headersCopy) {
+			return true
+		}
+	}
+
+	if expected := expectedInput.Headers.Matches; expected != nil {
+		expectedCopy := copyHeaders(expected)
+		if closestMatch != nil {
+			closestMatch.headersRule = "match"
+			closestMatch.headers = expected
+		}
 		if matches(expectedCopy, headersCopy) {
-			return closestMatch, true
+			return true
 		}
 	}
 
-	return closestMatch, false
+	return false
 }
 
 func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error {
@@ -308,32 +350,20 @@ func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc, ignoreO
 		return false
 	}
 
-	expectStringArray, expectStringArrayOk := expect.([]string)
-	if expectStringArrayOk {
-		actualArrayValue, actualArrayOk := actual.([]string)
-		if !actualArrayOk {
-			acc = false
-			return acc
+	// Convert []string to []interface{} for unified slice handling
+	if expectStringArray, ok := expect.([]string); ok {
+		tmp := make([]interface{}, len(expectStringArray))
+		for i, v := range expectStringArray {
+			tmp[i] = v
 		}
-
-		if exactMatch {
-			if len(expectStringArray) != len(actualArrayValue) {
-				acc = false
-				return acc
-			}
-		} else {
-			if len(expectStringArray) > len(actualArrayValue) {
-				acc = false
-				return acc
-			}
+		expect = tmp
+	}
+	if actualStringArray, ok := actual.([]string); ok {
+		tmp := make([]interface{}, len(actualStringArray))
+		for i, v := range actualStringArray {
+			tmp[i] = v
 		}
-
-		for expectItemIndex, expectItemValue := range expectStringArray {
-			actualItemValue := actualArrayValue[expectItemIndex]
-			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f)
-		}
-
-		return acc
+		actual = tmp
 	}
 
 	expectArrayValue, expectArrayOk := expect.([]interface{})
@@ -469,4 +499,15 @@ func (sm *stubMapping) readStubFromFile(path string) int {
 	}
 
 	return count
+}
+
+func headerFind(expect, actual map[string]interface{}) bool {
+	return find(expect, actual, true, false, func(expect, actual interface{}) bool {
+		expectStr, expectOk := expect.(string)
+		actualStr, actualOk := actual.(string)
+		if !expectOk || !actualOk {
+			return false
+		}
+		return strings.Contains(actualStr, expectStr)
+	}, false)
 }

@@ -6,3 +6,4 @@ protogen/*
 !protogen/go.mod
 !protogen/example/
 temp
+.cursor

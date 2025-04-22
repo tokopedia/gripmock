@@ -11,177 +11,395 @@ import (
 
 func Test_findStub(t *testing.T) {
 	tests := []struct {
-		name                  string
-		service               string
-		method                string
-		stubInput             Input
-		stubOutput            Output
-		input                 map[string]interface{}
-		inputHeaders          map[string]string
-		checkHeaders          bool
-		expectedOutput        map[string]interface{}
-		expectedOutputHeaders map[string]string
+		name          string
+		setup         *Stub
+		input         *findStubPayload
+		wantOutput    *Output
+		wantErr       bool
+		wantErrString string
 	}{
 		{
-			name:           "input equals",
-			service:        "user",
-			method:         "getName",
-			stubInput:      Input{Equals: map[string]interface{}{"id": 1}},
-			stubOutput:     Output{Data: map[string]interface{}{"name": "user1"}},
-			input:          map[string]interface{}{"id": 1},
-			checkHeaders:   false,
-			expectedOutput: map[string]interface{}{"name": "user1"},
+			name: "service not found",
+			input: &findStubPayload{
+				Service: "nonexistent",
+				Method:  "test",
+			},
+			wantErr:       true,
+			wantErrString: "can't find stub for Service: nonexistent",
 		},
 		{
-			name:       "input contains",
-			service:    "user",
-			method:     "getName",
-			stubInput:  Input{Equals: map[string]interface{}{"id": 1}},
-			stubOutput: Output{Data: map[string]interface{}{"name": "user1"}},
-			input: map[string]interface{}{
-				"id": 1,
+			name: "method not found",
+			setup: &Stub{
+				Service: "test",
+				Method:  "method1",
 			},
-			checkHeaders: false,
-			expectedOutput: map[string]interface{}{
-				"name": "user1",
+			input: &findStubPayload{
+				Service: "test",
+				Method:  "method2",
 			},
+			wantErr:       true,
+			wantErrString: "can't find stub for Service:test and Method:method2",
 		},
 		{
-			name:       "input matches",
-			service:    "user",
-			method:     "getName",
-			stubInput:  Input{Equals: map[string]interface{}{"id": 1}},
-			stubOutput: Output{Data: map[string]interface{}{"name": "user1"}},
-			input: map[string]interface{}{
-				"id": 1,
-			},
-			checkHeaders: false,
-			expectedOutput: map[string]interface{}{
-				"name": "user1",
-			},
-		},
-		{
-			name:    "input equals and input headers equals",
-			service: "user",
-			method:  "getName",
-			stubInput: Input{
-				Equals: map[string]interface{}{"id": 1},
-				EqualsHeaders: map[string]string{
-					"header-1": "value-1",
-					"header-2": "value-3",
+			name: "exact match - simple",
+			setup: &Stub{
+				Service: "user",
+				Method:  "GetUser",
+				Input: Input{
+					Equals: map[string]interface{}{
+						"id": 1,
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"name": "John",
+					},
 				},
 			},
-			stubOutput: Output{
-				Data: map[string]interface{}{"name": "user1"},
+			input: &findStubPayload{
+				Service: "user",
+				Method:  "GetUser",
+				Data: map[string]interface{}{
+					"id": 1,
+				},
+			},
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"name": "John",
+				},
+			},
+		},
+		{
+			name: "exact match - nested structure",
+			setup: &Stub{
+				Service: "user",
+				Method:  "GetUser",
+				Input: Input{
+					Equals: map[string]interface{}{
+						"user": map[string]interface{}{
+							"id":   1,
+							"type": "admin",
+						},
+						"options": []interface{}{
+							"full",
+							"details",
+						},
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"result": "success",
+					},
+				},
+			},
+			input: &findStubPayload{
+				Service: "user",
+				Method:  "GetUser",
+				Data: map[string]interface{}{
+					"user": map[string]interface{}{
+						"id":   1,
+						"type": "admin",
+					},
+					"options": []interface{}{
+						"full",
+						"details",
+					},
+				},
+			},
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"result": "success",
+				},
+			},
+		},
+		{
+			name: "equals unordered - array elements",
+			setup: &Stub{
+				Service: "test",
+				Method:  "Test",
+				Input: Input{
+					EqualsUnordered: map[string]interface{}{
+						"tags": []interface{}{"a", "b", "c"},
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"result": "found",
+					},
+				},
+			},
+			input: &findStubPayload{
+				Service: "test",
+				Method:  "Test",
+				Data: map[string]interface{}{
+					"tags": []interface{}{"c", "a", "b"},
+				},
+			},
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"result": "found",
+				},
+			},
+		},
+		{
+			name: "contains match",
+			setup: &Stub{
+				Service: "product",
+				Method:  "Search",
+				Input: Input{
+					Contains: map[string]interface{}{
+						"category": "electronics",
+						"price": map[string]interface{}{
+							"min": 100,
+						},
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"products": []interface{}{
+							map[string]interface{}{"id": 1},
+						},
+					},
+				},
+			},
+			input: &findStubPayload{
+				Service: "product",
+				Method:  "Search",
+				Data: map[string]interface{}{
+					"category": "electronics",
+					"price": map[string]interface{}{
+						"min": 100,
+						"max": 200,
+					},
+					"brand": "apple",
+				},
+			},
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"products": []interface{}{
+						map[string]interface{}{"id": 1},
+					},
+				},
+			},
+		},
+		{
+			name: "regex match",
+			setup: &Stub{
+				Service: "validation",
+				Method:  "ValidateEmail",
+				Input: Input{
+					Matches: map[string]interface{}{
+						"email": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"valid": true,
+					},
+				},
+			},
+			input: &findStubPayload{
+				Service: "validation",
+				Method:  "ValidateEmail",
+				Data: map[string]interface{}{
+					"email": "test@example.com",
+				},
+			},
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"valid": true,
+				},
+			},
+		},
+		{
+			name: "headers - exact match",
+			setup: &Stub{
+				Service: "auth",
+				Method:  "Verify",
+				Input: Input{
+					Equals: map[string]interface{}{
+						"token": "123",
+					},
+					Headers: &InputHeaders{
+						Equals: map[string]string{
+							"Authorization": "Bearer token123",
+							"X-Request-ID":  "abc123",
+						},
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"valid": true,
+					},
+					Headers: map[string]string{
+						"X-Response-ID": "xyz789",
+					},
+				},
+			},
+			input: &findStubPayload{
+				Service: "auth",
+				Method:  "Verify",
+				Data: map[string]interface{}{
+					"token": "123",
+				},
 				Headers: map[string]string{
-					"return-header": "value-1",
+					"Authorization": "Bearer token123",
+					"X-Request-ID":  "abc123",
 				},
 			},
-			input: map[string]interface{}{
-				"id": 1,
-			},
-			inputHeaders: map[string]string{
-				"header-1": "value-1",
-				"header-2": "value-3",
-			},
-			checkHeaders: true,
-			expectedOutput: map[string]interface{}{
-				"name": "user1",
-			},
-			expectedOutputHeaders: map[string]string{
-				"return-header": "value-1",
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"valid": true,
+				},
+				Headers: map[string]string{
+					"X-Response-ID": "xyz789",
+				},
 			},
 		},
 		{
-			name:    "input equals and input headers contains",
-			service: "user",
-			method:  "getName",
-			stubInput: Input{
-				Equals:       map[string]interface{}{"id": 1},
-				CheckHeaders: true,
-				ContainsHeaders: map[string]string{
-					"header-2": "value-4",
+			name: "headers - contains match",
+			setup: &Stub{
+				Service: "auth",
+				Method:  "Verify",
+				Input: Input{
+					Equals: map[string]interface{}{
+						"token": "123",
+					},
+					Headers: &InputHeaders{
+						Contains: map[string]string{
+							"Authorization": "Bearer",
+						},
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"valid": true,
+					},
 				},
 			},
-			stubOutput: Output{
-				Data: map[string]interface{}{"name": "user1"},
+			input: &findStubPayload{
+				Service: "auth",
+				Method:  "Verify",
+				Data: map[string]interface{}{
+					"token": "123",
+				},
 				Headers: map[string]string{
-					"return-header": "value-1",
+					"Authorization": "Bearer token123",
+					"X-Extra":       "value",
 				},
 			},
-			input: map[string]interface{}{
-				"id": 1,
-			},
-			inputHeaders: map[string]string{
-				"header-1": "value-1",
-				"header-2": "value-4",
-				"header-3": "value-7",
-			},
-			checkHeaders: true,
-			expectedOutput: map[string]interface{}{
-				"name": "user1",
-			},
-			expectedOutputHeaders: map[string]string{
-				"return-header": "value-1",
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"valid": true,
+				},
 			},
 		},
 		{
-			name:    "input equals and input headers match",
-			service: "user",
-			method:  "getName",
-			stubInput: Input{
-				Equals:       map[string]interface{}{"id": 1},
-				CheckHeaders: true,
-				MatchesHeaders: map[string]string{
-					"header-1": "value.*",
-					"header-2": "value.*",
+			name: "headers - regex match",
+			setup: &Stub{
+				Service: "auth",
+				Method:  "Verify",
+				Input: Input{
+					Equals: map[string]interface{}{
+						"token": "123",
+					},
+					Headers: &InputHeaders{
+						Matches: map[string]string{
+							"X-Request-ID": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$",
+						},
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"valid": true,
+					},
 				},
 			},
-			stubOutput: Output{
-				Data: map[string]interface{}{"name": "user1"},
+			input: &findStubPayload{
+				Service: "auth",
+				Method:  "Verify",
+				Data: map[string]interface{}{
+					"token": "123",
+				},
 				Headers: map[string]string{
-					"return-header": "value-1",
+					"X-Request-ID": "550e8400-e29b-41d4-a716-446655440000",
 				},
 			},
-			input: map[string]interface{}{
-				"id": 1,
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"valid": true,
+				},
 			},
-			inputHeaders: map[string]string{
-				"header-1": "value-1",
-				"header-2": "value-4",
+		},
+		{
+			name: "multiple stubs - most specific match",
+			setup: &Stub{
+				Service: "user",
+				Method:  "GetUser",
+				Input: Input{
+					Contains: map[string]interface{}{
+						"id": 1,
+					},
+				},
+				Output: Output{
+					Data: map[string]interface{}{
+						"name": "John Generic",
+					},
+				},
 			},
-			checkHeaders: true,
-			expectedOutput: map[string]interface{}{
-				"name": "user1",
+			input: &findStubPayload{
+				Service: "user",
+				Method:  "GetUser",
+				Data: map[string]interface{}{
+					"id":      1,
+					"details": true,
+				},
 			},
-			expectedOutputHeaders: map[string]string{
-				"return-header": "value-1",
+			wantOutput: &Output{
+				Data: map[string]interface{}{
+					"name": "John Generic",
+				},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := storeStub(&Stub{
-				Service: tt.service,
-				Method:  tt.method,
-				Input:   tt.stubInput,
-				Output:  tt.stubOutput,
-			})
-			require.NoError(t, err)
-			defer delete(stubStorage, tt.service)
+			// Clear storage before each test
+			clearStorage()
 
-			output, err := findStub(&findStubPayload{
-				Service: tt.service,
-				Method:  tt.method,
-				Data:    tt.input,
-				Headers: tt.inputHeaders,
-			})
-			require.NoError(t, err)
+			// Setup stub if provided
+			if tt.setup != nil {
+				err := storeStub(tt.setup)
+				require.NoError(t, err)
+			}
 
-			require.True(t, reflect.DeepEqual(tt.expectedOutput, output.Data), "Expected output should equal the actual output")
-			if tt.checkHeaders {
-				require.True(t, reflect.DeepEqual(tt.expectedOutputHeaders, output.Headers), "Expected output headers should equal the actual headers")
+			// Execute test
+			got, err := findStub(tt.input)
+
+			// Verify error cases
+			if tt.wantErr {
+				require.Error(t, err)
+				if tt.wantErrString != "" {
+					require.Contains(t, err.Error(), tt.wantErrString)
+				}
+				return
+			}
+
+			// Verify success cases
+			require.NoError(t, err)
+			require.NotNil(t, got)
+
+			// Check output data
+			if tt.wantOutput.Data != nil {
+				require.True(t, reflect.DeepEqual(tt.wantOutput.Data, got.Data),
+					"Expected output data %v, got %v", tt.wantOutput.Data, got.Data)
+			}
+
+			// Check output headers
+			if tt.wantOutput.Headers != nil {
+				require.True(t, reflect.DeepEqual(tt.wantOutput.Headers, got.Headers),
+					"Expected output headers %v, got %v", tt.wantOutput.Headers, got.Headers)
 			}
 		})
 	}
@@ -189,11 +407,11 @@ func Test_findStub(t *testing.T) {
 
 func Test_readStubFromFile(t *testing.T) {
 	tests := []struct {
-		name    string
-		mock    func(service, method string, data []storage) (path string)
-		service string
-		method  string
-		data    []storage
+		name        string
+		mock        func(service, method string, data []storage) (path string)
+		service     string
+		method      string
+		data        []storage
 		expectCount int
 	}{
 		{

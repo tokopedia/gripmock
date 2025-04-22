@@ -51,6 +51,26 @@ func TestStub(t *testing.T) {
 		{
 			name: "list stub",
 			mock: func() *http.Request {
+				clearStorage()
+				// Add the test stub
+				stub := &Stub{
+					Service: "Testing",
+					Method:  "TestMethod",
+					Input: Input{
+						Equals: map[string]interface{}{
+							"Hola": "Mundo",
+						},
+					},
+					Output: Output{
+						Data: map[string]interface{}{
+							"Hello": "World",
+						},
+					},
+				}
+				err := storeStub(stub)
+				if err != nil {
+					panic(err)
+				}
 				return httptest.NewRequest("GET", "/", nil)
 			},
 			handler: listStub,

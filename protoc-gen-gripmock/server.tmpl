@@ -161,9 +161,12 @@ type response struct {
 
 func findStub(ctx context.Context, service, method string, headers metadata.MD, in, out protoiface.MessageV1) error {
 	url := fmt.Sprintf("http://localhost%s/find", HTTP_PORT)
-	headersMap := make(map[string]string)
-	for header, values := range headers {
-		headersMap[header] = values[0]
+	var headersMap map[string]string
+	if headers != nil {
+		headersMap = make(map[string]string)
+		for header, values := range headers {
+			headersMap[header] = values[0]
+		}
 	}
 
 	pyl := payload{
@@ -203,8 +206,10 @@ func findStub(ctx context.Context, service, method string, headers metadata.MD, 
 		}
 	}
 
-	md := metadata.New(respRPC.Headers)
-	grpc.SetHeader(ctx, md)
+    if respRPC.Headers != nil {
+        md := metadata.New(respRPC.Headers)
+        grpc.SetHeader(ctx, md)
+    }
 
 	data, _ := json.Marshal(respRPC.Data)
 	return jsonpb.Unmarshal(bytes.NewReader(data), out)

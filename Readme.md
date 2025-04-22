@@ -216,21 +216,34 @@ Nested fields are allowed for input matching too for all JSON data types. (`stri
 
 ### Input Headers Matching Rule
 
-Input headers matching has 3 rules to match input headers: **equals_headers**, **contains_headers**, **regex_headers**.
+Input headers matching has 4 rules to match input headers: `equals`, `equals_unordered`, `contains`, and `matches`.
 <br>
 Headers are map of strings and the same matching rules apply for headers as for payload data.
 <br>
-**WARNING** If you want to verify input headers against the rules you have applied you have to set `check_headers` field to true (default: `false`).
+**Important Note:** Only one rule type is applied at a time. If multiple rule types are specified, the first matching rule will be used.
 <br>
-```
+Headers can be specified in the `headers` field of the `input` object:
+<br>
+```json
 {
-  .
-  .
-  "check_headers": true,
-  "input":{
-    ...
+  "service": "YourService",
+  "method": "YourMethod",
+  "input": {
+    "equals": {
+      "field1": "value1"
+    },
+    "headers": {
+      "equals": {
+        "Content-Type": "application/json"
+      }
+      // Only one rule type is applied. If you specify multiple rules,
+      // the first matching rule will be used.
+    }
+  },
+  "output": {
+    "data": {
+      "result": "success"
+    }
   }
-  .
-  .
 }
 ```
