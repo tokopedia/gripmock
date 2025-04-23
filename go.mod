@@ -1,6 +1,6 @@
 module github.com/tokopedia/gripmock
 
-go 1.20
+go 1.18
 
 require (
 	github.com/go-chi/chi v4.1.2+incompatible

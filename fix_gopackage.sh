@@ -42,5 +42,4 @@ do
   # append our own go_package delcaration just below "syntax" declaration
   sed -i "${syntaxLineNum}s~$~\n$goPackageString~" $newfile
   echo $newfile
-done
-
+done 
