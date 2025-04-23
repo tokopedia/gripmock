@@ -4,6 +4,10 @@
 BINARY_NAME=gripmock
 DOCKER_IMAGE=tkpd/gripmock
 PLATFORMS=linux/amd64,linux/arm64
+GOPATH:=$(shell go env GOPATH)
+
+# Include test makefile
+include Makefile.test
 
 .PHONY: all build clean test push help
 
@@ -43,6 +47,7 @@ clean:
 	@echo "Cleaning..."
 	rm -f $(BINARY_NAME)
 	go clean
+	docker rm -f gripmock-test || true
 
 # Show help
 help:
@@ -53,4 +58,8 @@ help:
 	@echo "  docker-push    - Push Docker image (requires VERSION=x.y.z)"
 	@echo "  test           - Run tests"
 	@echo "  clean          - Clean build artifacts"
-	@echo "  help           - Show this help message" 
+	@echo "  help           - Show this help message"
+	@echo ""
+	@echo "Test targets:"
+	@echo "  test-simple    - Run simple example test"
+	@echo "  build-test-image - Build test Docker image" 

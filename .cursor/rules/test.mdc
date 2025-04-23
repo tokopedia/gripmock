@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- Only create/modify the unit test when I ask.
+- I want to have the unit test file 1:1 to code file. 
+- I prefer to have the function test 1:1 with the code function, with a test case loop style.
+- try to use gomock to generate mock.

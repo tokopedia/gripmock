@@ -1,7 +1,8 @@
 syntax = "proto3";
-option go_package = "github.com/tokopedia/gripmock/protogen/example/stub-subfolders";
 
 package stub_subfolders;
+
+option go_package = "github.com/tokopedia/gripmock/example/stub-subfolders";
 
 // The Gripmock service definition.
 service Gripmock {

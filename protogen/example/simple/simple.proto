@@ -19,5 +19,4 @@ message Request {
 // The response message containing the greetings
 message Reply {
   string message = 1;
-  int32 return_code = 2;
 }

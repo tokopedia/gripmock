@@ -1,9 +1,8 @@
 syntax = "proto3";
-option go_package = "github.com/tokopedia/gripmock/protogen/example/multi-files";
 
 package multifiles;
 
-
+option go_package = "github.com/tokopedia/gripmock/example/multi-files";
 // The Gripmock service definition.
 service Gripmock1 {
   // simple unary method

@@ -17,6 +17,11 @@ jobs:
       with:
         entrypoint: example/simple/entrypoint.sh
         args: simple
+    - name: Run Advanced Example
+      uses: ./
+      with:
+        entrypoint: example/advanced/entrypoint.sh
+        args: advanced
     - name: Run Stream Example
       uses: ./
       with:

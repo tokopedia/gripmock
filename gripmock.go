@@ -12,8 +12,12 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/tokopedia/gripmock/protogen"
 	"github.com/tokopedia/gripmock/stub"
 )
+
+// ensure protogen is included in go.mod
+var _ = protogen.ProtoGen
 
 func main() {
 	outputPointer := flag.String("o", "", "directory to output server.go. Default is $GOPATH/src/grpc/")
@@ -24,7 +28,7 @@ func main() {
 	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
 	imports := flag.String("imports", "/protobuf", "comma separated imports path. default path /protobuf is where gripmock Dockerfile install WKT protos")
 	// for backwards compatibility
-	if os.Args[1] == "gripmock" {
+	if len(os.Args) > 1 && os.Args[1] == "gripmock" {
 		os.Args = append(os.Args[:1], os.Args[2:]...)
 	}
 
@@ -166,7 +170,7 @@ func fixGoPackage(protoPaths []string) []string {
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
-	run := exec.Command("go", "run", output+"server.go")
+	run := exec.Command("start_server.sh")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	err := run.Start()

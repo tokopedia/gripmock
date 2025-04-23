@@ -1,9 +1,8 @@
 syntax = "proto3";
-option go_package = "github.com/tokopedia/gripmock/protogen/example/one-of";
 
 package oneof;
 
-
+option go_package = "github.com/tokopedia/gripmock/example/one-of";
 
 // The Gripmock service definition.
 service Gripmock {

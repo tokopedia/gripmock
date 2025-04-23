@@ -1,9 +1,8 @@
 syntax = "proto3";
-option go_package = "github.com/tokopedia/gripmock/protogen/example/multi-files";
 
 package multifiles;
 
-
+option go_package = "github.com/tokopedia/gripmock/example/multi-files";
 service Gripmock2 {
   // simple unary method
   rpc SayHello (Request2) returns (Reply2);
