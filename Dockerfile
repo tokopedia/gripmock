@@ -21,6 +21,7 @@ RUN mkdir -p /proto /stubs /protogen &&\
     ln -s /go/src/github.com/tokopedia/gripmock/scripts/start_server.sh /bin/
 
 # Copy server.go and go.mod to /go/src/grpc
+# to build go module
 RUN mkdir -p /go/src/grpc &&\
     cp /go/src/github.com/tokopedia/gripmock/scripts/server.go /go/src/grpc/ &&\
     cp /go/src/github.com/tokopedia/gripmock/scripts/go.mod /go/src/grpc/
@@ -32,9 +33,6 @@ WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 RUN rm -f pkged.go && pkger && go install -v
 
 WORKDIR /go/src/github.com/tokopedia/gripmock
-
-# Set Go version for protobuf generation
-ENV GO_VERSION=1.21
 
 # install gripmock
 RUN go install -v
