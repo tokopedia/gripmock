@@ -1,9 +1,9 @@
-FROM golang:1.24-alpine
+FROM golang:1.23-alpine
 
 # install tools (bash, git, protobuf, protoc-gen-go, protoc-grn-go-grpc, pkger)
 RUN apk -U --no-cache add bash git protobuf &&\
     go install -v github.com/golang/protobuf/protoc-gen-go@latest &&\
-    go install -v google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest &&\
+    go install -v google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0 &&\
     go install github.com/markbates/pkger/cmd/pkger@latest
 
 # cloning well-known-types
@@ -18,7 +18,8 @@ COPY . /go/src/github.com/tokopedia/gripmock
 RUN mkdir -p /proto /stubs /protogen &&\
     chmod +x /go/src/github.com/tokopedia/gripmock/scripts/*.sh &&\
     ln -s /go/src/github.com/tokopedia/gripmock/scripts/fix_gopackage.sh /bin/ &&\
-    ln -s /go/src/github.com/tokopedia/gripmock/scripts/start_server.sh /bin/
+    ln -s /go/src/github.com/tokopedia/gripmock/scripts/start_server.sh /bin/ &&\
+    ln -s /go/src/github.com/tokopedia/gripmock/scripts/wait_for_gripmock.sh /bin/
 
 # Copy server.go and go.mod to /go/src/grpc
 # to build go module
@@ -36,6 +37,11 @@ WORKDIR /go/src/github.com/tokopedia/gripmock
 
 # install gripmock
 RUN go install -v
+
+# cache the dependencies then clean up
+RUN ./scripts/setup_examples.sh && \
+    go build example/simple/client/*.go && \
+    find . -name "*.pb.go" -type f -delete
 
 # run server for caching purposes
 RUN start_server.sh

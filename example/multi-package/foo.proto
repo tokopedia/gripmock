@@ -4,8 +4,7 @@ syntax = "proto3";
 // but different package
 package foo;
 
-// simulating dummy private repo
-option go_package = "github.com/my/private/repo/multi-package";
+option go_package = "github.com/tokopedia/gripmock/example/multi-package";
 
 message Response {
     string response = 1;

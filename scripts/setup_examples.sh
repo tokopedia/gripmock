@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Create protogen/example directory
+rm -rf protogen/example
+
 mkdir -p protogen/example
 
 # Copy all examples to protogen/example
@@ -17,11 +19,14 @@ for dir in */; do
         # Change to example directory
         cd "$dir"
         
-        # Generate .pb.go files if proto file exists
-        if [ -f "${dir%/}.proto" ]; then
+        # Find all .proto files recursively and process them together
+        proto_files=($(find . -name "*.proto"))
+        echo "proto_files: ${proto_files[@]}"
+        if [ ${#proto_files[@]} -gt 0 ]; then
+            echo "Generating protobuf for ${#proto_files[@]} proto files..."
             protoc --go_out=. --go_opt=paths=source_relative \
                    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-                   "${dir%/}.proto"
+                   "${proto_files[@]}"
         fi
         
         # Go back to parent directory

@@ -2,9 +2,14 @@
 
 # this file is used by .github/workflows/integration-test.yml
 
-gripmock --stub=example/advanced/stub example/advanced/advanced.proto &
+gripmock --stub=example/advanced/stub example/advanced/advanced.proto > gripmock.log 2>&1 &
 
-# wait for generated files to be available and gripmock is up
-sleep 2
+# Wait for gripmock to be ready
+wait_for_gripmock.sh
 
-go run example/advanced/client/*.go 
+echo "======== RUNNING CLIENT ========="
+go run example/advanced/client/*.go && \
+ echo "======== DONE ========="
+
+# kill the server
+kill %1 

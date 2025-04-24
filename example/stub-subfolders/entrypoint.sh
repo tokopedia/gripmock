@@ -2,6 +2,15 @@
 
 # this file is used by .github/workflows/integration-test.yml
 
-gripmock --stub=example/stub-subfolders/stub example/stub-subfolders/stub-subfolders.proto &
+# start the server
+gripmock --stub=example/stub-subfolders/stub example/stub-subfolders/stub-subfolders.proto > gripmock.log 2>&1 &
 
-go run example/stub-subfolders/client/*.go
+# Wait for gripmock to be ready
+wait_for_gripmock.sh
+
+echo "======== RUNNING CLIENT ========="
+go run example/stub-subfolders/client/*.go && \
+ echo "======== DONE ========="
+
+# kill the server
+kill %1
