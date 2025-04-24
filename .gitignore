@@ -4,3 +4,4 @@ gripmock
 .cursor
 .DS_Store
 temp
+protogen/example/
