@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine
+FROM golang:1.24-alpine
 
 # install tools (bash, git, protobuf, protoc-gen-go, protoc-grn-go-grpc, pkger)
 RUN apk -U --no-cache add bash git protobuf &&\
@@ -36,9 +36,6 @@ WORKDIR /go/src/github.com/tokopedia/gripmock
 
 # install gripmock
 RUN go install -v
-
-# Setup examples in protogen/example
-RUN ./scripts/setup_examples.sh
 
 # run server for caching purposes
 RUN start_server.sh
