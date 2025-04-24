@@ -76,6 +76,9 @@ Stub Format is JSON text format. It has a skeleton as follows:
     "data":{
       // put result fields here
     },
+    "headers": {
+      // put result headers here
+    },
     "error":"<error message>" // Optional. if you want to return error instead.
     "code":"<response code>" // Optional. Grpc response code. if code !=0  return error instead.
   }
@@ -211,3 +214,36 @@ Nested fields are allowed for input matching too for all JSON data types. (`stri
 }
 ```
 
+### Input Headers Matching Rule
+
+Input headers matching has 4 rules to match input headers: `equals`, `equals_unordered`, `contains`, and `matches`.
+<br>
+Headers are map of strings and the same matching rules apply for headers as for payload data.
+<br>
+**Important Note:** Only one rule type is applied at a time. If multiple rule types are specified, the first matching rule will be used.
+<br>
+Headers can be specified in the `headers` field of the `input` object:
+<br>
+```json
+{
+  "service": "YourService",
+  "method": "YourMethod",
+  "input": {
+    "equals": {
+      "field1": "value1"
+    },
+    "headers": {
+      "equals": {
+        "Content-Type": "application/json"
+      }
+      // Only one rule type is applied. If you specify multiple rules,
+      // the first matching rule will be used.
+    }
+  },
+  "output": {
+    "data": {
+      "result": "success"
+    }
+  }
+}
+```

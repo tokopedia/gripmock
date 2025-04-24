@@ -7,11 +7,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
-
-	"github.com/go-chi/chi"
 )
 
 type Options struct {
@@ -36,6 +35,7 @@ func RunStubServer(opt Options) {
 	r.Post("/find", handleFindStub)
 	r.Get("/clear", handleClearStub)
 	r.Post("/reset", handleResetStub)
+	r.Get("/requests", listRequests)
 
 	if opt.StubPath != "" {
 		count := readStubFromFile(opt.StubPath)
@@ -68,12 +68,22 @@ type Input struct {
 	EqualsUnordered map[string]interface{} `json:"equals_unordered"`
 	Contains        map[string]interface{} `json:"contains"`
 	Matches         map[string]interface{} `json:"matches"`
+
+	Headers *InputHeaders `json:"headers,omitempty"`
+}
+
+type InputHeaders struct {
+	Equals          map[string]string `json:"equals,omitempty"`
+	EqualsUnordered map[string]string `json:"equals_unordered,omitempty"`
+	Contains        map[string]string `json:"contains,omitempty"`
+	Matches         map[string]string `json:"matches,omitempty"`
 }
 
 type Output struct {
-	Data  map[string]interface{} `json:"data"`
-	Error string                 `json:"error"`
-	Code  *codes.Code            `json:"code,omitempty"`
+	Data    map[string]interface{} `json:"data"`
+	Error   string                 `json:"error"`
+	Code    *codes.Code            `json:"code,omitempty"`
+	Headers map[string]string      `json:"headers,omitempty"`
 }
 
 func addStub(w http.ResponseWriter, r *http.Request) {
@@ -152,6 +162,7 @@ type findStubPayload struct {
 	Service string                 `json:"service"`
 	Method  string                 `json:"method"`
 	Data    map[string]interface{} `json:"data"`
+	Headers map[string]string      `json:"headers,omitempty"`
 }
 
 func handleFindStub(w http.ResponseWriter, r *http.Request) {
@@ -199,4 +210,9 @@ func handleResetStub(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error writing handleResetStub response: %w", err)
 		}
 	}
+}
+
+func listRequests(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allRequests())
 }

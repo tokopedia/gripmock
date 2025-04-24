@@ -51,6 +51,26 @@ func TestStub(t *testing.T) {
 		{
 			name: "list stub",
 			mock: func() *http.Request {
+				clearStorage()
+				// Add the test stub
+				stub := &Stub{
+					Service: "Testing",
+					Method:  "TestMethod",
+					Input: Input{
+						Equals: map[string]interface{}{
+							"Hola": "Mundo",
+						},
+					},
+					Output: Output{
+						Data: map[string]interface{}{
+							"Hello": "World",
+						},
+					},
+				}
+				err := storeStub(stub)
+				if err != nil {
+					panic(err)
+				}
 				return httptest.NewRequest("GET", "/", nil)
 			},
 			handler: listStub,
@@ -104,6 +124,14 @@ func TestStub(t *testing.T) {
 			},
 			handler: handleFindStub,
 			expect:  "{\"data\":{\"Hello\":\"World\"},\"error\":\"\"}\n",
+		},
+		{
+			name: "get recorded requests",
+			mock: func() *http.Request {
+				return httptest.NewRequest("GET", "/requests", nil)
+			},
+			handler: listRequests,
+			expect:  "[{\"record\":{\"service\":\"Testing\",\"method\":\"TestMethod\",\"data\":{\"Hola\":\"Mundo\"}},\"count\":1},{\"record\":{\"service\":\"NestedTesting\",\"method\":\"TestMethod\",\"data\":{\"age\":1,\"cities\":[\"Istanbul\",\"Jakarta\"],\"girl\":true,\"greetings\":{\"hola\":\"mundo\",\"merhaba\":\"dunya\"},\"name\":\"Afra Gokce\",\"null\":null}},\"count\":1}]\n",
 		},
 		{
 			name: "add stub equals_unordered",
@@ -462,7 +490,7 @@ func TestStub(t *testing.T) {
 				return httptest.NewRequest("POST", "/find", bytes.NewReader([]byte(payload)))
 			},
 			handler: handleFindStub,
-			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\n{\n\tHola: Dunia\n}\n\nClosest Match \n\nequals:{\n\tHola: Mundo\n}",
+			expect:  "Can't find stub \n\nService: Testing \n\nMethod: TestMethod \n\nInput\n\nData:\n{\n\tHola: Dunia\n}\n\nClosest Match \n\nequals:{\n\tHola: Mundo\n}",
 		},
 		{
 			name: "reset stubs with path configured",
@@ -654,12 +682,12 @@ func TestStub(t *testing.T) {
 				// Set up a temporary directory with a non-json file
 				dir, err := ioutil.TempDir("", "")
 				require.NoError(t, err)
-				
+
 				// Create a .txt file (should be ignored)
 				tempF1, err := ioutil.TempFile(dir, "stub*.txt")
 				require.NoError(t, err)
 				defer tempF1.Close()
-				
+
 				// Create a valid JSON file
 				tempF2, err := ioutil.TempFile(dir, "stub*.json")
 				require.NoError(t, err)
@@ -675,7 +703,7 @@ func TestStub(t *testing.T) {
 				require.NoError(t, err)
 				_, err = tempF2.Write(byt)
 				require.NoError(t, err)
-				
+
 				// Write some non-JSON content to the .txt file
 				_, err = tempF1.WriteString("This is not a JSON file")
 				require.NoError(t, err)
@@ -703,12 +731,12 @@ func TestStub(t *testing.T) {
 				// Set up a temporary directory with nested directories
 				dir, err := ioutil.TempDir("", "")
 				require.NoError(t, err)
-				
+
 				// Create a subdirectory
 				subdir := filepath.Join(dir, "subdir")
 				err = os.Mkdir(subdir, 0755)
 				require.NoError(t, err)
-				
+
 				// Create a stub file in the root directory
 				stub1 := Stub{
 					Service: "Service1",
@@ -720,7 +748,7 @@ func TestStub(t *testing.T) {
 				require.NoError(t, err)
 				err = ioutil.WriteFile(filepath.Join(dir, "stub1.json"), byt1, 0644)
 				require.NoError(t, err)
-				
+
 				// Create a stub file in the subdirectory
 				stub2 := Stub{
 					Service: "Service2",
