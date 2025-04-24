@@ -23,7 +23,8 @@ RUN mkdir -p /proto /stubs /protogen &&\
 # Copy server.go and go.mod to /go/src/grpc
 # to build go module
 RUN mkdir -p /go/src/grpc &&\
-    cp -r /go/src/github.com/tokopedia/gripmock/scripts/server /go/src/grpc/
+    cp /go/src/github.com/tokopedia/gripmock/scripts/server/server.go /go/src/grpc/ &&\
+    cp /go/src/github.com/tokopedia/gripmock/scripts/server/go.mod /go/src/grpc/
 
 # install plugin protoc-gen-go-grpc
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
