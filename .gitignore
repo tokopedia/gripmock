@@ -1,8 +1,6 @@
 pkged.go
 gripmock
 .idea
+.cursor
 .DS_Store
-protogen/*
-!protogen/go.mod
-!protogen/protogen.go
 temp

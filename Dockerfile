@@ -25,6 +25,7 @@ RUN mkdir -p /go/src/grpc &&\
     cp /go/src/github.com/tokopedia/gripmock/scripts/server.go /go/src/grpc/ &&\
     cp /go/src/github.com/tokopedia/gripmock/scripts/go.mod /go/src/grpc/
 
+# install plugin protoc-gen-go-grpc
 WORKDIR /go/src/github.com/tokopedia/gripmock/protoc-gen-gripmock
 
 # install generator plugin
