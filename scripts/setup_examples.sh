@@ -29,6 +29,12 @@ for dir in */; do
     fi
 done
 
+# remove everything except .pb.go files
+find . -type f ! -name '*.pb.go' -delete
+
+# remove all empty directories
+find . -type d -empty -delete
+
 # Go back to root
 cd ../..
 

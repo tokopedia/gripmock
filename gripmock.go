@@ -12,12 +12,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/tokopedia/gripmock/protogen"
 	"github.com/tokopedia/gripmock/stub"
 )
-
-// ensure protogen is included in go.mod
-var _ = protogen.ProtoGen
 
 func main() {
 	outputPointer := flag.String("o", "", "directory to output server.go. Default is $GOPATH/src/grpc/")
