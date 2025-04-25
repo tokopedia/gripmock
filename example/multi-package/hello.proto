@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package multi_package;
 
-option go_package = "github.com/tokopedia/gripmock/example/multi-package";
-
 import "bar/bar.proto";
 import "foo.proto";
 

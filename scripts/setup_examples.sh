@@ -2,11 +2,16 @@
 
 # Create protogen/example directory
 rm -rf protogen/example
-
 mkdir -p protogen/example
 
-# Copy all examples to protogen/example
-cp -r example/* protogen/example/
+# Find all proto files in example directory and process them with fix_gopackage
+# cd example
+proto_files=($(find . -name "*.proto" | sed 's|^\./||'))
+# cd ..
+echo "Found proto files: ${proto_files[@]}"
+
+# Process all proto files with fix_gopackage
+./scripts/fix_gopackage.sh "${proto_files[@]}"
 
 # Change to protogen/example directory
 cd protogen/example
