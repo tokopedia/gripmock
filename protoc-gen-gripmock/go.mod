@@ -1,6 +1,6 @@
 module github.com/tokopedia/gripmock/protoc-gen-gripmock
 
-go 1.19
+go 1.21
 
 require (
 	github.com/golang/protobuf v1.5.2

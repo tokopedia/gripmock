@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	"github.com/tokopedia/gripmock/stub"
-	_ "github.com/tokopedia/gripmock/protogen"
 )
 
 func main() {
@@ -30,7 +29,7 @@ func main() {
 	}
 
 	// for backwards compatibility
-	if os.Args[1] == "gripmock" {
+	if len(os.Args) > 1 && os.Args[1] == "gripmock" {
 		os.Args = append(os.Args[:1], os.Args[2:]...)
 	}
 
@@ -172,7 +171,7 @@ func fixGoPackage(protoPaths []string) []string {
 }
 
 func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
-	run := exec.Command("go", "run", output+"server.go")
+	run := exec.Command("start_server.sh")
 	run.Stdout = os.Stdout
 	run.Stderr = os.Stderr
 	err := run.Start()

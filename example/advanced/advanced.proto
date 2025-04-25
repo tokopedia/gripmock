@@ -1,13 +1,12 @@
 syntax = "proto3";
-option go_package = "github.com/tokopedia/gripmock/protogen/example/simple";
 
-package simple;
+package advanced;
 
-
+option go_package = "github.com/tokopedia/gripmock/example/advanced";
 
 // The Gripmock service definition.
 service Gripmock {
-  // simple unary method
+  // advanced unary method with error handling
   rpc SayHello (Request) returns (Reply);
 }
 
@@ -20,4 +19,4 @@ message Request {
 message Reply {
   string message = 1;
   int32 return_code = 2;
-}
+} 
