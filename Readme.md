@@ -10,10 +10,10 @@ The latest [version (v1.10)](https://github.com/tokopedia/gripmock/releases/tag/
 
 **Update Feb 2022:**
 
-[Version 1.11-beta](https://github.com/tokopedia/gripmock/releases/tag/v1.11-beta) release is available.
+[Version 1.11.1-beta](https://github.com/tokopedia/gripmock/releases/tag/v1.11.1-beta) release is available.
 It supports **NO** declaration of `go_package`, please download and test before it can be tagged as stable.
 
-you can get the docker image using `docker pull tkpd/gripmock:v1.11-beta`.
+you can get the docker image using `docker pull tkpd/gripmock:v1.11.1-beta`.
 
 ---
 
