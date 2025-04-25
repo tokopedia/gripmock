@@ -4,10 +4,8 @@
 rm -rf protogen/example
 mkdir -p protogen/example
 
-# Find all proto files in example directory and process them with fix_gopackage
-# cd example
+# Find all proto files in current directory and process them with fix_gopackage
 proto_files=($(find . -name "*.proto" | sed 's|^\./||'))
-# cd ..
 echo "Found proto files: ${proto_files[@]}"
 
 # Process all proto files with fix_gopackage
