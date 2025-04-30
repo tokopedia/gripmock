@@ -11,14 +11,14 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/protobuf/runtime/protoiface"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 {{ range $package, $alias := .Dependencies }}
 import {{$alias}} "{{$package}}"
@@ -159,7 +159,7 @@ type response struct {
 	Headers map[string]string `json:"headers,omitempty"`
 }
 
-func findStub(ctx context.Context, service, method string, headers metadata.MD, in, out protoiface.MessageV1) error {
+func findStub(ctx context.Context, service, method string, headers metadata.MD, in, out proto.Message) error {
 	url := fmt.Sprintf("http://localhost%s/find", HTTP_PORT)
 	var headersMap map[string]string
 	if headers != nil {
@@ -212,6 +212,6 @@ func findStub(ctx context.Context, service, method string, headers metadata.MD, 
     }
 
 	data, _ := json.Marshal(respRPC.Data)
-	return jsonpb.Unmarshal(bytes.NewReader(data), out)
+	return protojson.Unmarshal(data, out)
 }
 {{ end }}

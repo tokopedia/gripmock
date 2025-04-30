@@ -2,22 +2,25 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"text/template"
 
-	"google.golang.org/protobuf/types/pluginpb"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/markbates/pkger"
 	"golang.org/x/tools/imports"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	descriptor "google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 )
+
+var _ = json.Marshal
+var _ = protojson.Unmarshal
 
 func main() {
 	// Tip of the hat to Tim Coulson
@@ -25,7 +28,7 @@ func main() {
 
 	// Protoc passes pluginpb.CodeGeneratorRequest in via stdin
 	// marshalled with Protobuf
-	input, _ := ioutil.ReadAll(os.Stdin)
+	input, _ := io.ReadAll(os.Stdin)
 	var request pluginpb.CodeGeneratorRequest
 	if err := proto.Unmarshal(input, &request); err != nil {
 		log.Fatalf("error unmarshalling [%s]: %v", string(input), err)
@@ -115,21 +118,8 @@ type Options struct {
 	format    bool
 }
 
+//go:embed server.tmpl
 var SERVER_TEMPLATE string
-
-func init() {
-	f, err := pkger.Open("/server.tmpl")
-	if err != nil {
-		log.Fatalf("error opening server.tmpl: %s", err)
-	}
-
-	bytes, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatalf("error reading server.tmpl: %s", err)
-	}
-
-	SERVER_TEMPLATE = string(bytes)
-}
 
 func generateServer(protos []*descriptor.FileDescriptorProto, opt *Options) error {
 	services := extractServices(protos)
@@ -280,24 +270,32 @@ func extractServices(protos []*descriptor.FileDescriptorProto) []Service {
 
 func getMessageType(protos []*descriptor.FileDescriptorProto, tipe string) string {
 	split := strings.Split(tipe, ".")[1:]
-	targetPackage := strings.Join(split[:len(split)-1], ".")
-	targetType := split[len(split)-1]
-	for _, proto := range protos {
-		if proto.GetPackage() != targetPackage {
-			continue
-		}
 
-		for _, msg := range proto.GetMessageType() {
-			if msg.GetName() == targetType {
-				alias, _ := getGoPackage(proto)
-				if alias != "" {
-					alias += "."
+	for i := 1; i < len(split); i++ {
+		targetPackage := strings.Join(split[:len(split)-i], ".")
+		targetType := split[len(split)-i]
+
+		for _, proto := range protos {
+			if proto.GetPackage() != targetPackage {
+				continue
+			}
+
+			for _, msg := range proto.GetMessageType() {
+				if msg.GetName() == targetType {
+					alias, _ := getGoPackage(proto)
+					if alias != "" {
+						alias += "."
+					}
+
+					targetType = strings.Join(split[len(split)-i:], "_")
+
+					return fmt.Sprintf("%s%s", alias, targetType)
 				}
-				return fmt.Sprintf("%s%s", alias, msg.GetName())
 			}
 		}
 	}
-	return targetType
+
+	return split[len(split)-1]
 }
 
 func isKeyword(word string) bool {
