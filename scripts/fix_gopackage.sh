@@ -2,6 +2,13 @@
 
 protos=("$@")
 
+# Set sed -i parameter based on OS
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  sed_i=(-i "")
+else
+  sed_i=(-i)
+fi
+
 for proto in "${protos[@]}"
 do
   # if it's a directory then skip
@@ -31,7 +38,7 @@ do
 
     # Force remove any declaration of go_package
     # then replace it with our own declaration below
-    sed -i 's/^option go_package.*$//g' $newfile
+    sed "${sed_i[@]}" 's/^option go_package.*$//g' $newfile
 
 
   # get the line number of "syntax" declaration
@@ -40,7 +47,6 @@ do
   goPackageString="option go_package = \"github.com/tokopedia/gripmock/protogen/$dir\";"
 
   # append our own go_package delcaration just below "syntax" declaration
-  sed -i "${syntaxLineNum}s~$~\n$goPackageString~" $newfile
+  sed "${sed_i[@]}" "${syntaxLineNum}s~$~\n$goPackageString~" $newfile
   echo $newfile
-done
-
+done 

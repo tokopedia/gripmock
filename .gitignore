@@ -1,8 +1,8 @@
 pkged.go
 gripmock
 .idea
+.cursor
 .DS_Store
-protogen/*
-!protogen/go.mod
-!protogen/example/
 temp
+
+# protogen/example/ is not ignored for the sake of go mod tidy

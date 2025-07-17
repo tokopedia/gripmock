@@ -32,12 +32,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("error from grpc: %v", err)
 	}
-	log.Printf("Greeting: %s (return code %d)", r.Message, r.ReturnCode)
-
-	name = "world"
-	r, err = c.SayHello(context.Background(), &pb.Request{Name: name})
-	if err != nil {
-		log.Fatalf("error from grpc: %v", err)
-	}
-	log.Printf("Greeting: %s (return code %d)", r.Message, r.ReturnCode)
+	log.Printf("Greeting: %s", r.Message)
 }

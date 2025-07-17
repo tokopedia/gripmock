@@ -1,0 +1,142 @@
+# Gripmock Test Makefile
+
+# Test Variables
+TEST_VERSION=test
+
+# Detect platform automatically
+ifeq ($(shell uname),Darwin)
+    # Check if running on Apple Silicon
+    ifeq ($(shell uname -m),arm64)
+        LOCAL_PLATFORM?=linux/arm64
+    else
+        LOCAL_PLATFORM?=linux/amd64
+    endif
+else
+    # For Linux, detect architecture
+    ifeq ($(shell uname -m),aarch64)
+        LOCAL_PLATFORM?=linux/arm64
+    else
+        LOCAL_PLATFORM?=linux/amd64
+    endif
+endif
+
+.PHONY: test-simple test-advanced test-well-known-types test-stub-subfolders test-stream test-one-of test-multi-package test-multi-files build-test-image
+
+# Optional: Build test image
+build-test-image:
+	docker buildx build --load -t $(DOCKER_IMAGE):$(TEST_VERSION) --platform $(LOCAL_PLATFORM) .
+
+# Run simple example test
+test-simple:
+	@echo "Starting gripmock container for simple test..."
+	@docker rm -f gripmock-test || true
+	docker run -d --name gripmock-test \
+		--entrypoint=example/simple/entrypoint.sh \
+		$(DOCKER_IMAGE):$(TEST_VERSION) 
+	@echo "Waiting for server to start..."
+	@sleep 3
+	@echo "Container logs:"
+	@docker logs gripmock-test
+	@echo "Cleaning up..."
+	@docker rm -f gripmock-test
+
+# Run advanced example test
+test-advanced:
+	@echo "Starting gripmock container for advanced test..."
+	@docker rm -f gripmock-test || true
+	docker run -d --name gripmock-test \
+		--entrypoint=example/advanced/entrypoint.sh \
+		$(DOCKER_IMAGE):$(TEST_VERSION) 
+	@echo "Waiting for server to start..."
+	@sleep 3
+	@echo "Container logs:"
+	@docker logs gripmock-test
+	@echo "Cleaning up..."
+	@docker rm -f gripmock-test
+
+# Run well-known types example test
+test-well-known-types:
+	@echo "Starting gripmock container for well-known types test..."
+	@docker rm -f gripmock-test || true
+	docker run -d --name gripmock-test \
+		--entrypoint=example/well_known_types/entrypoint.sh \
+		$(DOCKER_IMAGE):$(TEST_VERSION) 
+	@echo "Waiting for server to start..."
+	@sleep 3
+	@echo "Container logs:"
+	@docker logs gripmock-test
+	@echo "Cleaning up..."
+	@docker rm -f gripmock-test
+
+# Run stub subfolders example test
+test-stub-subfolders:
+	@echo "Starting gripmock container for stub subfolders test..."
+	@docker rm -f gripmock-test || true
+	docker run -d --name gripmock-test \
+		--entrypoint=example/stub-subfolders/entrypoint.sh \
+		$(DOCKER_IMAGE):$(TEST_VERSION) 
+	@echo "Waiting for server to start..."
+	@sleep 3
+	@echo "Container logs:"
+	@docker logs gripmock-test
+	@echo "Cleaning up..."
+	@docker rm -f gripmock-test
+
+# Run stream example test
+test-stream:
+	@echo "Starting gripmock container for stream test..."
+	@docker rm -f gripmock-test || true
+	docker run -d --name gripmock-test \
+		--entrypoint=example/stream/entrypoint.sh \
+		$(DOCKER_IMAGE):$(TEST_VERSION) 
+	@echo "Waiting for server to start..."
+	@sleep 3
+	@echo "Container logs:"
+	@docker logs gripmock-test
+	@echo "Cleaning up..."
+	@docker rm -f gripmock-test
+
+# Run one-of example test
+test-one-of:
+	@echo "Starting gripmock container for one-of test..."
+	@docker rm -f gripmock-test || true
+	docker run -d --name gripmock-test \
+		--entrypoint=example/one-of/entrypoint.sh \
+		$(DOCKER_IMAGE):$(TEST_VERSION) 
+	@echo "Waiting for server to start..."
+	@sleep 3
+	@echo "Container logs:"
+	@docker logs gripmock-test
+	@echo "Cleaning up..."
+	@docker rm -f gripmock-test
+
+# Run multi-package example test
+test-multi-package:
+	@echo "Starting gripmock container for multi-package test..."
+	@docker rm -f gripmock-test || true
+	docker run -d --name gripmock-test \
+		--entrypoint=example/multi-package/entrypoint.sh \
+		$(DOCKER_IMAGE):$(TEST_VERSION) 
+	@echo "Waiting for server to start..."
+	@sleep 3
+	@echo "Container logs:"
+	@docker logs gripmock-test
+	@echo "Cleaning up..."
+	@docker rm -f gripmock-test
+
+# Run multi-files example test
+test-multi-files:
+	@echo "Starting gripmock container for multi-files test..."
+	@docker rm -f gripmock-test || true
+	docker run -d --name gripmock-test \
+		--entrypoint=example/multi-files/entrypoint.sh \
+		$(DOCKER_IMAGE):$(TEST_VERSION) 
+	@echo "Waiting for server to start..."
+	@sleep 3
+	@echo "Container logs:"
+	@docker logs gripmock-test
+	@echo "Cleaning up..."
+	@docker rm -f gripmock-test
+
+# Run all tests
+test-all: test-simple test-advanced test-well-known-types test-stub-subfolders test-stream test-one-of test-multi-package test-multi-files 

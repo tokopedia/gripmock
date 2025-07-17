@@ -3,10 +3,12 @@ package stub
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"reflect"
 	"regexp"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -20,14 +22,33 @@ type stubMapping map[string]map[string][]storage
 type matchFunc func(interface{}, interface{}) bool
 
 var stubStorage = stubMapping{}
+var requestStorage = []*request{}
 
 type storage struct {
 	Input  Input
 	Output Output
 }
 
+type request struct {
+	Record findStubPayload `json:"record"`
+	Count  int             `json:"count"`
+}
+
 func storeStub(stub *Stub) error {
 	return stubStorage.storeStub(stub)
+}
+
+func storeRequest(stub *findStubPayload) {
+	for _, v := range requestStorage {
+		if reflect.DeepEqual(v.Record, *stub) {
+			v.Count++
+			return
+		}
+	}
+	requestStorage = append(requestStorage, &request{
+		Record: *stub,
+		Count:  1,
+	})
 }
 
 func (sm *stubMapping) storeStub(stub *Stub) error {
@@ -51,20 +72,29 @@ func allStub() stubMapping {
 	return stubStorage
 }
 
+func allRequests() []*request {
+	mx.Lock()
+	defer mx.Unlock()
+	return requestStorage
+}
+
 type closeMatch struct {
-	rule   string
-	expect map[string]interface{}
+	rule        string
+	expect      map[string]interface{}
+	headersRule string
+	headers     map[string]string
 }
 
 func findStub(stub *findStubPayload) (*Output, error) {
 	mx.Lock()
 	defer mx.Unlock()
+	storeRequest(stub)
 	if _, ok := stubStorage[stub.Service]; !ok {
-		return nil, fmt.Errorf("Can't find stub for Service: %s", stub.Service)
+		return nil, fmt.Errorf("can't find stub for Service: %s", stub.Service)
 	}
 
 	if _, ok := stubStorage[stub.Service][stub.Method]; !ok {
-		return nil, fmt.Errorf("Can't find stub for Service:%s and Method:%s", stub.Service, stub.Method)
+		return nil, fmt.Errorf("can't find stub for Service:%s and Method:%s", stub.Service, stub.Method)
 	}
 
 	stubs := stubStorage[stub.Service][stub.Method]
@@ -75,34 +105,150 @@ func findStub(stub *findStubPayload) (*Output, error) {
 	closestMatch := []closeMatch{}
 	for _, stubrange := range stubs {
 		if expect := stubrange.Input.Equals; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"equals", expect})
+			cm := closeMatch{rule: "equals", expect: expect}
 			if equals(stub.Data, expect) {
-				return &stubrange.Output, nil
+				if headersConstraintsApplied(stubrange.Input, stub, &cm) {
+					return &stubrange.Output, nil
+				}
 			}
+			closestMatch = append(closestMatch, cm)
+		}
+
+		if expect := stubrange.Input.EqualsUnordered; expect != nil {
+			cm := closeMatch{rule: "equals_unordered", expect: expect}
+			if equalsUnordered(stub.Data, expect) {
+				if headersConstraintsApplied(stubrange.Input, stub, &cm) {
+					return &stubrange.Output, nil
+				}
+			}
+			closestMatch = append(closestMatch, cm)
 		}
 
 		if expect := stubrange.Input.Contains; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"contains", expect})
-			if contains(stubrange.Input.Contains, stub.Data) {
-				return &stubrange.Output, nil
+			cm := closeMatch{rule: "contains", expect: expect}
+			if contains(expect, stub.Data) {
+				if headersConstraintsApplied(stubrange.Input, stub, &cm) {
+					return &stubrange.Output, nil
+				}
 			}
+			closestMatch = append(closestMatch, cm)
 		}
 
 		if expect := stubrange.Input.Matches; expect != nil {
-			closestMatch = append(closestMatch, closeMatch{"matches", expect})
-			if matches(stubrange.Input.Matches, stub.Data) {
-				return &stubrange.Output, nil
+			cm := closeMatch{rule: "matches", expect: expect}
+			if matches(expect, stub.Data) {
+				if headersConstraintsApplied(stubrange.Input, stub, &cm) {
+					return &stubrange.Output, nil
+				}
 			}
+			closestMatch = append(closestMatch, cm)
 		}
 	}
 
 	return nil, stubNotFoundError(stub, closestMatch)
 }
 
+func copyHeaders(headers map[string]string) map[string]interface{} {
+	cpy := make(map[string]interface{})
+	for k, v := range headers {
+		cpy[k] = v
+	}
+
+	return cpy
+}
+
+// headersConstraintsApplied checks if the provided headers in the stub match the expected header constraints.
+// It supports three types of header matching: exact equality, containment, and regex pattern matching.
+//
+// Parameters:
+//   - expectedInput: Input containing the header constraints to check against
+//   - stub: The findStubPayload containing the actual headers to validate
+//   - closestMatch: Optional pointer to a closeMatch struct that will be populated with header matching info
+//     for error reporting. Can be nil if matching info is not needed.
+//
+// Returns:
+//   - bool: true if any of the following conditions are met:
+//     1. expectedInput.Headers is nil (no header constraints)
+//     2. Headers match exactly (Equals)
+//     3. Headers contain all expected values (Contains)
+//     4. Headers match the regex patterns (Matches)
+//     Returns false if none of the header constraints are satisfied.
+//
+// The function updates the closestMatch (if provided) with:
+//   - headersRule: The type of rule applied ("equal", "contains", or "match")
+//   - headers: The expected headers that were checked against
+//
+// Example:
+//
+//	input := Input{Headers: HeadersConstraint{Equals: map[string]string{"Content-Type": "application/json"}}}
+//	stub := &findStubPayload{Headers: map[string]string{"Content-Type": "application/json"}}
+//	cm := &closeMatch{}
+//	if headersConstraintsApplied(input, stub, cm) {
+//	    // Headers match the constraints
+//	}
+func headersConstraintsApplied(expectedInput Input, stub *findStubPayload, closestMatch *closeMatch) bool {
+	if expectedInput.Headers == nil {
+		return true
+	}
+
+	headersCopy := copyHeaders(stub.Headers)
+
+	if expected := expectedInput.Headers.Equals; expected != nil {
+		expectedCopy := copyHeaders(expected)
+		if closestMatch != nil {
+			closestMatch.headersRule = "equal"
+			closestMatch.headers = expected
+		}
+		if equals(expectedCopy, headersCopy) {
+			return true
+		}
+	}
+
+	if expected := expectedInput.Headers.EqualsUnordered; expected != nil {
+		expectedCopy := copyHeaders(expected)
+		if closestMatch != nil {
+			closestMatch.headersRule = "equal_unordered"
+			closestMatch.headers = expected
+		}
+		if equalsUnordered(expectedCopy, headersCopy) {
+			return true
+		}
+	}
+
+	if expected := expectedInput.Headers.Contains; expected != nil {
+		expectedCopy := copyHeaders(expected)
+		if closestMatch != nil {
+			closestMatch.headersRule = "contains"
+			closestMatch.headers = expected
+		}
+		if headerFind(expectedCopy, headersCopy) {
+			return true
+		}
+	}
+
+	if expected := expectedInput.Headers.Matches; expected != nil {
+		expectedCopy := copyHeaders(expected)
+		if closestMatch != nil {
+			closestMatch.headersRule = "match"
+			closestMatch.headers = expected
+		}
+		if matches(expectedCopy, headersCopy) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error {
 	template := fmt.Sprintf("Can't find stub \n\nService: %s \n\nMethod: %s \n\nInput\n\n", stub.Service, stub.Method)
-	expectString := renderFieldAsString(stub.Data)
+	expectString := "Data:\n" + renderFieldAsString(stub.Data)
 	template += expectString
+	if stub.Headers != nil {
+		headers := copyHeaders(stub.Headers)
+		expectString = "\nHeaders:\n" + renderFieldAsString(headers)
+		template += expectString
+	}
 
 	if len(closestMatches) == 0 {
 		return fmt.Errorf(template)
@@ -131,6 +277,10 @@ func stubNotFoundError(stub *findStubPayload, closestMatches []closeMatch) error
 
 	closestMatchString := renderFieldAsString(closestMatch.expect)
 	template += fmt.Sprintf("\n\nClosest Match \n\n%s:%s", closestMatch.rule, closestMatchString)
+	if closestMatch.headers != nil {
+		headers := copyHeaders(closestMatch.headers)
+		template += "\nHeaders " + closestMatch.headersRule + ":\n" + renderFieldAsString(headers)
+	}
 
 	return fmt.Errorf(template)
 }
@@ -171,8 +321,8 @@ func deepEqual(expect, actual interface{}) bool {
 }
 
 func regexMatch(expect, actual interface{}) bool {
-	var expectedStr, expectedStringOk = expect.(string)
-	var actualStr, actualStringOk = actual.(string)
+	expectedStr, expectedStringOk := expect.(string)
+	actualStr, actualStringOk := actual.(string)
 
 	if expectedStringOk && actualStringOk {
 		match, err := regexp.Match(expectedStr, []byte(actualStr))
@@ -186,27 +336,64 @@ func regexMatch(expect, actual interface{}) bool {
 }
 
 func equals(expect, actual map[string]interface{}) bool {
-	return find(expect, actual, true, true, deepEqual)
+	return find(expect, actual, true, true, deepEqual, false)
+}
+
+func equalsUnordered(expect, actual map[string]interface{}) bool {
+	return find(expect, actual, true, true, deepEqual, true)
 }
 
 func contains(expect, actual map[string]interface{}) bool {
-	return find(expect, actual, true, false, deepEqual)
+	return find(expect, actual, true, false, deepEqual, false)
 }
 
 func matches(expect, actual map[string]interface{}) bool {
-	return find(expect, actual, true, false, regexMatch)
+	return find(expect, actual, true, false, regexMatch, false)
 }
 
-func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
+func equalsIgnoreOrder(expect, actual interface{}) bool {
+	expectSlice, expectOk := expect.([]interface{})
+	actualSlice, actualOk := actual.([]interface{})
+	if !expectOk || !actualOk {
+		return false
+	}
+	if len(expectSlice) != len(actualSlice) {
+		return false
+	}
+	sort.Slice(expectSlice, func(i, j int) bool {
+		return fmt.Sprint(expectSlice[i]) < fmt.Sprint(expectSlice[j])
+	})
+	sort.Slice(actualSlice, func(i, j int) bool {
+		return fmt.Sprint(actualSlice[i]) < fmt.Sprint(actualSlice[j])
+	})
+	return reflect.DeepEqual(expectSlice, actualSlice)
+}
+
+func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc, ignoreOrder bool) bool {
 
 	// circuit brake
-	if acc == false {
+	if !acc {
 		return false
+	}
+
+	// Convert []string to []interface{} for unified slice handling
+	if expectStringArray, ok := expect.([]string); ok {
+		tmp := make([]interface{}, len(expectStringArray))
+		for i, v := range expectStringArray {
+			tmp[i] = v
+		}
+		expect = tmp
+	}
+	if actualStringArray, ok := actual.([]string); ok {
+		tmp := make([]interface{}, len(actualStringArray))
+		for i, v := range actualStringArray {
+			tmp[i] = v
+		}
+		actual = tmp
 	}
 
 	expectArrayValue, expectArrayOk := expect.([]interface{})
 	if expectArrayOk {
-
 		actualArrayValue, actualArrayOk := actual.([]interface{})
 		if !actualArrayOk {
 			acc = false
@@ -225,9 +412,13 @@ func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
 			}
 		}
 
+		if expectArrayOk && actualArrayOk && ignoreOrder {
+			return equalsIgnoreOrder(expectArrayValue, actualArrayValue)
+		}
+
 		for expectItemIndex, expectItemValue := range expectArrayValue {
 			actualItemValue := actualArrayValue[expectItemIndex]
-			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f)
+			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f, ignoreOrder)
 		}
 
 		return acc
@@ -256,7 +447,7 @@ func find(expect, actual interface{}, acc, exactMatch bool, f matchFunc) bool {
 
 		for expectItemKey, expectItemValue := range expectMapValue {
 			actualItemValue := actualMapValue[expectItemKey]
-			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f)
+			acc = find(expectItemValue, actualItemValue, acc, exactMatch, f, ignoreOrder)
 		}
 
 		return acc
@@ -270,51 +461,80 @@ func clearStorage() {
 	defer mx.Unlock()
 
 	stubStorage = stubMapping{}
+	requestStorage = []*request{}
 }
 
-func readStubFromFile(path string) {
-	stubStorage.readStubFromFile(path)
+func readStubFromFile(path string) int {
+	return stubStorage.readStubFromFile(path)
 }
 
-func (sm *stubMapping) readStubFromFile(path string) {
-	files, err := ioutil.ReadDir(path)
+func (sm *stubMapping) readStubFromFile(path string) int {
+	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Printf("Can't read stub from %s. %v\n", path, err)
-		return
+		return 0
 	}
 
+	count := 0
 	for _, file := range files {
 		if file.IsDir() {
-			readStubFromFile(path + "/" + file.Name())
+			count += sm.readStubFromFile(path + "/" + file.Name())
 			continue
 		}
 
-		byt, err := ioutil.ReadFile(path + "/" + file.Name())
+		// Only process .json files
+		if !strings.HasSuffix(strings.ToLower(file.Name()), ".json") {
+			continue
+		}
+
+		filePath := path + "/" + file.Name()
+		byt, err := os.ReadFile(filePath)
 		if err != nil {
 			log.Printf("Error when reading file %s. %v. skipping...", file.Name(), err)
 			continue
 		}
 
-		if byt[0] == '[' && byt[len(byt)-1] == ']' {
-			var stubs []*Stub
-			err = json.Unmarshal(byt, &stubs)
-			if err != nil {
-				log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
-				continue
-			}
+		// Try to unmarshal as array first
+		var stubs []*Stub
+		err = json.Unmarshal(byt, &stubs)
+		if err == nil && len(stubs) > 0 {
+			// Successfully unmarshaled as array
+			log.Printf("Successfully unmarshaled %s as array with %d stubs", file.Name(), len(stubs))
 			for _, s := range stubs {
-				sm.storeStub(s)
+				if err = sm.storeStub(s); err != nil {
+					log.Printf("Error when storing Stub from %s. %v. skipping...", file.Name(), err)
+				} else {
+					count++
+				}
 			}
 			continue
 		}
 
-		stub := new(Stub)
-		err = json.Unmarshal(byt, stub)
+		// If array unmarshal failed, try as single stub
+		var stub Stub
+		err = json.Unmarshal(byt, &stub)
 		if err != nil {
 			log.Printf("Error when unmarshalling file %s. %v. skipping...", file.Name(), err)
 			continue
 		}
 
-		sm.storeStub(stub)
+		if err = sm.storeStub(&stub); err != nil {
+			log.Printf("Error when storing Stub from %s. %v. skipping...", file.Name(), err)
+		} else {
+			count++
+		}
 	}
+
+	return count
+}
+
+func headerFind(expect, actual map[string]interface{}) bool {
+	return find(expect, actual, true, false, func(expect, actual interface{}) bool {
+		expectStr, expectOk := expect.(string)
+		actualStr, actualOk := actual.(string)
+		if !expectOk || !actualOk {
+			return false
+		}
+		return strings.Contains(actualStr, expectStr)
+	}, false)
 }
