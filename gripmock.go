@@ -25,6 +25,9 @@ func main() {
 	stubPath := flag.String("stub", "/stubs", "Path where the stub files are (Optional)")
 	imports := flag.String("imports", "/protobuf", "comma separated imports path. default path /protobuf is where gripmock Dockerfile install WKT protos")
 
+	var protoDirs multiStringFlag
+	flag.Var(&protoDirs, "proto-dir", "Directory to recursively collect .proto files from (can be specified multiple times)")
+
 	if len(os.Args) == 0 {
 		log.Fatal("No arguments were passed")
 	}
@@ -60,15 +63,27 @@ func main() {
 	// parse proto files
 	protoPaths := flag.Args()
 
-	if len(protoPaths) == 0 {
-		protoPaths = []string{"/proto"}
+	allProtoFiles := []string{}
+	// Add explicit .proto files from positional args
+	for _, p := range protoPaths {
+		if strings.HasSuffix(p, ".proto") {
+			allProtoFiles = append(allProtoFiles, p)
+		}
+	}
+	// Add recursively found .proto files from --proto-dir
+	for _, dir := range protoDirs {
+		allProtoFiles = append(allProtoFiles, readDirProto(dir)...)
+	}
+
+	if len(allProtoFiles) == 0 {
+		log.Fatal("Need at least one .proto file (via positional arg or --proto-dir)")
 	}
 
 	importDirs := strings.Split(*imports, ",")
 
 	// generate pb.go and grpc server based on proto
 	generateProtoc(protocParam{
-		protoPath:   protoPaths,
+		protoPath:   allProtoFiles,
 		adminPort:   *adminport,
 		grpcAddress: *grpcBindAddr,
 		grpcPort:    *grpcPort,
@@ -134,6 +149,9 @@ func generateProtoc(param protocParam) {
 	protoPaths := []string{}
 	for _, proto := range param.protoPath {
 		dir, paths := getProtoDirAndPath(proto)
+		if len(paths) == 0 {
+			continue // skip if nothing to add
+		}
 		dir = "protogen/" + strings.TrimLeft(dir, "/")
 		paths = fixGoPackage(paths)
 
@@ -170,14 +188,11 @@ func getProtoDirAndPath(proto string) (protoDir string, protoPaths []string) {
 		fmt.Println(proto)
 		log.Fatal(fmt.Errorf("fail to stat proto %s: %w", proto, err))
 	}
-	if stat.Mode().IsRegular() {
+	if stat.Mode().IsRegular() && strings.HasSuffix(proto, ".proto") {
 		protoDir = path.Dir(proto)
 		protoPaths = append(protoPaths, proto)
-	} else if stat.Mode().IsDir() {
-		protoDir = proto
-		protoPaths = append(protoPaths, readDirProto(proto)...)
 	}
-
+	// Directories are ignored
 	return
 }
 
@@ -229,4 +244,15 @@ func runGrpcServer(output string) (*exec.Cmd, <-chan error) {
 		runerr <- run.Wait()
 	}()
 	return run, runerr
+}
+
+type multiStringFlag []string
+
+func (m *multiStringFlag) String() string {
+	return strings.Join(*m, ",")
+}
+
+func (m *multiStringFlag) Set(value string) error {
+	*m = append(*m, value)
+	return nil
 }
