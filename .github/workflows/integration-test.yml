@@ -55,3 +55,7 @@ jobs:
         
     - name: Run stub subfolders example
       run: docker run --rm --entrypoint example/stub-subfolders/entrypoint.sh gripmock:test
+    - name: Run gzip example
+      uses: ./
+      with:
+        entrypoint: example/simple-with-gzip/entrypoint.sh
