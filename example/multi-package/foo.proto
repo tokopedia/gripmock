@@ -10,3 +10,15 @@ option go_package = "github.com/my/private/repo/multi-package";
 message Response {
     string response = 1;
 }
+
+// Add nested message for type resolution test
+message Outer {
+  message Inner {
+    string value = 1;
+  }
+}
+
+service FooService {
+  // Add method using nested type
+  rpc UseNested (Outer.Inner) returns (Outer.Inner);
+}
