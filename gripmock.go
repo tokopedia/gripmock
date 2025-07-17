@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -21,7 +22,7 @@ func main() {
 	grpcBindAddr := flag.String("grpc-listen", "", "Address the gRPC server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
 	adminport := flag.String("admin-port", "4771", "Port of stub admin server")
 	adminBindAddr := flag.String("admin-listen", "", "Address the admin server will bind to. Default to localhost, set to 0.0.0.0 to use from another machine")
-	stubPath := flag.String("stub", "", "Path where the stub files are (Optional)")
+	stubPath := flag.String("stub", "/stubs", "Path where the stub files are (Optional)")
 	imports := flag.String("imports", "/protobuf", "comma separated imports path. default path /protobuf is where gripmock Dockerfile install WKT protos")
 
 	if len(os.Args) == 0 {
@@ -60,7 +61,7 @@ func main() {
 	protoPaths := flag.Args()
 
 	if len(protoPaths) == 0 {
-		log.Fatal("Need at least one proto file")
+		protoPaths = []string{"/proto"}
 	}
 
 	importDirs := strings.Split(*imports, ",")
@@ -130,29 +131,73 @@ func getProtodirs(protoPath string, imports []string) []string {
 }
 
 func generateProtoc(param protocParam) {
-	param.protoPath = fixGoPackage(param.protoPath)
-	protodirs := getProtodirs(param.protoPath[0], param.imports)
+	protoPaths := []string{}
+	for _, proto := range param.protoPath {
+		dir, paths := getProtoDirAndPath(proto)
+		dir = "protogen/" + strings.TrimLeft(dir, "/")
+		paths = fixGoPackage(paths)
+
+		param.imports = append(param.imports, dir)
+		protoPaths = append(protoPaths, paths...)
+	}
+	param.protoPath = protoPaths
 
 	// estimate args length to prevent expand
-	args := make([]string, 0, len(protodirs)+len(param.protoPath)+2)
-	for _, dir := range protodirs {
+	args := make([]string, 0, len(param.imports)+len(param.protoPath)+2)
+	fmt.Println("Imports:", param.imports)
+	for _, dir := range param.imports {
 		args = append(args, "-I", dir)
 	}
 
 	// the latest go-grpc plugin will generate subfolders under $GOPATH/src based on go_package option
 	pbOutput := os.Getenv("GOPATH") + "/src"
-
-	args = append(args, param.protoPath...)
-	args = append(args, "--go_out=plugins=grpc:"+pbOutput)
+	args = append(args, "--go_out="+pbOutput)
+	args = append(args, "--go-grpc_out=require_unimplemented_servers=false:"+pbOutput)
 	args = append(args, fmt.Sprintf("--gripmock_out=admin-port=%s,grpc-address=%s,grpc-port=%s:%s",
 		param.adminPort, param.grpcAddress, param.grpcPort, param.output))
+	args = append(args, param.protoPath...)
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
-	err := protoc.Run()
-	if err != nil {
+	if err := protoc.Run(); err != nil {
 		log.Fatal("Fail on protoc ", err)
 	}
+}
+
+func getProtoDirAndPath(proto string) (protoDir string, protoPaths []string) {
+	stat, err := os.Stat(proto)
+	if err != nil {
+		fmt.Println(proto)
+		log.Fatal(fmt.Errorf("fail to stat proto %s: %w", proto, err))
+	}
+	if stat.Mode().IsRegular() {
+		protoDir = path.Dir(proto)
+		protoPaths = append(protoPaths, proto)
+	} else if stat.Mode().IsDir() {
+		protoDir = proto
+		protoPaths = append(protoPaths, readDirProto(proto)...)
+	}
+
+	return
+}
+
+func readDirProto(proto string) (protoPaths []string) {
+	entries, err := os.ReadDir(proto)
+	if err != nil {
+		log.Fatal(fmt.Errorf("Error reading dir %s: %w", proto, err))
+	}
+	for _, entry := range entries {
+		name := path.Join(proto, entry.Name())
+		if entry.Type().IsRegular() {
+			if filepath.Ext(entry.Name()) == ".proto" {
+				protoPaths = append(protoPaths, name)
+			}
+		} else if entry.Type().IsDir() {
+			protoPaths = append(protoPaths, readDirProto(name)...)
+		}
+	}
+
+	return protoPaths
 }
 
 // append gopackage in proto files if doesn't have any
