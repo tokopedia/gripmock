@@ -76,6 +76,9 @@ Stub Format is JSON text format. It has a skeleton as follows:
   "input":{ // input matching rule. see Input Matching Rule section below
     // put rule here
   },
+  "headers":{ // Optional header matching rule. See "Headers Matching Rule" section below.
+    // put rule here
+  },
   "output":{ // output json if input were matched
     "data":{
       // put result fields here
@@ -218,7 +221,7 @@ Nested fields are allowed for input matching too for all JSON data types. (`stri
 }
 ```
 
-### Input Headers Matching Rule
+### Headers Matching Rule
 
 Input headers matching has 4 rules to match input headers: `equals`, `equals_unordered`, `contains`, and `matches`.
 <br>
@@ -226,7 +229,7 @@ Headers are map of strings and the same matching rules apply for headers as for 
 <br>
 **Important Note:** Only one rule type is applied at a time. If multiple rule types are specified, the first matching rule will be used.
 <br>
-Headers can be specified in the `headers` field of the `input` object:
+Headers can be specified in the `headers` field of the root object:
 <br>
 ```json
 {
@@ -236,13 +239,13 @@ Headers can be specified in the `headers` field of the `input` object:
     "equals": {
       "field1": "value1"
     },
-    "headers": {
-      "equals": {
-        "Content-Type": "application/json"
-      }
-      // Only one rule type is applied. If you specify multiple rules,
-      // the first matching rule will be used.
+  },
+  "headers": {
+    "equals": {
+      "Content-Type": "application/json"
     }
+    // Only one rule type is applied. If you specify multiple rules,
+    // the first matching rule will be used.
   },
   "output": {
     "data": {
