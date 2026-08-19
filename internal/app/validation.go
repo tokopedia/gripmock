@@ -21,6 +21,8 @@ func NewStubValidator() (*validator.Validate, error) {
 		}
 	}
 
+	v.RegisterStructValidation(validateStubConfiguration, stuber.Stub{})
+
 	return v, nil
 }
 
@@ -66,6 +68,30 @@ func validateOutputConfiguration(fl validator.FieldLevel) bool {
 	hasStreamOutput := len(v.Output.Stream) > 0
 
 	return hasDataOutput != hasStreamOutput
+}
+
+func validateStubConfiguration(sl validator.StructLevel) {
+	v, ok := sl.Current().Interface().(stuber.Stub)
+	if !ok {
+		return
+	}
+
+	if validDelayConfiguration(v.Output) {
+		return
+	}
+
+	sl.ReportError(v.Output, "Output", "output", "valid_delay_config", "")
+}
+
+func validDelayConfiguration(output stuber.Output) bool {
+	switch output.DelayType {
+	case "", stuber.DelayTypeDefault:
+		return output.DelayStep == 0
+	case stuber.DelayTypeRegressive:
+		return output.Delay > 0 && output.DelayStep > 0
+	default:
+		return false
+	}
 }
 
 func validateEffectsConfiguration(fl validator.FieldLevel) bool {
@@ -122,6 +148,9 @@ func getValidationMessage(fe validator.FieldError) string {
 		return "Invalid input configuration: must have either 'input' or 'inputs', but not both"
 	case "valid_output_config":
 		return "Invalid output configuration: must have either 'data' or 'stream', but not both"
+	case "valid_delay_config":
+		return "Invalid delay configuration: regressive delay requires positive 'delay' and 'delay_step'; " +
+			"'delay_step' is not allowed for the default delay type"
 	case "valid_effects":
 		return "Invalid effects configuration: upsert requires 'stub', delete requires 'id'"
 	case "gte":

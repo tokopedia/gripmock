@@ -77,6 +77,40 @@ output:
   delay: 1h30m    # 1 hour 30 minutes
 ```
 
+## Regressive Delay
+
+Use `delay_type: regressive` to decrease the response delay after every match. This is useful for testing clients that retry timed-out requests and eventually receive a response.
+
+```yaml
+service: ExampleService
+method: GetData
+input:
+  contains:
+    key: example
+output:
+  delay: 3s
+  delay_type: regressive
+  delay_step: 500ms
+  data:
+    result: success
+```
+
+The effective delay is calculated as `max(0, delay - (match_number - 1) * delay_step)`. The example produces:
+
+```text
+3s, 2.5s, 2s, 1.5s, 1s, 500ms, 0s, 0s, ...
+```
+
+- The first match uses the configured `delay`.
+- The delay never becomes negative and remains at zero after reaching it.
+- `delay` and `delay_step` must both be positive when the type is `regressive`.
+- Omitting `delay_type`, or setting it to `default`, keeps the delay fixed.
+- The match number is isolated by stub and `X-Gripmock-Session`. Without a session, it is global for the stub.
+- A match advances the sequence even if the client later cancels or times out.
+- Clearing or deleting the stub resets the sequence.
+
+For unary, client-streaming, and server-streaming calls, the effective value is calculated once when the stub is matched. Bidirectional streams advance the sequence for each independently matched incoming message. A per-element `_gripmock.delay` continues to override the top-level delay.
+
 ## Streaming Responses
 
 For streaming responses, delay is applied **before** every message in the stream.
@@ -263,4 +297,4 @@ You can verify delay behavior using gRPC clients or tools like `grpcurl`:
 grpcurl -plaintext -d '{"stn":"MS#00001"}' localhost:4770 TrackService/StreamTrack
 ```
 
-The response time should include the configured delay plus processing time. 
+The response time should include the configured delay plus processing time.

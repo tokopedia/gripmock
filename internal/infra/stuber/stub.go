@@ -17,6 +17,16 @@ const (
 	SourceProxy = "proxy"
 )
 
+// DelayType controls how the configured response delay changes between matches.
+type DelayType string
+
+const (
+	// DelayTypeDefault keeps the configured delay unchanged for every match.
+	DelayTypeDefault DelayType = "default"
+	// DelayTypeRegressive decreases the configured delay after every match.
+	DelayTypeRegressive DelayType = "regressive"
+)
+
 func IsKnownSource(source string) bool {
 	switch source {
 	case SourceFile, SourceRest, SourceMCP, SourceProxy:
@@ -254,5 +264,39 @@ type Output struct {
 	Error   string           `json:"error"`             // The error message of the response.
 	Code    *codes.Code      `json:"code,omitempty"`    // The status code of the response.
 	Details []map[string]any `json:"details,omitempty"` // gRPC error details (google.protobuf.Any payloads).
-	Delay   types.Duration   `json:"delay,omitempty"`   // The delay of the response or error.
+	Delay   types.Duration   `json:"delay,omitempty"`   // The base delay of the response or error.
+	//nolint:tagliatelle // Keep the proposed public stub field name.
+	DelayType DelayType `json:"delay_type,omitempty"` // The strategy used to adjust Delay between matches.
+	//nolint:tagliatelle // Keep the proposed public stub field name.
+	DelayStep types.Duration `json:"delay_step,omitempty"` // The amount subtracted after each match.
+}
+
+// EffectiveDelay returns the delay for the one-based match number.
+func (o Output) EffectiveDelay(matchNumber int) types.Duration {
+	if o.DelayType != DelayTypeRegressive || matchNumber <= 1 || o.Delay <= 0 || o.DelayStep <= 0 {
+		return o.Delay
+	}
+
+	decrements := int64(matchNumber - 1)
+	delay := int64(o.Delay)
+	step := int64(o.DelayStep)
+
+	// Avoid overflowing the multiplication and clamp the result at zero.
+	if decrements > delay/step {
+		return 0
+	}
+
+	return types.Duration(delay - decrements*step)
+}
+
+func effectiveDelayStub(stub *Stub, matchNumber int) *Stub {
+	if stub == nil || stub.Output.DelayType != DelayTypeRegressive || matchNumber <= 0 {
+		return stub
+	}
+
+	result := *stub
+	result.Output = stub.Output
+	result.Output.Delay = stub.Output.EffectiveDelay(matchNumber)
+
+	return &result
 }

@@ -1,0 +1,44 @@
+--- ENDPOINT ---
+helloworld.Greeter/SayHello
+
+--- REQUEST ---
+{
+  "name": "regressive-delay"
+}
+
+--- RESPONSE with_asserts ---
+{
+  "message": "Hello with regressive delay!"
+}
+
+--- ASSERTS ---
+@elapsed_ms() >= 20
+
+--- ENDPOINT ---
+helloworld.Greeter/SayHello
+
+--- REQUEST ---
+{
+  "name": "regressive-delay"
+}
+
+--- RESPONSE with_asserts ---
+{
+  "message": "Hello with regressive delay!"
+}
+
+--- ASSERTS ---
+@elapsed_ms() >= 10
+
+--- ENDPOINT ---
+helloworld.Greeter/SayHello
+
+--- REQUEST ---
+{
+  "name": "regressive-delay"
+}
+
+--- RESPONSE ---
+{
+  "message": "Hello with regressive delay!"
+}

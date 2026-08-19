@@ -62,8 +62,10 @@ func (s *searcher) processStubsSequential(query Query, stubs []*Stub) (*Result, 
 }
 
 func (s *searcher) processSingleStub(query Query, stub *Stub) (*Result, error) {
-	if s.matcher.Match(query, stub) && s.tryReserve(query, stub) {
-		return &Result{found: stub}, nil
+	if s.matcher.Match(query, stub) {
+		if matchNumber, reserved := s.tryReserve(query, stub); reserved {
+			return &Result{found: effectiveDelayStub(stub, matchNumber)}, nil
+		}
 	}
 
 	return &Result{similar: stub}, nil
@@ -93,8 +95,8 @@ func (s *searcher) collectSequentialCandidates(query Query, stubs []*Stub) ([]ra
 
 func (s *searcher) reserveFirstRankedMatch(query Query, matches []rankedMatch) *Stub {
 	for _, match := range matches {
-		if s.tryReserve(query, match.stub) {
-			return match.stub
+		if matchNumber, reserved := s.tryReserve(query, match.stub); reserved {
+			return effectiveDelayStub(match.stub, matchNumber)
 		}
 	}
 

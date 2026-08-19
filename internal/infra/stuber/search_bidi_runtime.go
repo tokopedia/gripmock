@@ -40,8 +40,8 @@ func (br *BidiResult) Next(messageData map[string]any) (*Stub, error) {
 			return nil, ErrStubNotFound
 		}
 
-		if br.tryReserveAndFinalize(bestStub, itemQuery, isFirstMessage) {
-			return bestStub, nil
+		if reservedStub, reserved := br.tryReserveAndFinalize(bestStub, itemQuery, isFirstMessage); reserved {
+			return reservedStub, nil
 		}
 		// Stub exhausted (Times), remove and try next
 		br.removeStubFromMatchingByIndex(bestIndex)
@@ -116,9 +116,10 @@ func (br *BidiResult) selectBestStub(itemQuery Query, messageIndex int) (*Stub, 
 	return bestStub, bestIndex
 }
 
-func (br *BidiResult) tryReserveAndFinalize(bestStub *Stub, itemQuery Query, isFirstMessage bool) bool {
-	if !br.searcher.tryReserve(itemQuery, bestStub) {
-		return false
+func (br *BidiResult) tryReserveAndFinalize(bestStub *Stub, itemQuery Query, isFirstMessage bool) (*Stub, bool) {
+	matchNumber, reserved := br.searcher.tryReserve(itemQuery, bestStub)
+	if !reserved {
+		return nil, false
 	}
 
 	if !bestStub.IsClientStream() && isFirstMessage {
@@ -126,7 +127,7 @@ func (br *BidiResult) tryReserveAndFinalize(bestStub *Stub, itemQuery Query, isF
 		br.messageCount.Store(0)
 	}
 
-	return true
+	return effectiveDelayStub(bestStub, matchNumber), true
 }
 
 func (br *BidiResult) queryForMessage(messageData map[string]any) Query {

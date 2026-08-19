@@ -217,6 +217,37 @@ func (s *RestValidationTestSuite) TestAddStubValidationErrors() {
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Invalid effects configuration",
 		},
+		{
+			name: "regressive delay without step",
+			jsonData: `[{
+				"service": "TestService",
+				"method": "TestMethod",
+				"input": {"contains": {"key": "value"}},
+				"output": {
+					"delay": "1s",
+					"delay_type": "regressive",
+					"data": {"result": "success"}
+				}
+			}]`,
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Invalid delay configuration",
+		},
+		{
+			name: "delay step with default type",
+			jsonData: `[{
+				"service": "TestService",
+				"method": "TestMethod",
+				"input": {"contains": {"key": "value"}},
+				"output": {
+					"delay": "1s",
+					"delay_type": "default",
+					"delay_step": "100ms",
+					"data": {"result": "success"}
+				}
+			}]`,
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Invalid delay configuration",
+		},
 	}
 
 	for _, tt := range tests {
@@ -396,6 +427,20 @@ func (s *RestValidationTestSuite) TestAddStubValidConfigurations() {
 				"input": {"contains": {"key": "value"}},
 				"output": {"data": {"result": "success"}},
 				"priority": 10
+			}]`,
+		},
+		{
+			name: "valid stub with regressive delay",
+			jsonData: `[{
+				"service": "test.Service",
+				"method": "TestMethod",
+				"input": {"contains": {"key": "value"}},
+				"output": {
+					"delay": "1s",
+					"delay_type": "regressive",
+					"delay_step": "100ms",
+					"data": {"result": "success"}
+				}
 			}]`,
 		},
 	}

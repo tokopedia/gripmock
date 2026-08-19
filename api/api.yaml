@@ -1479,3 +1479,19 @@ components:
           example: "1s"
           x-omitzero: true
           x-go-type-skip-optional-pointer: true
+        delay_type:
+          type: string
+          enum: [default, regressive]
+          description: Strategy used to adjust the response delay between stub matches
+          example: regressive
+          x-go-type-skip-optional-pointer: true
+        delay_step:
+          type: string
+          x-go-type: gptypes.Duration
+          x-go-type-import:
+            name: gptypes
+            path: github.com/bavix/gripmock/v3/internal/infra/types
+          description: Amount subtracted from delay after every match when delay_type is regressive
+          example: "500ms"
+          x-omitzero: true
+          x-go-type-skip-optional-pointer: true

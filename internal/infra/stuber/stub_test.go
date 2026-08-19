@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goccy/go-yaml"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -198,4 +199,54 @@ func TestOutputDelayJsonSerialization(t *testing.T) {
 		&decodedOutput)
 	require.NoError(t, err)
 	require.Equal(t, types.Duration(200*time.Millisecond), decodedOutput.Delay)
+}
+
+func TestOutputRegressiveDelayJSONSerialization(t *testing.T) {
+	t.Parallel()
+
+	output := stuber.Output{
+		Data:      map[string]any{"message": "Hello World"},
+		Delay:     types.Duration(3 * time.Second),
+		DelayType: stuber.DelayTypeRegressive,
+		DelayStep: types.Duration(500 * time.Millisecond),
+	}
+
+	jsonData, err := json.Marshal(output)
+	require.NoError(t, err)
+	require.Contains(t, string(jsonData), `"delay":"3s"`)
+	require.Contains(t, string(jsonData), `"delay_type":"regressive"`)
+	require.Contains(t, string(jsonData), `"delay_step":"500ms"`)
+
+	var decoded stuber.Output
+	require.NoError(t, json.Unmarshal(jsonData, &decoded))
+	require.Equal(t, output.Delay, decoded.Delay)
+	require.Equal(t, output.DelayType, decoded.DelayType)
+	require.Equal(t, output.DelayStep, decoded.DelayStep)
+}
+
+func TestOutputRegressiveDelayYAMLDeserialization(t *testing.T) {
+	t.Parallel()
+
+	data := []byte(`
+service: example.Service
+method: Get
+input:
+  contains:
+    key: example
+output:
+  delay: 3s
+  delay_type: regressive
+  delay_step: 500ms
+  data:
+    result: success
+`)
+
+	var stub stuber.Stub
+
+	jsonData, err := yaml.YAMLToJSON(data)
+	require.NoError(t, err)
+	require.NoError(t, json.Unmarshal(jsonData, &stub))
+	require.Equal(t, types.Duration(3*time.Second), stub.Output.Delay)
+	require.Equal(t, stuber.DelayTypeRegressive, stub.Output.DelayType)
+	require.Equal(t, types.Duration(500*time.Millisecond), stub.Output.DelayStep)
 }

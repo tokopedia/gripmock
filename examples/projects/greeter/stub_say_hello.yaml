@@ -1,5 +1,19 @@
 # yaml-language-server: $schema=https://bavix.github.io/gripmock/schema/stub.json
 
+# Regressive delay - each matching call is faster than the previous one
+- service: helloworld.Greeter
+  method: SayHello
+  priority: 100
+  input:
+    equals:
+      name: regressive-delay
+  output:
+    delay: 30ms
+    delay_type: regressive
+    delay_step: 10ms
+    data:
+      message: Hello with regressive delay!
+
 # Unary - Dynamic greeting using request data
 - service: helloworld.Greeter
   method: SayHello
